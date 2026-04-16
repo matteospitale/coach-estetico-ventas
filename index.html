@@ -550,6 +550,8 @@
     </div>
     <div class="form-card">
       <div class="form-grid">
+
+        <!-- FILA 1: Asesor - Fecha -->
         <div class="form-group">
           <label class="form-label">Asesor *</label>
           <select class="form-select" id="f-asesor">
@@ -560,13 +562,21 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Fecha de venta *</label>
+          <label class="form-label">Fecha *</label>
           <input type="date" class="form-input" id="f-fecha">
         </div>
+
+        <!-- FILA 2: Monto USD - Monto Local -->
         <div class="form-group">
-          <label class="form-label">Monto (USD) *</label>
+          <label class="form-label">Monto USD *</label>
           <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01">
         </div>
+        <div class="form-group">
+          <label class="form-label">Monto local (opcional)</label>
+          <input type="text" class="form-input" id="f-monto-local" placeholder="Ej: 189.900 ARS">
+        </div>
+
+        <!-- FILA 3: Forma de pago - Canal -->
         <div class="form-group">
           <label class="form-label">Forma de pago *</label>
           <select class="form-select" id="f-pago">
@@ -583,27 +593,31 @@
             <option>PayPal</option>
           </select>
         </div>
-        <div class="form-group full">
-          <label class="form-label">Canal de venta *</label>
-          <div style="display:flex;gap:12px;margin-top:2px">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text2)">
-              <input type="radio" name="canal" id="f-canal-ig" value="Instagram" style="accent-color:var(--accent);width:16px;height:16px">
+        <div class="form-group">
+          <label class="form-label">Canal *</label>
+          <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
+              <input type="radio" name="canal" id="f-canal-ig" value="Instagram" style="accent-color:#C13584;width:16px;height:16px">
               Instagram
             </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text2)">
-              <input type="radio" name="canal" id="f-canal-wa" value="WhatsApp" style="accent-color:var(--accent);width:16px;height:16px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
+              <input type="radio" name="canal" id="f-canal-wa" value="WhatsApp" style="accent-color:#25D366;width:16px;height:16px">
               WhatsApp
             </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text2)">
-              <input type="radio" name="canal" id="f-canal-web" value="Web/Automático" style="accent-color:var(--accent);width:16px;height:16px">
-              Web / Automático
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
+              <input type="radio" name="canal" id="f-canal-ia" value="IA/Web" style="accent-color:var(--accent);width:16px;height:16px">
+              IA / Web
             </label>
           </div>
         </div>
+
+        <!-- FILA 4: Curso -->
         <div class="form-group full">
           <label class="form-label">Curso / Producto *</label>
           <input type="text" class="form-input" id="f-curso" placeholder="Ej: Método NutriSkin, Diplomado Peeling Químico...">
         </div>
+
+        <!-- FILA 5: ID Lead - Código comprobante -->
         <div class="form-group">
           <label class="form-label">ID Lead Kommo</label>
           <input type="text" class="form-input" id="f-lead" placeholder="Ej: 27537979">
@@ -612,22 +626,23 @@
           <label class="form-label">Código comprobante</label>
           <input type="text" class="form-input" id="f-codigo" placeholder="Ej: HP0198428386">
         </div>
+
+        <!-- FILA 6: Teléfono - Mail -->
         <div class="form-group">
-          <label class="form-label">Teléfono del alumno</label>
+          <label class="form-label">Teléfono</label>
           <input type="tel" class="form-input" id="f-telefono" placeholder="Ej: +5491112345678">
         </div>
         <div class="form-group">
-          <label class="form-label">Email del alumno</label>
+          <label class="form-label">Mail</label>
           <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com">
         </div>
-        <div class="form-group">
-          <label class="form-label">Monto local (opcional)</label>
-          <input type="text" class="form-input" id="f-monto-local" placeholder="Ej: 189.900 ARS">
-        </div>
+
+        <!-- FILA 7: Aclaración -->
         <div class="form-group full">
           <label class="form-label">Aclaración (opcional)</label>
           <textarea class="form-textarea" id="f-nota" placeholder="Ej: Venta Mariel, alumna de Dermatocosmiatría..."></textarea>
         </div>
+
       </div>
       <div class="form-actions">
         <button class="btn btn-accent" onclick="confirmarVenta()">Revisar y confirmar</button>
@@ -854,7 +869,7 @@
         <td title="${v.curso}" style="font-size:11px">${v.curso}</td>
         <td class="mono">${v.lead ? `<a href="https://coachestetico.kommo.com/leads/detail/${v.lead}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">${v.lead}</a>` : '—'}</td>
         <td style="font-size:11px;color:var(--text2)">${v.telefono||'—'}</td>
-        <td style="font-size:11px;color:var(--text3)">${v.email||'—'}</td>
+        <td style="font-size:11px">${v.email ? `<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=${encodeURIComponent(v.email)}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500">${v.email}</a>` : '—'}</td>
         <td class="mono" style="color:var(--text3)">${v.codigo||'—'}</td>
         <td style="color:var(--text3);font-size:11px" title="${v.nota||''}">${v.nota||'—'}</td>
         <td><button class="btn btn-danger" onclick="eliminarVenta('${v._key}')">✕</button></td>
