@@ -198,26 +198,32 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow);
+    width: 100%;
   }
-  .table-scroll { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .table-scroll { width: 100%; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
   thead th {
     background: var(--surface2);
-    padding: 11px 14px;
+    padding: 9px 8px;
     text-align: left;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--text3);
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   tbody td {
-    padding: 12px 14px;
+    padding: 9px 8px;
     border-bottom: 1px solid var(--border);
     color: var(--text);
     vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover td { background: var(--surface2); }
@@ -515,18 +521,20 @@
         <table>
           <thead>
             <tr>
-              <th>Fecha</th>
-              <th>Hora carga</th>
-              <th>Asesor</th>
-              <th>Canal</th>
-              <th>Monto</th>
-              <th>Pago</th>
-              <th>Curso / Producto</th>
-              <th>ID Lead</th>
-              <th>Email</th>
-              <th>Código</th>
-              <th>Nota</th>
-              <th></th>
+              <th style="width:80px">Fecha</th>
+              <th style="width:65px">Hora</th>
+              <th style="width:75px">Asesor</th>
+              <th style="width:80px">Canal</th>
+              <th style="width:60px">USD</th>
+              <th style="width:75px">M. Local</th>
+              <th style="width:90px">Pago</th>
+              <th style="width:140px">Curso / Producto</th>
+              <th style="width:75px">ID Lead</th>
+              <th style="width:110px">Teléfono</th>
+              <th style="width:120px">Email</th>
+              <th style="width:100px">Código</th>
+              <th style="width:120px">Nota</th>
+              <th style="width:70px"></th>
             </tr>
           </thead>
           <tbody id="tabla-body"></tbody>
@@ -605,8 +613,16 @@
           <input type="text" class="form-input" id="f-codigo" placeholder="Ej: HP0198428386">
         </div>
         <div class="form-group">
-          <label class="form-label">Email del alumno (opcional)</label>
+          <label class="form-label">Teléfono del alumno</label>
+          <input type="tel" class="form-input" id="f-telefono" placeholder="Ej: +5491112345678">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email del alumno</label>
           <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto local (opcional)</label>
+          <input type="text" class="form-input" id="f-monto-local" placeholder="Ej: 189.900 ARS">
         </div>
         <div class="form-group full">
           <label class="form-label">Aclaración (opcional)</label>
@@ -831,15 +847,17 @@
         <td class="mono">${v.fecha.split('-').reverse().join('/')}</td>
         <td class="mono" style="color:var(--text3)">${horaStr}</td>
         <td><span class="badge badge-${v.asesor.toLowerCase()}">${v.asesor}</span></td>
-        <td style="font-size:12px;font-weight:600;color:${canalColor}">${v.canal||'—'}</td>
+        <td style="font-size:11px;font-weight:600;color:${canalColor}">${v.canal||'—'}</td>
         <td class="mono" style="font-weight:600;color:var(--accent)">$${parseFloat(v.monto).toLocaleString('en-US')}</td>
-        <td>${v.pago}</td>
-        <td><span class="curso-tag" title="${v.curso}">${v.curso}</span></td>
+        <td style="font-size:11px;color:var(--text2)">${v.montoLocal||'—'}</td>
+        <td style="font-size:11px">${v.pago}</td>
+        <td title="${v.curso}" style="font-size:11px">${v.curso}</td>
         <td class="mono">${v.lead ? `<a href="https://coachestetico.kommo.com/leads/detail/${v.lead}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">${v.lead}</a>` : '—'}</td>
-        <td style="font-size:12px;color:var(--text3)">${v.email||'—'}</td>
+        <td style="font-size:11px;color:var(--text2)">${v.telefono||'—'}</td>
+        <td style="font-size:11px;color:var(--text3)">${v.email||'—'}</td>
         <td class="mono" style="color:var(--text3)">${v.codigo||'—'}</td>
-        <td style="color:var(--text3);font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v.nota||''}">${v.nota||'—'}</td>
-        <td><button class="btn btn-danger" onclick="eliminarVenta('${v._key}')">Eliminar</button></td>
+        <td style="color:var(--text3);font-size:11px" title="${v.nota||''}">${v.nota||'—'}</td>
+        <td><button class="btn btn-danger" onclick="eliminarVenta('${v._key}')">✕</button></td>
       </tr>
     `}).join('');
   };
@@ -866,6 +884,8 @@
     const codigo = document.getElementById('f-codigo').value.trim();
     const nota = document.getElementById('f-nota').value.trim();
     const email = document.getElementById('f-email').value.trim();
+    const telefono = document.getElementById('f-telefono').value.trim();
+    const montoLocal = document.getElementById('f-monto-local').value.trim();
     const canalEl = document.querySelector('input[name="canal"]:checked');
     const canal = canalEl ? canalEl.value : '';
 
@@ -876,13 +896,14 @@
     const ahora = new Date();
     const cargado = ahora.toISOString();
     const horaLocal = ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
-    pendiente = { asesor, fecha, monto, pago, curso, canal, lead, codigo, email, nota, cargado };
+    pendiente = { asesor, fecha, monto, pago, curso, canal, lead, codigo, email, telefono, montoLocal, nota, cargado };
     document.getElementById('modal-body').innerHTML = `
       <strong>${asesor}</strong> · ${fecha.split('-').reverse().join('/')} · <span style="color:var(--text3)">${horaLocal}</span><br>
-      <span class="amount">$${monto.toLocaleString('en-US')} USD</span>
+      <span class="amount">$${monto.toLocaleString('en-US')} USD</span>${montoLocal ? ` · <span style="color:var(--text3)">${montoLocal}</span>` : ''}
       vía <strong>${pago}</strong> · <strong>${canal}</strong><br>
       ${curso}
       ${lead ? `<br><span style="color:var(--text3)">Lead: ${lead}</span>` : ''}
+      ${telefono ? `<br><span style="color:var(--text3)">Tel: ${telefono}</span>` : ''}
       ${codigo ? ` · <span style="color:var(--text3)">${codigo}</span>` : ''}
       ${email ? `<br><span style="color:var(--text3)">Email: ${email}</span>` : ''}
       ${nota ? `<br><em>${nota}</em>` : ''}
@@ -916,10 +937,10 @@
     const search = document.getElementById('fil-search').value;
     const vf = filteredVentas(asesor, mes, pago, search);
     if (!vf.length) { showToast('No hay ventas para exportar'); return; }
-    const rows = [['Fecha','Hora carga','Asesor','Canal','Monto USD','Forma de pago','Curso/Producto','ID Lead Kommo','Email','Código','Aclaración']];
+    const rows = [['Fecha','Hora carga','Asesor','Canal','Monto USD','Monto Local','Forma de pago','Curso/Producto','ID Lead Kommo','Teléfono','Email','Código','Aclaración']];
     vf.forEach(v => {
       const hora = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '';
-      rows.push([v.fecha, hora, v.asesor, v.canal||'', v.monto, v.pago, v.curso, v.lead||'', v.email||'', v.codigo||'', v.nota||'']);
+      rows.push([v.fecha, hora, v.asesor, v.canal||'', v.monto, v.montoLocal||'', v.pago, v.curso, v.lead||'', v.telefono||'', v.email||'', v.codigo||'', v.nota||'']);
     });
     const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
     const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
@@ -931,7 +952,7 @@
   // ── UTILS ──
   window.limpiarForm = function() {
     ['f-asesor','f-pago'].forEach(id => document.getElementById(id).value = '');
-    ['f-monto','f-curso','f-lead','f-codigo','f-email','f-nota'].forEach(id => document.getElementById(id).value = '');
+    ['f-monto','f-curso','f-lead','f-codigo','f-email','f-telefono','f-monto-local','f-nota'].forEach(id => document.getElementById(id).value = '');
     document.querySelectorAll('input[name="canal"]').forEach(r => r.checked = false);
     document.getElementById('f-fecha').valueAsDate = new Date();
   };
