@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ventas — Coach Estético</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #F7F5F0;
@@ -55,12 +55,11 @@
     z-index: 50;
   }
   .header-logo {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     color: var(--text);
-    text-transform: uppercase;
   }
   .header-logo span { color: var(--accent); }
   .header-right { display: flex; gap: 10px; align-items: center; }
@@ -516,7 +515,9 @@
           <thead>
             <tr>
               <th>Fecha</th>
+              <th>Hora carga</th>
               <th>Asesor</th>
+              <th>Canal</th>
               <th>Monto</th>
               <th>Pago</th>
               <th>Curso / Producto</th>
@@ -572,6 +573,23 @@
             <option>Pesos Peruanos</option>
             <option>PayPal</option>
           </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Canal de venta *</label>
+          <div style="display:flex;gap:12px;margin-top:2px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text2)">
+              <input type="radio" name="canal" id="f-canal-ig" value="Instagram" style="accent-color:var(--accent);width:16px;height:16px">
+              Instagram
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text2)">
+              <input type="radio" name="canal" id="f-canal-wa" value="WhatsApp" style="accent-color:var(--accent);width:16px;height:16px">
+              WhatsApp
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text2)">
+              <input type="radio" name="canal" id="f-canal-web" value="Web/Automático" style="accent-color:var(--accent);width:16px;height:16px">
+              Web / Automático
+            </label>
+          </div>
         </div>
         <div class="form-group full">
           <label class="form-label">Curso / Producto *</label>
@@ -780,10 +798,15 @@
       tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">◌</div>Sin ventas con esos filtros</div></td></tr>`;
       return;
     }
-    tbody.innerHTML = vf.map(v => `
+    tbody.innerHTML = vf.map(v => {
+      const horaStr = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '—';
+      const canalColor = v.canal === 'Instagram' ? '#C13584' : v.canal === 'WhatsApp' ? '#25D366' : 'var(--text3)';
+      return `
       <tr>
         <td class="mono">${v.fecha.split('-').reverse().join('/')}</td>
+        <td class="mono" style="color:var(--text3)">${horaStr}</td>
         <td><span class="badge badge-${v.asesor.toLowerCase()}">${v.asesor}</span></td>
+        <td style="font-size:12px;font-weight:600;color:${canalColor}">${v.canal||'—'}</td>
         <td class="mono" style="font-weight:600;color:var(--accent)">$${parseFloat(v.monto).toLocaleString('en-US')}</td>
         <td>${v.pago}</td>
         <td><span class="curso-tag" title="${v.curso}">${v.curso}</span></td>
@@ -793,7 +816,7 @@
         <td style="color:var(--text3);font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v.nota||''}">${v.nota||'—'}</td>
         <td><button class="btn btn-danger" onclick="eliminarVenta('${v._key}')">Eliminar</button></td>
       </tr>
-    `).join('');
+    `}).join('');
   };
 
   // ── FILL MESES SELECT ──
@@ -818,16 +841,21 @@
     const codigo = document.getElementById('f-codigo').value.trim();
     const nota = document.getElementById('f-nota').value.trim();
     const email = document.getElementById('f-email').value.trim();
+    const canalEl = document.querySelector('input[name="canal"]:checked');
+    const canal = canalEl ? canalEl.value : '';
 
-    if (!asesor || !fecha || !monto || !pago || !curso) {
-      showToast('Completá los campos obligatorios (*)');
+    if (!asesor || !fecha || !monto || !pago || !curso || !canal) {
+      showToast('Completá todos los campos obligatorios (*)');
       return;
     }
-    pendiente = { asesor, fecha, monto, pago, curso, lead, codigo, email, nota, cargado: new Date().toISOString() };
+    const ahora = new Date();
+    const cargado = ahora.toISOString();
+    const horaLocal = ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    pendiente = { asesor, fecha, monto, pago, curso, canal, lead, codigo, email, nota, cargado };
     document.getElementById('modal-body').innerHTML = `
-      <strong>${asesor}</strong> · ${fecha.split('-').reverse().join('/')}<br>
+      <strong>${asesor}</strong> · ${fecha.split('-').reverse().join('/')} · <span style="color:var(--text3)">${horaLocal}</span><br>
       <span class="amount">$${monto.toLocaleString('en-US')} USD</span>
-      vía <strong>${pago}</strong><br>
+      vía <strong>${pago}</strong> · <strong>${canal}</strong><br>
       ${curso}
       ${lead ? `<br><span style="color:var(--text3)">Lead: ${lead}</span>` : ''}
       ${codigo ? ` · <span style="color:var(--text3)">${codigo}</span>` : ''}
@@ -863,8 +891,11 @@
     const search = document.getElementById('fil-search').value;
     const vf = filteredVentas(asesor, mes, pago, search);
     if (!vf.length) { showToast('No hay ventas para exportar'); return; }
-    const rows = [['Fecha','Asesor','Monto USD','Forma de pago','Curso/Producto','ID Lead Kommo','Email','Código','Aclaración','Cargado']];
-    vf.forEach(v => rows.push([v.fecha, v.asesor, v.monto, v.pago, v.curso, v.lead||'', v.email||'', v.codigo||'', v.nota||'', v.cargado||'']));
+    const rows = [['Fecha','Hora carga','Asesor','Canal','Monto USD','Forma de pago','Curso/Producto','ID Lead Kommo','Email','Código','Aclaración']];
+    vf.forEach(v => {
+      const hora = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '';
+      rows.push([v.fecha, hora, v.asesor, v.canal||'', v.monto, v.pago, v.curso, v.lead||'', v.email||'', v.codigo||'', v.nota||'']);
+    });
     const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
     const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -876,6 +907,7 @@
   window.limpiarForm = function() {
     ['f-asesor','f-pago'].forEach(id => document.getElementById(id).value = '');
     ['f-monto','f-curso','f-lead','f-codigo','f-email','f-nota'].forEach(id => document.getElementById(id).value = '');
+    document.querySelectorAll('input[name="canal"]').forEach(r => r.checked = false);
     document.getElementById('f-fecha').valueAsDate = new Date();
   };
 
