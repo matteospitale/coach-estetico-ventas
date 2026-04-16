@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ventas — Coach Estético</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #F7F5F0;
@@ -55,10 +55,10 @@
     z-index: 50;
   }
   .header-logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
     color: var(--text);
   }
   .header-logo span { color: var(--accent); }
@@ -452,7 +452,9 @@
 <header class="header">
   <div class="header-logo">Coach<span>.</span>Estético — Ventas</div>
   <div class="header-right">
-    <span id="header-mes" style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace"></span>
+    <select id="header-mes-sel" onchange="onHeaderMesChange()" style="padding:6px 12px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;cursor:pointer">
+      <option value="all">Todos los meses</option>
+    </select>
     <button class="btn btn-accent" onclick="switchTab('cargar')">+ Venta</button>
   </div>
 </header>
@@ -473,7 +475,6 @@
 
   <!-- RESUMEN -->
   <section class="section" id="sec-resumen">
-    <div class="pills-wrap" id="pills-resumen"></div>
     <div class="metrics-grid" id="metrics"></div>
     <div class="charts-row" id="charts"></div>
   </section>
@@ -702,23 +703,47 @@
     });
   }
 
+  // ── FILL HEADER MES DROPDOWN ──
+  function fillHeaderMes() {
+    const sel = document.getElementById('header-mes-sel');
+    const cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    // Generate months from oldest venta to current month
+    const now = new Date();
+    const allMeses = new Set(ventas.map(v => v.fecha.substring(0,7)));
+    // Also add current month even if no ventas yet
+    allMeses.add(now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0'));
+    const sorted = [...allMeses].sort().reverse();
+    sorted.forEach(m => {
+      const o = document.createElement('option');
+      o.value = m;
+      const [y, mo] = m.split('-');
+      const diasEnMes = new Date(parseInt(y), parseInt(mo), 0).getDate();
+      const nombres = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      o.text = `${nombres[parseInt(mo)-1]} ${y}  (1/${parseInt(mo)} — ${diasEnMes}/${parseInt(mo)})`;
+      sel.appendChild(o);
+    });
+    // Set to current month by default if not previously selected
+    if (!cur || cur === '') {
+      const curMes = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+      sel.value = allMeses.has(curMes) ? curMes : 'all';
+    } else {
+      sel.value = cur;
+    }
+  }
+
+  window.onHeaderMesChange = function() {
+    renderResumen();
+  };
+
   // ── RENDER RESUMEN ──
   function renderResumen() {
-    const activePill = document.querySelector('.month-pill.active');
-    const mes = activePill ? activePill.dataset.mes : currMes();
+    const mes = document.getElementById('header-mes-sel').value;
     const vf = mes === 'all' ? ventas : ventas.filter(v => v.fecha.startsWith(mes));
 
     const total = vf.reduce((s,v) => s + parseFloat(v.monto), 0);
     const byAsesor = { Matteo: 0, Facundo: 0, Dianela: 0 };
     vf.forEach(v => { if (byAsesor[v.asesor] !== undefined) byAsesor[v.asesor] += parseFloat(v.monto); });
-
-    // Pills
-    const meses = getMeses();
-    const pillsWrap = document.getElementById('pills-resumen');
-    pillsWrap.innerHTML = `
-      <button class="month-pill${mes==='all'?' active':''}" data-mes="all" onclick="setPill(this)">Todo</button>
-      ${meses.map(m => `<button class="month-pill${mes===m?' active':''}" data-mes="${m}" onclick="setPill(this)">${mesLabel(m)}</button>`).join('')}
-    `;
 
     // Metrics
     document.getElementById('metrics').innerHTML = `
@@ -775,13 +800,13 @@
     `;
   }
 
-  window.setPill = function(el) {
-    document.querySelectorAll('.month-pill').forEach(p => p.classList.remove('active'));
-    el.classList.add('active');
+  function renderAll() {
+    fillHeaderMes();
+    fillMesOptions('fil-mes');
     renderResumen();
-  };
-
-  // ── RENDER TABLA ──
+    const activeTab = document.querySelector('.nav-btn.active')?.id.replace('tab-','') || 'resumen';
+    if (activeTab === 'ventas') renderTabla();
+  }
   window.renderTabla = function() {
     const asesor = document.getElementById('fil-asesor').value;
     const mes = document.getElementById('fil-mes').value;
@@ -930,17 +955,8 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  function renderAll() {
-    fillMesOptions('fil-mes');
-    renderResumen();
-    const activeTab = document.querySelector('.nav-btn.active')?.id.replace('tab-','') || 'resumen';
-    if (activeTab === 'ventas') renderTabla();
-  }
-
   // Init
   const now = new Date();
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  document.getElementById('header-mes').textContent = meses[now.getMonth()] + ' ' + now.getFullYear();
   document.getElementById('f-fecha').valueAsDate = now;
   document.getElementById('sec-resumen').classList.add('active');
 </script>
