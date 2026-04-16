@@ -518,7 +518,10 @@
   <section class="section" id="sec-ventas">
     <div class="section-header">
       <div class="section-title" id="ventas-title">Todas las ventas</div>
-      <button class="btn btn-ghost" onclick="exportCSV()">↓ Exportar CSV</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="exportCSV()">↓ Exportar CSV</button>
+        <button class="btn btn-ghost" id="btn-modo-edicion" onclick="toggleModoEdicion()">✎ Editar / Eliminar</button>
+      </div>
     </div>
     <div class="filters">
       <select id="fil-asesor" onchange="renderTabla()">
@@ -550,20 +553,20 @@
         <table>
           <thead>
             <tr>
-              <th style="width:80px">Fecha</th>
-              <th style="width:65px">Hora</th>
-              <th style="width:75px">Asesor</th>
-              <th style="width:80px">Canal</th>
-              <th style="width:60px">USD</th>
-              <th style="width:75px">M. Local</th>
-              <th style="width:90px">Pago</th>
-              <th style="width:140px">Curso / Producto</th>
-              <th style="width:75px">ID Lead</th>
-              <th style="width:110px">Teléfono</th>
-              <th style="width:120px">Email</th>
-              <th style="width:100px">Código</th>
-              <th style="width:120px">Nota</th>
-              <th style="width:70px"></th>
+              <th>Fecha</th>
+              <th>Hora carga</th>
+              <th>Asesor</th>
+              <th>Canal</th>
+              <th>Monto USD</th>
+              <th>Monto local</th>
+              <th>Forma de pago</th>
+              <th>Curso / Producto</th>
+              <th>ID Lead</th>
+              <th>Teléfono</th>
+              <th>Email</th>
+              <th>Código</th>
+              <th>Aclaración</th>
+              <th id="th-acciones" style="display:none">Acciones</th>
             </tr>
           </thead>
           <tbody id="tabla-body"></tbody>
@@ -912,6 +915,62 @@
     if (activeTab === 'ventas') renderTabla();
     if (activeTab === 'stats') renderStats();
   }
+  let modoEdicion = false;
+
+  window.toggleModoEdicion = function() {
+    modoEdicion = !modoEdicion;
+    const btn = document.getElementById('btn-modo-edicion');
+    const th = document.getElementById('th-acciones');
+    btn.style.background = modoEdicion ? 'var(--accent)' : '';
+    btn.style.color = modoEdicion ? '#fff' : '';
+    btn.style.borderColor = modoEdicion ? 'var(--accent-dark)' : '';
+    btn.textContent = modoEdicion ? '✓ Salir de edición' : '✎ Editar / Eliminar';
+    th.style.display = modoEdicion ? '' : 'none';
+    renderTabla();
+  };
+
+  window.editarVenta = function(key) {
+    const v = ventas.find(x => x._key === key);
+    if (!v) return;
+    // Llenar el form con los datos de la venta
+    document.getElementById('f-asesor').value = v.asesor || '';
+    document.getElementById('f-fecha').value = v.fecha || '';
+    document.getElementById('f-monto').value = v.monto || '';
+    document.getElementById('f-monto-local').value = v.montoLocal || '';
+    document.getElementById('f-pago').value = v.pago || '';
+    document.getElementById('f-curso').value = v.curso || '';
+    document.getElementById('f-lead').value = v.lead || '';
+    document.getElementById('f-codigo').value = v.codigo || '';
+    document.getElementById('f-telefono').value = v.telefono || '';
+    document.getElementById('f-email').value = v.email || '';
+    document.getElementById('f-nota').value = v.nota || '';
+    document.querySelectorAll('input[name="canal"]').forEach(r => { r.checked = r.value === v.canal; });
+    // Guardar key para sobreescribir
+    window._editKey = key;
+    switchTab('cargar');
+    document.querySelector('.form-actions .btn-accent').textContent = 'Guardar cambios';
+    showToast('Editando venta — modificá los campos y confirmá');
+  };
+
+  window.guardarVenta = async function() {
+    closeModal();
+    try {
+      if (window._editKey) {
+        // Editar: eliminar la vieja y guardar la nueva
+        await remove(ref(db, 'ventas/' + window._editKey));
+        window._editKey = null;
+        document.querySelector('.form-actions .btn-accent').textContent = 'Revisar y confirmar';
+      }
+      await push(ventasRef, pendiente);
+      limpiarForm();
+      showToast('Venta guardada — visible para todos');
+      switchTab('resumen');
+    } catch(e) {
+      showToast('Error al guardar. Revisá la conexión.');
+    }
+    pendiente = null;
+  };
+
   window.renderTabla = function() {
     const asesor = document.getElementById('fil-asesor').value;
     const mes = document.getElementById('fil-mes').value;
@@ -925,28 +984,32 @@
 
     const tbody = document.getElementById('tabla-body');
     if (!vf.length) {
-      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">◌</div>Sin ventas con esos filtros</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="14"><div class="empty-state"><div class="empty-icon">◌</div>Sin ventas con esos filtros</div></td></tr>`;
       return;
     }
     tbody.innerHTML = vf.map(v => {
       const horaStr = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '—';
       const canalColor = v.canal === 'Instagram' ? '#C13584' : v.canal === 'WhatsApp' ? '#25D366' : 'var(--text3)';
+      const acciones = modoEdicion ? `<td style="white-space:nowrap">
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-right:4px" onclick="editarVenta('${v._key}')">✎ Editar</button>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="eliminarVenta('${v._key}')">✕ Eliminar</button>
+      </td>` : '<td style="display:none"></td>';
       return `
       <tr>
-        <td class="mono">${v.fecha.split('-').reverse().join('/')}</td>
-        <td class="mono" style="color:var(--text3)">${horaStr}</td>
-        <td><span class="badge badge-${v.asesor.toLowerCase()}">${v.asesor}</span></td>
-        <td style="font-size:11px;font-weight:600;color:${canalColor}">${v.canal||'—'}</td>
-        <td class="mono" style="font-weight:600;color:var(--accent)">$${parseFloat(v.monto).toLocaleString('en-US')}</td>
-        <td style="font-size:11px;color:var(--text2)">${v.montoLocal||'—'}</td>
-        <td style="font-size:11px">${v.pago}</td>
-        <td title="${v.curso}" style="font-size:11px">${v.curso}</td>
+        <td class="mono" style="white-space:nowrap">${v.fecha.split('-').reverse().join('/')}</td>
+        <td class="mono" style="color:var(--text3);white-space:nowrap">${horaStr}</td>
+        <td><span class="badge badge-${(v.asesor||'').toLowerCase()}">${v.asesor}</span></td>
+        <td style="font-size:12px;font-weight:600;color:${canalColor};white-space:nowrap">${v.canal||'—'}</td>
+        <td class="mono" style="font-weight:600;color:var(--accent);white-space:nowrap">$${parseFloat(v.monto).toLocaleString('en-US')}</td>
+        <td style="font-size:12px;color:var(--text2)">${v.montoLocal||'—'}</td>
+        <td style="font-size:12px;white-space:nowrap">${v.pago}</td>
+        <td style="font-size:12px">${v.curso}</td>
         <td class="mono">${v.lead ? `<a href="https://coachestetico.kommo.com/leads/detail/${v.lead}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">${v.lead}</a>` : '—'}</td>
-        <td style="font-size:11px;color:var(--text2)">${v.telefono||'—'}</td>
-        <td style="font-size:11px">${v.email ? `<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=${encodeURIComponent(v.email)}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500">${v.email}</a>` : '—'}</td>
+        <td style="font-size:12px;white-space:nowrap">${v.telefono||'—'}</td>
+        <td style="font-size:12px">${v.email ? `<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=${encodeURIComponent(v.email)}" target="_blank" style="color:var(--accent);text-decoration:none">${v.email}</a>` : '—'}</td>
         <td class="mono" style="color:var(--text3)">${v.codigo||'—'}</td>
-        <td style="color:var(--text3);font-size:11px" title="${v.nota||''}">${v.nota||'—'}</td>
-        <td><button class="btn btn-danger" onclick="eliminarVenta('${v._key}')">✕</button></td>
+        <td style="font-size:12px;color:var(--text2);max-width:180px" title="${v.nota||''}">${v.nota||'—'}</td>
+        ${acciones}
       </tr>
     `}).join('');
   };
@@ -998,19 +1061,6 @@
       ${nota ? `<br><em>${nota}</em>` : ''}
     `;
     document.getElementById('modal-confirm').classList.add('show');
-  };
-
-  window.guardarVenta = async function() {
-    closeModal();
-    try {
-      await push(ventasRef, pendiente);
-      limpiarForm();
-      showToast('Venta registrada — visible para todos');
-      switchTab('resumen');
-    } catch(e) {
-      showToast('Error al guardar. Revisá la conexión.');
-    }
-    pendiente = null;
   };
 
   window.eliminarVenta = async function(key) {
