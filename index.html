@@ -643,7 +643,10 @@
         <!-- FILA 4: Curso -->
         <div class="form-group full">
           <label class="form-label">Curso / Producto *</label>
-          <input type="text" class="form-input" id="f-curso" placeholder="Ej: Método NutriSkin, Diplomado Peeling Químico...">
+          <div style="position:relative" id="curso-wrap">
+            <input type="text" class="form-input" id="f-curso" placeholder="Escribí para buscar... ej: diplo, nutri, peeling" autocomplete="off" oninput="buscarCurso(this.value)" onblur="setTimeout(()=>closeCursoList(),180)">
+            <div id="curso-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
+          </div>
         </div>
 
         <!-- FILA 5: ID Lead - Código comprobante -->
@@ -1184,6 +1187,72 @@
     t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
+
+  // ── AUTOCOMPLETE CURSOS ──
+  const CURSOS = [
+    'Club Coach','Lifetime','Migración',
+    'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
+    'Diplomado Internacional Aparatología y Tecnologías Estéticas 2025',
+    'Diplomado Internacional en Peeling Químico: Ciencia y Maestría',
+    'Diplomado Internacional en Microneedling',
+    'Acné Expert Training',
+    'Anatomía del HIFU: Más que un equipo',
+    'Envejecimiento Expert Training',
+    'Formación en Cosmiatría Profesional e Internacional',
+    'Formación Profesional en Peeling Químico',
+    'Master Training en Diagnóstico Estético Facial',
+    'Melanosis Expert Training',
+    'Microneedling PRO: Entrenamiento Intensivo en Dermapen',
+    'Consultor(a) Skin Care',
+    'Método NutriSkin con Dra. Israelina',
+    'Abordaje Inteligente Estrías',
+    'Acné Activo con Dermapen',
+    'Actualización en Despigmentación',
+    'Actualización en Peeling Químico y Ácidos',
+    'Electroestética Facial',
+    'Hidrafacial',
+    'Lámpara Wood',
+    'Limpiezas Faciales',
+    'Perfeccionamiento en Dermapen',
+    'Plasma Pen',
+    'Radiofrecuencias',
+    'Tratamientos Domiciliares',
+    'Inmersión en Secuelas Post Acné',
+    'Manejo de la Pigmentación con Peeling Químico',
+    'Rosácea y Acné',
+    'Principios Activos con Dermapen',
+    'Protocolos en Fototipos Altos',
+    'Química Cosmética',
+    'Rebrote Acneico',
+    'Reestructuración en Pieles',
+    'Diagnóstico 0 - Pre Peeling',
+    'Altafrecuencia',
+    'IPL - Luz Pulsada Intensa',
+    'Microneedling en Cuero Cabelludo',
+    'Ultrasonido 3 Mghz'
+  ];
+
+  window.buscarCurso = function(q) {
+    const list = document.getElementById('curso-list');
+    if (!q.trim()) { list.style.display = 'none'; return; }
+    const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const matches = CURSOS.filter(c => norm(c).includes(norm(q)));
+    if (!matches.length) { list.style.display = 'none'; return; }
+    list.innerHTML = matches.map(c => {
+      const hl = c.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<strong>$1</strong>');
+      return `<div onclick="selectCurso('${c.replace(/'/g,"\\'")}'')" style="padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:0.5px solid var(--border);color:var(--text);transition:background 0.1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${hl}</div>`;
+    }).join('');
+    list.style.display = 'block';
+  };
+
+  window.selectCurso = function(nombre) {
+    document.getElementById('f-curso').value = nombre;
+    document.getElementById('curso-list').style.display = 'none';
+  };
+
+  window.closeCursoList = function() {
+    document.getElementById('curso-list').style.display = 'none';
+  };
 
   // Init
   const now = new Date();
