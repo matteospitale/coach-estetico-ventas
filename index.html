@@ -1290,8 +1290,16 @@
     if (!matches.length) { list.style.display = 'none'; return; }
     list.innerHTML = matches.map(c => {
       const hl = c.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<strong>$1</strong>');
-      return `<div onclick="selectCurso('${c.replace(/'/g,"\\'")}'')" style="padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:0.5px solid var(--border);color:var(--text);transition:background 0.1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${hl}</div>`;
+      return `<div data-nombre="${c.replace(/"/g,'&quot;')}" class="curso-opt" style="padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:0.5px solid var(--border);color:var(--text);transition:background 0.1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">${hl}</div>`;
     }).join('');
+    // attach click handlers after rendering
+    list.querySelectorAll('.curso-opt').forEach(el => {
+      el.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        document.getElementById('f-curso').value = this.dataset.nombre;
+        list.style.display = 'none';
+      });
+    });
     list.style.display = 'block';
   };
 
