@@ -566,16 +566,20 @@
               <th>Email</th>
               <th>Código</th>
               <th>Aclaración</th>
-              <th id="th-acciones" style="display:none">Acciones</th>
+              <th id="th-check" style="display:none;width:36px"><input type="checkbox" id="check-all" onchange="toggleCheckAll(this)" style="accent-color:var(--accent);width:15px;height:15px"></th>
             </tr>
           </thead>
           <tbody id="tabla-body"></tbody>
         </table>
       </div>
     </div>
+    <!-- BARRA FLOTANTE -->
+    <div id="barra-acciones" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:12px 20px;border-radius:30px;box-shadow:0 4px 20px rgba(0,0,0,0.25);align-items:center;gap:16px;z-index:200;white-space:nowrap">
+      <span id="barra-count" style="font-size:13px;font-weight:500;color:var(--bg)"></span>
+      <button onclick="accionEditar()" style="background:var(--bg);color:var(--text);border:none;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✎ Editar</button>
+      <button onclick="accionEliminar()" style="background:#C0392B;color:#fff;border:none;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Eliminar</button>
+    </div>
   </section>
-
-  <!-- CARGAR -->
   <section class="section" id="sec-cargar">
     <div class="section-header">
       <div class="section-title">Registrar venta</div>
@@ -916,17 +920,64 @@
     if (activeTab === 'stats') renderStats();
   }
   let modoEdicion = false;
+  let seleccionados = new Set();
 
   window.toggleModoEdicion = function() {
     modoEdicion = !modoEdicion;
+    seleccionados.clear();
     const btn = document.getElementById('btn-modo-edicion');
-    const th = document.getElementById('th-acciones');
+    const th = document.getElementById('th-check');
     btn.style.background = modoEdicion ? 'var(--accent)' : '';
     btn.style.color = modoEdicion ? '#fff' : '';
     btn.style.borderColor = modoEdicion ? 'var(--accent-dark)' : '';
     btn.textContent = modoEdicion ? '✓ Salir de edición' : '✎ Editar / Eliminar';
     th.style.display = modoEdicion ? '' : 'none';
+    document.getElementById('barra-acciones').style.display = 'none';
     renderTabla();
+  };
+
+  window.toggleCheckAll = function(el) {
+    document.querySelectorAll('.row-check').forEach(c => {
+      c.checked = el.checked;
+      if (el.checked) seleccionados.add(c.dataset.key);
+      else seleccionados.delete(c.dataset.key);
+    });
+    actualizarBarra();
+  };
+
+  window.toggleCheck = function(el) {
+    if (el.checked) seleccionados.add(el.dataset.key);
+    else seleccionados.delete(el.dataset.key);
+    actualizarBarra();
+  };
+
+  function actualizarBarra() {
+    const n = seleccionados.size;
+    const barra = document.getElementById('barra-acciones');
+    const count = document.getElementById('barra-count');
+    if (n === 0) { barra.style.display = 'none'; return; }
+    count.textContent = `${n} venta${n!==1?'s':''} seleccionada${n!==1?'s':''}`;
+    barra.style.display = 'flex';
+    // Si hay más de 1 seleccionada, deshabilitar Editar
+    barra.querySelector('button:first-of-type').style.opacity = n === 1 ? '1' : '0.4';
+    barra.querySelector('button:first-of-type').style.pointerEvents = n === 1 ? 'auto' : 'none';
+  }
+
+  window.accionEditar = function() {
+    if (seleccionados.size !== 1) return;
+    const key = [...seleccionados][0];
+    editarVenta(key);
+  };
+
+  window.accionEliminar = async function() {
+    const n = seleccionados.size;
+    if (!confirm(`¿Eliminar ${n} venta${n!==1?'s':''}? Esta acción no se puede deshacer.`)) return;
+    for (const key of seleccionados) {
+      await remove(ref(db, 'ventas/' + key));
+    }
+    seleccionados.clear();
+    document.getElementById('barra-acciones').style.display = 'none';
+    showToast(`${n} venta${n!==1?'s':''} eliminada${n!==1?'s':''}`);
   };
 
   window.editarVenta = function(key) {
@@ -990,12 +1041,9 @@
     tbody.innerHTML = vf.map(v => {
       const horaStr = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '—';
       const canalColor = v.canal === 'Instagram' ? '#C13584' : v.canal === 'WhatsApp' ? '#25D366' : 'var(--text3)';
-      const acciones = modoEdicion ? `<td style="white-space:nowrap;padding:8px 10px">
-        <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px;margin-right:6px" onclick="editarVenta('${v._key}')">✎ Editar</button>
-        <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;background:var(--danger-bg);border:1px solid var(--danger);border-radius:var(--radius)" onclick="eliminarVenta('${v._key}')">✕ Eliminar</button>
-      </td>` : '';
+      const checkTd = modoEdicion ? `<td style="text-align:center;padding:8px 10px"><input type="checkbox" class="row-check" data-key="${v._key}" ${seleccionados.has(v._key)?'checked':''} onchange="toggleCheck(this)" style="accent-color:var(--accent);width:15px;height:15px;cursor:pointer"></td>` : '';
       return `
-      <tr>
+      <tr style="${seleccionados.has(v._key)?'background:var(--accent-light)':''}">
         <td class="mono" style="white-space:nowrap">${v.fecha.split('-').reverse().join('/')}</td>
         <td class="mono" style="color:var(--text3);white-space:nowrap">${horaStr}</td>
         <td><span class="badge badge-${(v.asesor||'').toLowerCase()}">${v.asesor}</span></td>
@@ -1009,7 +1057,7 @@
         <td style="font-size:12px">${v.email ? `<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=${encodeURIComponent(v.email)}" target="_blank" style="color:var(--accent);text-decoration:none">${v.email}</a>` : '—'}</td>
         <td class="mono" style="color:var(--text3)">${v.codigo||'—'}</td>
         <td style="font-size:12px;color:var(--text2);max-width:180px" title="${v.nota||''}">${v.nota||'—'}</td>
-        ${acciones}
+        ${checkTd}
       </tr>
     `}).join('');
   };
