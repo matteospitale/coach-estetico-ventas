@@ -131,6 +131,8 @@
   .metric-card.accent .metric-sub { color: rgba(255,255,255,0.65); }
   .metric-card:not(.accent):hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); transform: translateY(-1px); transition: all 0.15s; }
   .metric-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+  .stat-bar-row:hover { background: var(--surface2) !important; }
+  .stat-bar-row.stat-active { background: var(--accent-light) !important; }
   /* SECTION HEADER */
   .section-header {
     display: flex;
@@ -1046,46 +1048,80 @@
   };
 
   // ── RENDER ESTADÍSTICAS ──
+  function miniTabla(vf) {
+    if (!vf.length) return `<tr><td colspan="8"><div class="empty-state" style="padding:20px">Sin ventas</div></td></tr>`;
+    return vf.map(v => {
+      const horaStr = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '—';
+      const canalColor = v.canal === 'Instagram' ? '#C13584' : v.canal === 'WhatsApp' ? '#25D366' : 'var(--text3)';
+      const badge = `<span class="badge badge-${(v.asesor||'').toLowerCase()}">${v.asesor}</span>`;
+      return `<tr>
+        <td class="mono">${v.fecha.split('-').reverse().join('/')}</td>
+        <td class="mono" style="color:var(--text3)">${horaStr}</td>
+        <td>${badge}</td>
+        <td style="font-size:11px;font-weight:600;color:${canalColor}">${v.canal||'—'}</td>
+        <td class="mono" style="font-weight:600;color:var(--accent)">$${parseFloat(v.monto).toLocaleString('en-US')}</td>
+        <td style="font-size:11px">${v.pago}</td>
+        <td style="font-size:11px" title="${v.curso}">${v.curso}</td>
+        <td class="mono">${v.lead ? `<a href="https://coachestetico.kommo.com/leads/detail/${v.lead}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">${v.lead}</a>` : '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.filterStats = function(campo, valor) {
+    const mes = document.getElementById('header-mes-sel').value;
+    const base = mes === 'all' ? ventas : ventas.filter(v => v.fecha.startsWith(mes));
+    let vf;
+    if (campo === 'mes') {
+      vf = ventas.filter(v => v.fecha.startsWith(valor));
+    } else {
+      vf = base.filter(v => (v[campo]||'Sin canal') === valor || v[campo] === valor);
+    }
+    const total = vf.reduce((s,v) => s+parseFloat(v.monto), 0);
+    const wrap = document.getElementById('stats-drill');
+    const titulo = document.getElementById('stats-drill-title');
+    titulo.textContent = `${valor} — ${vf.length} venta${vf.length!==1?'s':''} · $${total.toLocaleString('en-US')} USD`;
+    document.getElementById('stats-drill-tbody').innerHTML = miniTabla(vf);
+    wrap.style.display = 'block';
+    wrap.scrollIntoView({behavior:'smooth', block:'nearest'});
+    // Highlight active bar
+    document.querySelectorAll('.stat-bar-row').forEach(r => r.classList.remove('stat-active'));
+    document.querySelectorAll(`.stat-bar-row[data-campo="${campo}"][data-valor="${CSS.escape(valor)}"]`).forEach(r => r.classList.add('stat-active'));
+  };
+
   function renderStats() {
     const mes = document.getElementById('header-mes-sel').value;
     const vf = mes === 'all' ? ventas : ventas.filter(v => v.fecha.startsWith(mes));
-    const total = vf.reduce((s,v) => s+parseFloat(v.monto), 0);
 
-    // Canal
     const byCanal = {};
     vf.forEach(v => { const c = v.canal||'Sin canal'; byCanal[c] = (byCanal[c]||{n:0,usd:0}); byCanal[c].n++; byCanal[c].usd += parseFloat(v.monto); });
     const maxCanal = Math.max(...Object.values(byCanal).map(x=>x.usd), 1);
     const canalColors = { Instagram:'#C13584', WhatsApp:'#25D366', 'IA/Web':'#C8965A', 'Sin canal':'#aaa' };
 
-    // Pago
     const byPago = {};
     vf.forEach(v => { byPago[v.pago] = (byPago[v.pago]||{n:0,usd:0}); byPago[v.pago].n++; byPago[v.pago].usd += parseFloat(v.monto); });
     const topPago = Object.entries(byPago).sort((a,b)=>b[1].usd-a[1].usd);
     const maxPago = topPago.length ? topPago[0][1].usd : 1;
 
-    // Curso
     const byCurso = {};
     vf.forEach(v => { byCurso[v.curso] = (byCurso[v.curso]||{n:0,usd:0}); byCurso[v.curso].n++; byCurso[v.curso].usd += parseFloat(v.monto); });
     const topCurso = Object.entries(byCurso).sort((a,b)=>b[1].usd-a[1].usd).slice(0,8);
     const maxCurso = topCurso.length ? topCurso[0][1].usd : 1;
 
-    // Asesor
     const byAsesor = {};
     vf.forEach(v => { byAsesor[v.asesor] = (byAsesor[v.asesor]||{n:0,usd:0}); byAsesor[v.asesor].n++; byAsesor[v.asesor].usd += parseFloat(v.monto); });
     const asesorColors = { Matteo:'#3B6B9E', Facundo:'#4A8C5C', Dianela:'#9B5E9B' };
     const maxAsesor = Math.max(...Object.values(byAsesor).map(x=>x.usd), 1);
 
-    // Por mes (últimos 6)
     const byMes = {};
     ventas.forEach(v => { const m = v.fecha.substring(0,7); byMes[m] = (byMes[m]||{n:0,usd:0}); byMes[m].n++; byMes[m].usd += parseFloat(v.monto); });
     const topMes = Object.entries(byMes).sort((a,b)=>a[0].localeCompare(b[0])).slice(-6);
     const maxMes = topMes.length ? Math.max(...topMes.map(x=>x[1].usd)) : 1;
 
-    function statCard(title, rows, maxVal, colorFn, clickFn) {
+    function statCard(title, rows, maxVal, colorFn, campo) {
       return `<div class="chart-card" style="margin-bottom:16px">
         <div class="chart-title">${title}</div>
         ${rows.map(([label, data]) => `
-          <div class="bar-row" onclick="${clickFn ? clickFn(label) : ''}" style="${clickFn?'cursor:pointer':''}">
+          <div class="bar-row stat-bar-row" data-campo="${campo}" data-valor="${label}" onclick="filterStats('${campo}','${label.replace(/'/g,"\\'")}')" style="cursor:pointer;border-radius:6px;padding:4px 6px;margin:0 -6px;transition:background 0.12s">
             <span class="bar-name" title="${label}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;min-width:80px">${label}</span>
             <div class="bar-track"><div class="bar-fill" style="width:${Math.round(data.usd/maxVal*100)}%;background:${colorFn(label)}"></div></div>
             <span class="bar-amount" style="min-width:90px;text-align:right;font-size:11px">$${data.usd.toLocaleString('en-US')} <span style="color:var(--text3)">(${data.n})</span></span>
@@ -1095,26 +1131,41 @@
 
     document.getElementById('stats-content').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        ${statCard('Por canal', Object.entries(byCanal).sort((a,b)=>b[1].usd-a[1].usd), maxCanal, l => canalColors[l]||'#aaa', l => `filterInicioAndGo('canal','${l}')`)}
-        ${statCard('Por asesor', Object.entries(byAsesor).sort((a,b)=>b[1].usd-a[1].usd), maxAsesor, l => asesorColors[l]||'#888', l => `filterInicio('${l}')`)}
-        ${statCard('Por forma de pago', topPago, maxPago, () => 'var(--accent)', null)}
-        ${statCard('Por curso (top 8)', topCurso, maxCurso, () => '#7F77DD', null)}
+        ${statCard('Por canal', Object.entries(byCanal).sort((a,b)=>b[1].usd-a[1].usd), maxCanal, l => canalColors[l]||'#aaa', 'canal')}
+        ${statCard('Por asesor', Object.entries(byAsesor).sort((a,b)=>b[1].usd-a[1].usd), maxAsesor, l => asesorColors[l]||'#888', 'asesor')}
+        ${statCard('Por forma de pago', topPago, maxPago, () => 'var(--accent)', 'pago')}
+        ${statCard('Por curso (top 8)', topCurso, maxCurso, () => '#7F77DD', 'curso')}
       </div>
-      <div class="chart-card" style="margin-top:4px">
+      <div class="chart-card" style="margin-top:4px;margin-bottom:16px">
         <div class="chart-title">Evolución mensual (USD)</div>
         ${topMes.map(([m, data]) => `
-          <div class="bar-row">
+          <div class="bar-row stat-bar-row" data-campo="mes" data-valor="${m}" onclick="filterStats('mes','${m}')" style="cursor:pointer;border-radius:6px;padding:4px 6px;margin:0 -6px;transition:background 0.12s">
             <span class="bar-name" style="min-width:80px">${mesLabel(m)}</span>
             <div class="bar-track"><div class="bar-fill" style="width:${Math.round(data.usd/maxMes*100)}%;background:var(--accent)"></div></div>
             <span class="bar-amount">$${data.usd.toLocaleString('en-US')} <span style="color:var(--text3)">(${data.n})</span></span>
           </div>`).join('')}
+      </div>
+      <div id="stats-drill" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:14px;font-weight:500;color:var(--text)" id="stats-drill-title"></div>
+          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="document.getElementById('stats-drill').style.display='none';document.querySelectorAll('.stat-bar-row').forEach(r=>r.classList.remove('stat-active'))">Cerrar</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead><tr>
+                <th>Fecha</th><th>Hora</th><th>Asesor</th><th>Canal</th><th>USD</th><th>Pago</th><th>Curso</th><th>ID Lead</th>
+              </tr></thead>
+              <tbody id="stats-drill-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     `;
   }
 
   window.filterInicioAndGo = function(tipo, valor) {
     switchTab('resumen');
-    // pequeño delay para que el DOM esté listo
     setTimeout(() => filterInicio(tipo === 'asesor' ? valor : 'all'), 50);
   };
 
