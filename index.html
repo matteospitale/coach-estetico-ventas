@@ -990,10 +990,10 @@
     tbody.innerHTML = vf.map(v => {
       const horaStr = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '—';
       const canalColor = v.canal === 'Instagram' ? '#C13584' : v.canal === 'WhatsApp' ? '#25D366' : 'var(--text3)';
-      const acciones = modoEdicion ? `<td style="white-space:nowrap">
-        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-right:4px" onclick="editarVenta('${v._key}')">✎ Editar</button>
-        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="eliminarVenta('${v._key}')">✕ Eliminar</button>
-      </td>` : '<td style="display:none"></td>';
+      const acciones = modoEdicion ? `<td style="white-space:nowrap;padding:8px 10px">
+        <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px;margin-right:6px" onclick="editarVenta('${v._key}')">✎ Editar</button>
+        <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;background:var(--danger-bg);border:1px solid var(--danger);border-radius:var(--radius)" onclick="eliminarVenta('${v._key}')">✕ Eliminar</button>
+      </td>` : '';
       return `
       <tr>
         <td class="mono" style="white-space:nowrap">${v.fecha.split('-').reverse().join('/')}</td>
