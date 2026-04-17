@@ -530,47 +530,83 @@ tbody tr:hover td { background: var(--surface2); }
 
 <div class="toast" id="toast"></div>
 
-<!-- Firebase CDN (no module needed) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBEnj64ibIYAv_8QWRoFzOwRmCJqxfqi54",
-  authDomain: "coach-estetico-ventas.firebaseapp.com",
-  databaseURL: "https://coach-estetico-ventas-default-rtdb.firebaseio.com",
-  projectId: "coach-estetico-ventas",
-  storageBucket: "coach-estetico-ventas.firebasestorage.app",
-  messagingSenderId: "801604870977",
-  appId: "1:801604870977:web:d4fc6e95a6377ad994f7c0"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const ventasRef = db.ref('ventas');
-const plantillasRef = db.ref('plantillas');
+const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
 
 let ventas = [], plantillas = [], pendiente = null;
 let inicioFiltro = null, modoEdicion = false, seleccionados = new Set();
 let catActual = 'todos', plantillasInicializadas = false;
 
-// ── FIREBASE LISTENERS ──
-ventasRef.on('value', snap => {
-  ventas = [];
-  snap.forEach(c => ventas.push({ _key: c.key, ...c.val() }));
-  ventas.sort((a,b) => (b.cargado||'').localeCompare(a.cargado||''));
-  document.getElementById('loading-state').style.display = 'none';
-  renderAll();
-});
+// ── REST API HELPERS ──
+async function dbGet(path) {
+  const r = await fetch(DB_URL + path + '.json');
+  return r.ok ? r.json() : null;
+}
+async function dbPush(path, data) {
+  const r = await fetch(DB_URL + path + '.json', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  return r.ok ? r.json() : null;
+}
+async function dbSet(path, data) {
+  const r = await fetch(DB_URL + path + '.json', {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+  return r.ok;
+}
+async function dbDelete(path) {
+  const r = await fetch(DB_URL + path + '.json', { method: 'DELETE' });
+  return r.ok;
+}
 
-plantillasRef.on('value', snap => {
+// ── LOAD DATA ──
+async function loadVentas() {
+  const data = await dbGet('/ventas');
+  ventas = [];
+  if (data) {
+    Object.entries(data).forEach(([k, v]) => ventas.push({ _key: k, ...v }));
+    ventas.sort((a,b) => (b.cargado||'').localeCompare(a.cargado||''));
+  }
+}
+async function loadPlantillas() {
+  const data = await dbGet('/plantillas');
   plantillas = [];
-  snap.forEach(c => plantillas.push({ _key: c.key, ...c.val() }));
+  if (data) {
+    Object.entries(data).forEach(([k, v]) => plantillas.push({ _key: k, ...v }));
+  }
   if (plantillas.length === 0 && !plantillasInicializadas) {
     plantillasInicializadas = true;
-    initPlantillas();
+    await initPlantillas();
+    await loadPlantillas();
   }
+}
+
+// ── POLLING (refresh every 15s) ──
+async function refreshData() {
+  await loadVentas();
+  renderAll();
+}
+async function refreshPlantillas() {
+  await loadPlantillas();
   renderPlantillas();
-});
+}
+
+// ── INIT ──
+async function init() {
+  try {
+    await loadVentas();
+    document.getElementById('loading-state').style.display = 'none';
+    renderAll();
+    await loadPlantillas();
+    // Poll every 15 seconds
+    setInterval(refreshData, 15000);
+    setInterval(refreshPlantillas, 30000);
+  } catch(e) {
+    document.getElementById('loading-state').innerHTML = '<p style="color:red">Error de conexión. Revisá tu internet.</p>';
+  }
+}
 
 // ── SIDEBAR ──
 function toggleSidebar() {
@@ -896,17 +932,21 @@ function accionEditar() {
   if (seleccionados.size !== 1) return;
   editarVenta([...seleccionados][0]);
 }
-function accionEliminar() {
+async function accionEliminar() {
   const n = seleccionados.size;
   if (!confirm('¿Eliminar ' + n + ' venta' + (n!==1?'s':'') + '? No se puede deshacer.')) return;
-  seleccionados.forEach(key => db.ref('ventas/'+key).remove());
+  for (const key of seleccionados) await dbDelete('/ventas/' + key);
   seleccionados.clear();
   document.getElementById('barra-acciones').style.display = 'none';
+  await loadVentas();
+  renderTabla();
   showToast(n + ' venta' + (n!==1?'s':'') + ' eliminada' + (n!==1?'s':''));
 }
-function eliminarVenta(key) {
+async function eliminarVenta(key) {
   if (!confirm('¿Eliminar esta venta?')) return;
-  db.ref('ventas/'+key).remove();
+  await dbDelete('/ventas/' + key);
+  await loadVentas();
+  renderTabla();
   showToast('Venta eliminada');
 }
 function editarVenta(key) {
@@ -1085,10 +1125,10 @@ const PLANTILLAS_DEFAULT = [
   {titulo:"Ultrasonido 3 MHz – Info completa",categoria:"express",texto:"🚀 Ultrasonido 3 MHz – Curso Express\n\n💡 Lo que vas a dominar\n✅ El principio físico y biológico del ultrasonido estético\n✅ Cómo integrar el ultrasonido como técnica regenerativa\n\n📥 Qué incluye\n🎓 Clase técnica de 3 horas\n📘 Material de apoyo incluido\n🔓 Acceso ilimitado al campus virtual"}
 ];
 
-function initPlantillas() {
-  PLANTILLAS_DEFAULT.forEach(function(p) {
-    plantillasRef.push({ titulo: p.titulo, categoria: p.categoria, texto: p.texto });
-  });
+async function initPlantillas() {
+  for (const p of PLANTILLAS_DEFAULT) {
+    await dbPush('/plantillas', { titulo: p.titulo, categoria: p.categoria, texto: p.texto });
+  }
   showToast('Plantillas importadas');
 }
 
@@ -1186,18 +1226,24 @@ function cancelarEdicion(key) {
   document.getElementById('pbtn-save-'+key).style.display = 'none';
   document.getElementById('pbtn-cancel-'+key).style.display = 'none';
 }
-function guardarPlantilla(key) {
+async function guardarPlantilla(key) {
   const nuevoTexto = document.getElementById('pedit-'+key).value;
-  db.ref('plantillas/'+key+'/texto').set(nuevoTexto);
+  await dbSet('/plantillas/' + key + '/texto', nuevoTexto);
+  const p = plantillas.find(x=>x._key===key);
+  if (p) p.texto = nuevoTexto;
   showToast('Plantilla guardada');
   cancelarEdicion(key);
+  // refresh display
+  document.getElementById('ptxt-'+key).textContent = nuevoTexto;
 }
-function eliminarPlantilla(key) {
+async function eliminarPlantilla(key) {
   if (!confirm('¿Eliminar esta plantilla?')) return;
-  db.ref('plantillas/'+key).remove();
+  await dbDelete('/plantillas/' + key);
+  await loadPlantillas();
+  renderPlantillas();
   showToast('Plantilla eliminada');
 }
-function abrirNuevaPlantilla() {
+async function abrirNuevaPlantilla() {
   const titulo = prompt('Título de la plantilla:');
   if (!titulo || !titulo.trim()) return;
   const cats = ['diplomado','premium','esencial','masterclass','express'];
@@ -1205,7 +1251,9 @@ function abrirNuevaPlantilla() {
   const categoria = cats.indexOf((catStr||'').toLowerCase()) >= 0 ? catStr.toLowerCase() : 'esencial';
   const texto = prompt('Texto de la plantilla:');
   if (!texto || !texto.trim()) return;
-  plantillasRef.push({ titulo: titulo.trim(), categoria: categoria, texto: texto.trim() });
+  await dbPush('/plantillas', { titulo: titulo.trim(), categoria: categoria, texto: texto.trim() });
+  await loadPlantillas();
+  renderPlantillas();
   showToast('Plantilla creada');
 }
 
@@ -1263,21 +1311,23 @@ function confirmarVenta() {
   document.getElementById('modal-confirm').classList.add('show');
 }
 
-function guardarVenta() {
+async function guardarVenta() {
   closeModal();
-  if (window._editKey) {
-    db.ref('ventas/'+window._editKey).remove();
-    window._editKey = null;
-    document.getElementById('btn-confirmar').textContent = 'Revisar y confirmar';
-  }
-  ventasRef.push(pendiente, function(err) {
-    if (err) { showToast('Error al guardar. Verificá la conexión.'); }
-    else {
-      limpiarForm();
-      showToast('Venta guardada — visible para todos');
-      switchTab('inicio');
+  try {
+    if (window._editKey) {
+      await dbDelete('/ventas/' + window._editKey);
+      window._editKey = null;
+      document.getElementById('btn-confirmar').textContent = 'Revisar y confirmar';
     }
-  });
+    await dbPush('/ventas', pendiente);
+    limpiarForm();
+    showToast('Venta guardada — visible para todos');
+    await loadVentas();
+    renderAll();
+    switchTab('inicio');
+  } catch(e) {
+    showToast('Error al guardar. Verificá la conexión.');
+  }
   pendiente = null;
 }
 
@@ -1320,6 +1370,7 @@ function renderAll() {
 
 // Init
 document.getElementById('f-fecha').valueAsDate = new Date();
+init();
 </script>
 
 </body>
