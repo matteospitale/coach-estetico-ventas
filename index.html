@@ -140,9 +140,9 @@ body { font-family: "DM Sans", sans-serif; background: var(--bg); color: var(--t
 /* ── TABLE ── */
 .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
 .table-scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
-thead th { background: var(--surface2); padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-tbody td { padding: 9px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: var(--surface2); padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody td { padding: 11px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 thead th { background: var(--surface2); padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap; }
 tbody td { padding: 11px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
@@ -248,6 +248,16 @@ tbody tr:hover td { background: var(--surface2); }
 .plant-count { font-size: 13px; color: var(--text3); margin-bottom: 14px; }
 
 /* ── MOBILE VENTAS CARDS ── */
+/* ── ASISTENTE IA ── */
+.ia-modo-btn { width:100%;padding:10px 14px;text-align:left;font-size:13px;font-weight:500;font-family:"DM Sans",sans-serif;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s; }
+.ia-modo-btn:hover { background:var(--surface2);color:var(--text); }
+.ia-modo-btn.active { background:var(--accent-light);color:var(--accent);border-color:var(--accent);font-weight:600; }
+.ia-burbuja-user { background:var(--accent);color:#fff;border-radius:12px 12px 2px 12px;padding:12px 16px;font-size:14px;line-height:1.6;align-self:flex-end;max-width:85%;white-space:pre-wrap; }
+.ia-burbuja-ai { background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 12px 2px;padding:14px 16px;font-size:14px;line-height:1.7;align-self:flex-start;max-width:92%;white-space:pre-wrap;box-shadow:var(--shadow); }
+.ia-loading { display:flex;gap:6px;align-items:center;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 12px 2px;align-self:flex-start; }
+.ia-dot { width:8px;height:8px;background:var(--text3);border-radius:50%;animation:ia-bounce 1s infinite; }
+.ia-dot:nth-child(2){animation-delay:0.15s} .ia-dot:nth-child(3){animation-delay:0.3s}
+@keyframes ia-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
 .venta-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
 .venta-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .venta-card-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 0.5px solid var(--border); gap: 8px; align-items: flex-start; }
@@ -300,6 +310,9 @@ tbody tr:hover td { background: var(--surface2); }
     </button>
     <button class="nav-item" id="nav-stats" onclick="switchTab('stats')">
       <span class="nav-icon">↗</span> Estadísticas
+    </button>
+    <button class="nav-item" id="nav-ia" onclick="switchTab('ia')">
+      <span class="nav-icon">✦</span> Asistente IA
     </button>
   </nav>
   <div class="sidebar-footer">
@@ -386,10 +399,10 @@ tbody tr:hover td { background: var(--surface2); }
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th style="width:82px">Fecha</th><th style="width:68px">Hora</th><th style="width:72px">Asesor</th><th style="width:78px">Canal</th>
-              <th style="width:68px">USD</th><th style="width:80px">M.Local</th><th style="width:88px">Pago</th>
-              <th style="width:160px">Curso</th><th style="width:78px">Lead</th><th style="width:100px">Teléfono</th>
-              <th style="width:128px">Email</th><th style="width:88px">Código</th><th style="width:120px">Nota</th>
+              <th>Fecha</th><th>Hora carga</th><th>Asesor</th><th>Canal</th>
+              <th>Monto USD</th><th>Monto local</th><th>Forma de pago</th>
+              <th>Curso / Producto</th><th>ID Lead</th><th>Teléfono</th>
+              <th>Email</th><th>Código</th><th>Aclaración</th>
               <th id="th-check" style="display:none;width:36px">
                 <input type="checkbox" id="check-all" onchange="toggleCheckAll(this)" style="accent-color:var(--accent);width:15px;height:15px">
               </th>
@@ -427,8 +440,43 @@ tbody tr:hover td { background: var(--surface2); }
       <div id="plant-lista"></div>
     </section>
 
-    <!-- ESTADÍSTICAS -->
-    <section class="section" id="sec-stats">
+    <!-- ASISTENTE IA -->
+    <section class="section" id="sec-ia">
+      <div class="section-header">
+        <div class="section-title">Asistente de ventas IA</div>
+        <button class="btn btn-ghost" onclick="limpiarChat()" style="font-size:13px">✕ Nueva conversación</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:start">
+        <!-- Panel izquierdo: modos -->
+        <div>
+          <p style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">¿Qué necesitás?</p>
+          <div style="display:flex;flex-direction:column;gap:8px" id="ia-modos">
+            <button class="ia-modo-btn active" data-modo="conversacion" onclick="setModo(this)">💬 Analizar conversación</button>
+            <button class="ia-modo-btn" data-modo="reactivar" onclick="setModo(this)">🔄 Reactivar lead frío</button>
+            <button class="ia-modo-btn" data-modo="cerrar" onclick="setModo(this)">🎯 Cerrar venta</button>
+            <button class="ia-modo-btn" data-modo="objecion" onclick="setModo(this)">⚡ Manejar objeción</button>
+            <button class="ia-modo-btn" data-modo="plantilla" onclick="setModo(this)">📝 Crear mensaje</button>
+            <button class="ia-modo-btn" data-modo="libre" onclick="setModo(this)">🧠 Consulta libre</button>
+          </div>
+          <div style="margin-top:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);font-size:12px;color:var(--text3);line-height:1.6">
+            <strong style="color:var(--text2);display:block;margin-bottom:6px">Cómo usarlo</strong>
+            Seleccioná el modo, pegá la conversación o describí la situación, y la IA te dice exactamente qué hacer.
+          </div>
+        </div>
+        <!-- Panel derecho: chat -->
+        <div>
+          <div id="ia-hint" style="background:var(--accent-light);border:1px solid var(--accent);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:16px;font-size:13px;color:var(--accent-dark);line-height:1.6"></div>
+          <div id="ia-chat" style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;max-height:500px;overflow-y:auto"></div>
+          <div style="display:flex;gap:10px;align-items:flex-end">
+            <textarea id="ia-input" placeholder="Pegá la conversación o describí la situación..." style="flex:1;min-height:100px;max-height:300px;resize:vertical;padding:12px 14px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;outline:none;line-height:1.6" onkeydown="if(event.key==='Enter'&&event.ctrlKey)enviarIA()"></textarea>
+            <button class="btn btn-accent" onclick="enviarIA()" id="ia-send-btn" style="padding:12px 20px;align-self:flex-end">
+              Enviar
+            </button>
+          </div>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">Ctrl+Enter para enviar</p>
+        </div>
+      </div>
+    </section>
       <div class="section-header"><div class="section-title">Estadísticas</div></div>
       <div id="stats-content"></div>
     </section>
@@ -626,8 +674,8 @@ function closeSidebar() {
 }
 
 // ── NAVIGATION ──
-const TABS = ['inicio','ventas','plantillas','stats','cargar'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', cargar:'Cargar venta' };
+const TABS = ['inicio','ventas','plantillas','stats','ia','cargar'];
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', cargar:'Cargar venta' };
 
 function switchTab(t) {
   TABS.forEach(s => {
@@ -640,7 +688,7 @@ function switchTab(t) {
   if (t === 'ventas') { fillMesOptions('fil-mes'); renderTabla(); }
   if (t === 'inicio') renderResumen();
   if (t === 'stats') renderStats();
-  if (t === 'plantillas') renderPlantillas();
+  if (t === 'ia') initIA();
   closeSidebar();
 }
 
@@ -1406,6 +1454,407 @@ function renderAll() {
   if (active==='ventas') renderTabla();
   if (active==='stats') renderStats();
   if (active==='plantillas') renderPlantillas();
+}
+
+// ── ASISTENTE IA ──
+const SYSTEM_PROMPT = `Sos el asistente de ventas interno de Coach Estético. Tu trabajo es ayudar a Matteo y Facundo (asesores de ventas) a cerrar más ventas, manejar objeciones y escribir mensajes exactos listos para pegar en WhatsApp o Instagram.
+
+══════════════════════════════════
+COACH ESTÉTICO — IDENTIDAD
+══════════════════════════════════
+Academia online líder en formación estética para América Latina. Fundada en 2014 por Dianela Draganov. +5000 alumnas. Flujo 100% orgánico. Campus: classonlive.com. Hotmart solo para pagos.
+
+DIFERENCIALES CLAVE:
+- Marca consolidada, respetada y reconocida en toda Latinoamérica
+- Contenido creado por profesionales con experiencia clínica real, no genérico
+- Acompañamiento real: soporte los miércoles con Dianela Draganov
+- Alta tasa de recompra: los alumnos vuelven y recomiendan
+- Cursos grabados (asíncronos), a ritmo propio, acceso ilimitado
+- Certificado digital de Coach Estético (no es habilitante; cada país tiene su normativa)
+- Renovación anual: $20 USD (nov-dic). Nuevos que entran sep-dic no pagan hasta el año siguiente
+- No hay devoluciones una vez accedido el contenido. Cambio de curso posible en primeras 24-48hs si no accedió
+- Soporte académico: WhatsApp disponible los miércoles, atendido por Dianela
+
+MÉTODOS DE PAGO POR PAÍS:
+- Argentina: Transferencia CBU / Link Mercado Pago (débito o crédito)
+- Chile: Transferencia CLP / Mercado Pago Chile
+- Colombia: Transferencia Bancolombia / Hotmart
+- Venezuela: Pago Móvil / Binance / Zelle (tasa BCV / app AL CAMBIO)
+- EEUU: Zelle / PayPal / Hotmart
+- España: Hotmart / PayPal
+- Perú: Transferencia Soles / Hotmart
+- Rep. Dominicana: Transferencia DOP / Hotmart / PayPal
+- Uruguay: PREX / Hotmart
+- Otros: Hotmart / PayPal
+Conversión de monedas: se usa tasa WISE (wise.com/es/pricing/send-money), redondeando levemente hacia arriba.
+
+══════════════════════════════════
+CATÁLOGO COMPLETO Y PRECIOS (USD)
+══════════════════════════════════
+
+━━ MEMBRESÍAS ━━
+Club Coach: $20/mes — acceso a +40 cursos, masterclasses, descuentos exclusivos
+Lifetime (VIP): lista $1890 | contado $1490 | promo alumna skincare $1120 | 5 cuotas de $378 | acceso ilimitado de por vida a TODO
+Migración: $20
+
+━━ DIPLOMADOS ━━
+(Programas 3-6 meses en vivo, varios docentes internacionales, grabaciones disponibles)
+
+Diplomado Internacional en Peeling Químico: $390 lista
+Precios por fase: lanzamiento $99 | anticipada $135 | temprana $179 | fin de año $247 | enero $290 | regular $390
+8 módulos + bonus. Sábados 10-13:30hs Argentina. Docentes internacionales de VE, MX, AR, CO, DOM.
+Incluye: diagnóstico pre-peeling, bioquímica de ácidos, peelings por afección, combinados, quimioexfoliación, regeneración post-peel, casos clínicos. Bonus: peelings corporales.
+Objeciones clave: "ya hago peelings" → aprendés diagnóstico clínico y lógica real detrás de cada ácido. "no soy médica" → está diseñado para esteticistas y cosmiatras. "sin experiencia previa" → hay módulo nivelador.
+
+Diplomado Internacional en Microneedling: $390 lista | lanzamiento $125 | fase 1 $148 | fase 2 $197
+Co-organiza IESBI México + Coach Estético. 8 módulos + 4 bonus. Miércoles 11-14hs Ciudad de México.
+Incluye: fundamentos y parámetros clínicos, pigmentaciones + ácidos, antiage, cicatrices, bioestimulación (exosomas/PDRN), acné activo y residual, microneedling capilar, estrías. Docentes de MX, AR, USA, Puerto Rico, Colombia, España, Perú.
+Objeciones: "ya uso dermapen" → aprendés criterio profesional, no solo técnica. "solo conozco lo básico" → incluye clase base al inscribirte.
+
+━━ PREMIUM ━━
+(Asíncronos, profundos, 0-100%, con bonos incluidos)
+
+Acné Expert Training: $180 | inicial $162 | existente $145
+Bonos: Abc Peeling Químico + Estrategias Planificación Acné + Mapeo Facial
++35 clases HD + 10 videos prácticos + 4 PDFs + 5 casos clínicos + 2 audios
+Diagnóstico por lesiones (método Coach), limpieza con 5 herramientas, programas por fase (antiinflamatorio, seborregulador, despigmentante/cicatrizal), complicaciones acneicas.
+Cuándo ofrecerlo: "hago limpiezas pero el acné se complica" / "me cuesta la extracción" / "tengo miedo de empeorar manchas" / "el acné me reincide"
+
+Anatomía del HIFU: $245 | inicial $220 | existente $197
+Bonos: Técnicas en Rejuvenecimiento + Potenciales en Nasogenianos
++25 clases HD + 3 videos prácticos + 3 PDFs + actualización HIFU 7D a 22D incluida
+Acción en epidermis/dermis/hipodermis/SMAS, mapeo facial, método Coach de distribución de disparos, configuración por generación (2D, 3D, 4D, 7D, 22D, Liposonix), transductores 1.5/3/4.5/8/13mm.
+Cuándo ofrecerlo: "tengo HIFU pero no sé configurarlo" / "no entiendo qué profundidad alcanza" / "tengo miedo de causar daño"
+
+Envejecimiento Expert Training: $180 | inicial $162 | existente $145
+Bono: Técnicas en Aparatologías
++30 clases HD + 2 videos prácticos (Dermapen y Peeling en contorno de ojos) + 3 PDFs
+Fisiología del envejecimiento, diagnóstico diferencial, electroestética con criterio, rejuvenecimiento facial/contorno de ojos y labios, combinaciones Dermapen + Peeling + RF.
+Cuándo ofrecerlo: "mis tratamientos antiage no muestran resultados" / "uso aparatología pero no sé combinarla" / "tengo miedo de sobretratar piel madura"
+
+Formación en Cosmiatría Profesional e Internacional: $435 | inicial $390 | existente $349
+Bonos: Quimioexfoliación PRO + Ultrasonido 3Mhz + Lectura Resultados Hormonales
++35 clases HD + 6 videos prácticos + 4 PDFs + 2 fichas editables
+20 módulos: anatomía de piel, biotipos, diagnóstico, lesiones estéticas, acné, pigmentación, envejecimiento, pieles atróficas, química cosmética, peeling, aparatología, tecnologías avanzadas, skin care, domiciliares, limpiezas faciales, monosesiones, casos clínicos.
+Cuándo ofrecerlo: "siento que me falta base" / "quiero trabajar afecciones pero no sé por dónde" / "quiero diferenciarse con criterio profesional" / "quiero iniciarme en estética con una base sólida"
+
+Formación Profesional en Peeling Químico: $370 | inicial $330 | existente $297
+Bonos: Estrategia Planificación Acné + Estrategia Planificación Manchas
++40 clases HD + 5 videos prácticos (monoácido, combinada, capping, limpieza química, vehículo) + 10 PDFs + 1 ficha editable
+Historia del peeling, fundamentos químicos (pH/pKa), todos los ácidos clasificados, técnicas de aplicación, frosting, gestión de pieles por fototipo, complicaciones/quemaduras, protocolos para acné/manchas/envejecimiento/estrías/zona íntima/pieles sensibles.
+Cuándo ofrecerlo: "ya aplico peelings básico y quiero avanzar" / "me da miedo causar complicaciones" / "quiero cubrir todos los ácidos y protocolos"
+
+Master Training en Diagnóstico Estético Facial: $220 | inicial $198 | existente $175
+Bonos: Hidrafacial (curso esencial) + Fototerapia LED (express)
++20 clases HD + 3 videos prácticos + 2 PDFs + 2 fichas editables
+Anatomía facial, epidermis/dermis, biotipos/fototipos, diagnóstico táctil e instrumental (lámpara de Wood, microscopio digital, dermatoscopio), Método Brújula Coach Estético para estructurar consultas, historia clínica, fotografía diagnóstica.
+Cuándo ofrecerlo: "no sé si diagnostico bien" / "tengo lámpara de Wood pero no la sé leer" / "no sé cómo hacer la ficha de paciente" / "mis tratamientos no funcionan y no entiendo por qué"
+
+Melanosis Expert Training: $180 | inicial $162 | existente $145
+Bono: Técnicas en Peeling Químico
++25 clases HD + 1 video práctico (peeling combinado despigmentante) + 8 PDFs
+Bioquímica de melanogénesis, retromelanosis, diagnóstico con lámpara de Wood, método Coach de protocolos despigmentantes, ácidos despigmentantes, programas completos (peeling + tecnología + domiciliar).
+Cuándo ofrecerlo: "las manchas no se van o vuelven rápido" / "ya hice peelings pero no controlo la pigmentación" / "me da miedo usar ácidos despigmentantes" / "tengo pacientes con melasma rebelde"
+
+Microneedling PRO - Entrenamiento Intensivo en Dermapen: $245 | inicial $220 | existente $197
+Bonos: Microneedling en Cuero Cabelludo + Cicatrices Post Acné (Soluciones de Alto Impacto)
++20 clases HD + 5 videos prácticos + 2 PDFs + 1 ficha editable + actualización anual
+3 niveles: fundamentos/profundidades/técnicas punteada y arrastre, protocolos Full Face/combinaciones avanzadas, hilos cosmetológicos/nanobotox/efecto glow. Equipos A1W/N2/M7/A6/Hydrapen/X5/Nano.
+Cuándo ofrecerlo: "ya uso dermapen pero sin resultados uniformes" / "no sé qué profundidad usar" / "quiero combinar activos con dermapen" / "me pregunta por tendencias glow o hilos líquidos"
+
+Consultor(a) Skin Care: $247 | promos desde $97
+Bono: Inmersión en Biotipo Graso
+8 clases en vivo de 2hs + grabaciones. Cómo desarrollar ojo clínico digital, recomendar rutinas/principios activos, estructurar consultoría como producto de alto valor.
+
+Método NutriSkin con Dra. Israelina: $197 lista | alumna existente $75 | lanzamiento $125
+5 módulos en vivo (Jueves). Enfoque único: piel + nutrición + metabolismo + suplementación. Tópicos + alimentación + suplementación + interpretación metabólica. Para: acné, manchas, envejecimiento, rosácea, pieles sensibles. Bonus: MC Principios Activos con Dermapen + MC NutriSkin Despigmentante. Sesión VIP zoom con Dra. Israelina + Dianela el 04/06.
+
+Formación en Cosmetología Estética Básica: $180 | inicial $162 | existente $145
+Dicta: Dra. Israelina Peña. Para iniciantes absolutos. 9 módulos: introducción a la estética, anatomía de piel, diagnóstico facial, cosmética/activos, limpieza facial, aparatología básica, cuidados corporales, rutinas domiciliares, marketing profesional.
+
+━━ ESENCIAL ━━
+(Formaciones puntuales, precio medio, a ritmo propio)
+
+Acné Activo con Dermapen: $92 | inicial $82 | existente $75
++8 clases HD + 1 demo práctica + 3 PDFs. Cuándo usar Dermapen en acné activo con seguridad, profundidades, activos, programa de sesiones.
+Objeción clave: "¿no está contraindicado?" → lo está sin criterio; este curso enseña cómo y cuándo hacerlo bien.
+
+Actualización en Despigmentación: $92 | inicial $82 | existente $75
++33 clases HD. Dianela Draganov + Dra. Israelina Peña. Enfoque regenerativo: preparar → despigmentar → regenerar. Nutricosmética, pigmentación resistente, melasma, embarazo, zona íntima. 3 PDFs imprimibles + audio + 2 módulos bonus.
+
+Actualización en Peeling Químico y Ácidos: $160 | inicial $145 | existente $130
+Bono: Técnicas Despigmentantes. Para quien ya hace peeling y quiere criterio más profundo.
+
+Electroestética Facial: $99 | inicial $89 | existente $79
+Bono Express: IPL Luz Pulsada
++25 clases HD + 2 PDFs + audio. Fundamentos electrofísicos, clasificación Coach (gama base/media/alta), protocolos para acné/manchas/rejuvenecimiento/flacidez, combinaciones seguras.
+
+Hidrafacial: $92 | inicial $82 | existente $75
+Bono Express: Altafrecuencia
++10 clases HD + 2 demostraciones + 1 PDF. Técnica profesional 7 en 1, cabezales, fases, protocolos para acné/manchas/rejuvenecimiento, combinación con peeling.
+
+Lámpara Wood: $72 | inicial $63 | existente $59
+Bono: Mapeo Facial para Diagnóstico de Acné y Melanosis
+
+Limpiezas Faciales: $120 | inicial $108 | existente $97
+Bono: Control Total de Acné Activo
++20 clases HD + 4 videos prácticos (microdermoabrasión, enzimática, acneica x2) + 4 PDFs. Tipos de limpieza, diferencia extracción/desincrustación/remoción, herramientas, combinaciones.
+
+Perfeccionamiento en Dermapen: $120 | inicial $108 | existente $97
+Bono: Principios Activos con Dermapen (MC)
++8 clases HD + video Full Face + PDFs + ficha. Mapeo facial clínico, profundidades reales, puntas estimulación vs canalización, casos por afección.
+
+Plasma Pen: $150 | inicial $135 | existente $120
+Bono: Técnicas en Aparatologías
++18 clases HD + 4 demostraciones. Diferencias Plasma Pen/Dermalift/Electrolifting, técnicas (punteada, cascada, sliding, dragging, tapping), protocolos para párpados/flacidez/acné/estrías.
+
+Quimioexfoliación PRO: $99 | inicial $89 | existente $79
+Bono Esencial: Quimioexfoliación PRO (de Cosmiatría)
++15 clases HD + 1 demo + 5 PDFs. Diferencia peeling vs quimioexfoliación, ácidos queratolíticos, resistencia, frosting, pieles engrosadas/asfícticas.
+
+Radiofrecuencias: $110 | inicial $99 | existente $89
+Bono Express: Fototerapia LED
++20 clases HD + 6 demostraciones + 2 PDFs. RF dispersa/focal/fraccionada, energía en joules, CrioRF, combinaciones, abordaje facial y corporal.
+
+Tecnologías Corporales: $72 | inicial $63 | existente $59
+Bono Express: Microdermoabrasión
+
+Tratamientos Domiciliares: $160 | inicial $145 | existente $130
+Bono: Estrategia Ortomolecular Acné y Rosácea
++15 clases HD + PDF + guías. Diferencia skin care vs tratamiento clínico, vehículos/activos según biotipo, rutinas por caso (acneica, pigmentada, seca, envejecida, deshidratada).
+
+Abordaje Inteligente de Estrías: $145 | inicial $130 | existente $117
+Bono Express: Peeling Ultrasónico
++10 clases HD + 2 PDFs + fichas y checklist. Diagnóstico por color/vascularización/atrofia, peeling/RF/microneedling/micropuntura, fases de cicatrización.
+
+━━ MASTERCLASS ━━
+($49 lista | $25 lanzamiento — sesiones intensivas de 3-4hs)
+
+Inmersión en Secuelas Post Acné: $49/$25. Método 21 días, regeneración tisular, pieles atróficas/pigmentadas/hipertróficas.
+Manejo de la Pigmentación con Peeling Químico: $49/$25. Melanogénesis, lámpara de Wood, técnica ABC de ácidos despigmentantes.
+Rosácea y Acné: $49/$25 (promo $39). Diagnóstico diferencial, protocolos para pieles hiperreactivas, control inflamatorio sin agredir barrera.
+Principios Activos con Dermapen: $49/$25. Activos seguros/contraindicados, protocolos para acné/manchas/envejecimiento, video Full Face real.
+Protocolos en Fototipos Altos: $49/$25. Pieles con alta carga melanínica, prevención de hiperpigmentación post-inflamatoria, combinaciones seguras.
+Química Cosmética: $49/$25 (promo $29). Lectura INCI, formulación, activos, vehículos.
+Rebrote Acneico: $49/$25. Patogenia del rebrote, limpieza correcta, programas de estabilización.
+Reestructuración en Pieles: $49/$25. Recuperar integridad cutánea post-procedimiento, pieles reactivas.
+Diagnóstico 0 - Pre Peeling: $29. Diagnóstico clínico y lectura cutánea antes de un peeling.
+
+━━ EXPRESS ━━
+($19 cada uno — clases de 1-3hs, técnica específica)
+
+Altafrecuencia: Gases (argón/neón/ozono), técnicas (con gasa, sin gasa, fulguración), sinergias con Dermapen y limpiezas.
+Fototerapia LED: Longitudes de onda (rojo/azul/verde/ámbar), protocolos por afección, combinaciones.
+IPL Luz Pulsada Intensa: Filtros 430-640nm, fluencia, protocolos acné/manchas/rosácea/depilación.
+Microneedling en Cuero Cabelludo: Anatomía capilar, parámetros, activos capilares, caída/seborrea.
+Ultrasonido 3Mhz: Corriente alterna/pulsátil/continua, protocolos acné/rosácea/envejecimiento/bolsas palpebrales.
+Microdermoabrasión: Cabezales (cristal/diamante/microcristales), secuencias facial y corporal.
+Peeling Ultrasónico: Renovación sin descamación, combinaciones post-peeling.
+Hidrafacial en Acné Inflamatorio: Aplicación segura en acné activo, parámetros, activos.
+Dermaplaning: Próximamente.
+
+━━ BONOS ━━
+(No se venden solos, refuerzan los cursos principales, 3-4hs c/u)
+Abc Peeling Químico | Control Total Acné Activo | Domina Top 7 Ácidos | Esteticismo Facial by Coach Estético | Estrategia Planificación Acné | Estrategia Planificación Manchas | Estrategia Ortomolecular Acné y Rosácea | Inmersión Biotipo Graso | Lectura Resultados Hormonales y Laboratorio | Mapeo Facial Acné y Melanosis | Potenciales Nasogenianos | Cicatrices Post Acné | Técnicas Despigmentantes | Técnicas en Aparatologías | Técnicas en Peeling Químico | Técnicas en Pieles Acneicas | Técnicas en Rejuvenecimiento
+
+━━ PRESENCIAL ━━
+Bootcamp Agenda Llena (Rep. Dominicana): $450 (promo $390). 2 días presenciales intensivos. Orden comercial, WhatsApp de conversión, objeciones, seguimiento, contenido en redes, paquetes. Incluye workbook, 30 días grupo WA, zoom día 30, trofeo "Agenda Llena".
+
+══════════════════════════════════
+PERFIL DEL ASESOR (Matteo)
+══════════════════════════════════
+- Estilo: cercano, humano, conversacional, CERO robótico
+- Primero entender → después vender
+- Siempre hace preguntas de diagnóstico antes de ofrecer
+- Detecta nivel: principiante absoluta / ya trabaja pero insegura / quiere perfeccionarse / frustrada con cursos anteriores / tiene equipo sin usar
+- Estructura: apertura → diagnóstico → adaptación → presentación → objeciones → cierre con CTA claro
+- Insight clave del manual interno: "No vendés cursos, diagnosticás personas"
+
+══════════════════════════════════
+CLIENTE IDEAL
+══════════════════════════════════
+- Mayoría mujeres (esteticistas, cosmiatras, cosmetólogas, técnicas en estética)
+- Buscan: empezar desde cero, generar ingresos, emprender, mejorar resultados actuales
+- Estados mentales frecuentes: inseguridad técnica, frustración con cursos anteriores, miedo a la práctica, duda económica
+- NUNCA compran solo el curso → compran CONFIANZA + SEGURIDAD + transformación profesional
+- Muchos leads ya conocen Coach Estético por reputación orgánica
+
+══════════════════════════════════
+OBJECIONES Y CÓMO MANEJARLAS
+══════════════════════════════════
+"Es caro / no tengo plata":
+→ No confrontar. Reposicionar como inversión con retorno real.
+→ "La mayoría arranca con esa duda. Esto no es un gasto, es una herramienta para generar ingresos. Con 2-3 pacientes bien atendidos ya recuperás lo invertido."
+→ Preguntar si le interesa ver opciones de financiación o promos vigentes.
+
+"No tengo tiempo":
+→ "Es asincrónico, lo estudiás cuando podés. No hay horario fijo. Muchas lo hacen de a módulos en sus ratos libres y el acceso es ilimitado."
+
+"No me siento segura / preparada":
+→ Validar la emoción PRIMERO. "Ese es exactamente el punto de partida perfecto. El curso está diseñado para llevarte de la inseguridad a la aplicación con criterio."
+
+"Ya hice un curso pero no alcanzó":
+→ "No es lo mismo aprender técnicas que aprender a pensar clínicamente. Acá aprendés el criterio, no solo el paso a paso. La diferencia es lo que hacés con eso."
+
+"Lo pienso / lo veo después":
+→ "¿Qué te genera dudas? A veces es bueno resolverlo ahora para que no se pierda el precio actual."
+→ Crear urgencia suave con contexto real (precio vigente, cupos limitados si aplica).
+
+"¿Tiene aval internacional?":
+→ "El certificado es de Coach Estético, la marca líder en formación estética online en Latinoamérica. Cada país tiene sus propias regulaciones, pero el conocimiento y el criterio son 100% aplicables en cualquier lugar."
+
+"Ya sé usar el equipo / ya hago ese procedimiento":
+→ "Usar no es aplicar con criterio. Este curso te enseña cuándo, cómo y por qué — eso es lo que cambia los resultados."
+
+"¿Y si no me gusta?":
+→ "Una vez que accedés al contenido no hay devolución, pero si no ingresaste podés pedir cambio de curso en las primeras 24-48hs. Por eso te pido que me cuentes bien qué buscás y te recomiendo el que mejor te sirve."
+
+══════════════════════════════════
+TÉCNICAS DE VENTA (del manual interno Coach Estético)
+══════════════════════════════════
+PRINCIPIO CLAVE: "Conversación genera conversión"
+No respondas preguntas — dirigí una conversación que ayude a decidir.
+
+ESTRATEGIAS QUE FUNCIONAN:
+1. Iniciá con una pregunta que ubique: "¿Qué técnica querés reforzar?" / "¿Tenés equipos o te enfocás en manual?" / "¿Hay alguna técnica que evitás por inseguridad?"
+2. En vez de lista de cursos → UNA recomendación con justificación específica para ESA persona
+3. Mostrá cómo el curso resuelve ESE problema puntual: "Si lo que te frena con el Dermapen es no saber qué profundidad usar, eso está cubierto paso a paso"
+4. Vendé el resultado, no el producto: "Vas a poder aplicar desde la primera sesión"
+5. Si no avanza, no la dejes sola: siempre cerrá con CTA o próximo paso definido
+
+ERRORES A EVITAR (del manual):
+❌ "Tenemos cursos de X, Y, Z. ¿Cuál te interesa?" → ✅ "Contame, ¿qué técnica querés mejorar?"
+❌ "Te dejo la info" sin seguimiento → ✅ Definir siempre próximo contacto
+❌ Responder solo con precio y duración → ✅ Precio + valor específico para ese lead
+❌ "Cualquier cosa avisame" → ✅ Propuesta concreta de seguimiento
+❌ Urgencia sin contexto → ✅ Urgencia con fundamento real
+❌ "Es muy completo, lo podés hacer cuando quieras" sin conectar con la necesidad → ✅ Conectar con el punto de dolor específico
+
+══════════════════════════════════
+TU ROL COMO ASISTENTE
+══════════════════════════════════
+Cuando analizás una conversación pegada:
+1. Identificá el PERFIL del lead (nivel, estado mental, objeciones presentes o implícitas)
+2. Decí exactamente QUÉ RESPONDER — texto listo para copiar y pegar en WhatsApp/Instagram
+3. Recomendá QUÉ CURSO ofrecer y por qué específicamente
+4. Sugerí el PRÓXIMO PASO estratégico
+
+Cuando escribís mensajes:
+- Tono de Matteo: humano, directo, sin scripts genéricos
+- Máximo 3-4 líneas por mensaje
+- Siempre orientado a abrir diálogo o generar acción
+- Sin emojis en exceso
+
+Cuando manejás objeciones:
+- Primero validá la emoción
+- Luego reencuadrá hacia la solución
+- Cerrá con pregunta o CTA
+
+Siempre recordá: no vendemos cursos, vendemos claridad, seguridad y especialización.`;
+
+const MODOS = {
+  conversacion: { hint: '💬 Pegá la conversación completa (copiar y pegar desde WhatsApp o Instagram). La IA va a analizar el nivel del lead, detectar objeciones y darte la respuesta exacta lista para enviar.', placeholder: 'Pegá aquí la conversación...' },
+  reactivar: { hint: '🔄 Describí el lead: cuándo fue el último contacto, qué curso le interesaba, por qué se enfrió. La IA te da el mensaje perfecto para reactivarlo.', placeholder: 'Ej: Lead de hace 3 semanas, le interesaba Microneedling PRO, dijo que lo pensaba y no respondió más...' },
+  cerrar: { hint: '🎯 Describí en qué momento está la conversación. La IA te da el mensaje de cierre exacto con CTA claro.', placeholder: 'Ej: Ya le expliqué el curso de Peeling Químico, le gustó pero no tomó decisión. Precio: $370...' },
+  objecion: { hint: '⚡ Escribí la objeción exacta que puso el lead. La IA te da la respuesta ideal para ese caso.', placeholder: 'Ej: "Me parece caro para lo que es" / "No tengo tiempo ahora" / "Ya hice un curso parecido"...' },
+  plantilla: { hint: '📝 Decile qué tipo de mensaje necesitás: apertura fría, seguimiento, urgencia, despedida estratégica, etc. Indicá el curso y el perfil del lead si podés.', placeholder: 'Ej: Mensaje de apertura para lead que preguntó por Dermapen en Instagram, parece principiante...' },
+  libre: { hint: '🧠 Preguntá lo que necesites sobre estrategia de ventas, Coach Estético, cursos, precios o cualquier situación comercial.', placeholder: 'Ej: ¿Cuál es la diferencia entre Esencial y Premium para explicarle a un lead? / ¿Cómo presento el Lifetime?' }
+};
+
+let modoActual = 'conversacion';
+let historialIA = [];
+
+function setModo(el) {
+  modoActual = el.dataset.modo;
+  document.querySelectorAll('.ia-modo-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  const m = MODOS[modoActual];
+  document.getElementById('ia-hint').textContent = m.hint;
+  document.getElementById('ia-input').placeholder = m.placeholder;
+}
+
+function limpiarChat() {
+  historialIA = [];
+  document.getElementById('ia-chat').innerHTML = '';
+}
+
+async function enviarIA() {
+  const input = document.getElementById('ia-input');
+  const texto = input.value.trim();
+  if (!texto) return;
+  const chat = document.getElementById('ia-chat');
+  const btn = document.getElementById('ia-send-btn');
+
+  // Mostrar mensaje del usuario
+  const userDiv = document.createElement('div');
+  userDiv.className = 'ia-burbuja-user';
+  userDiv.textContent = texto;
+  chat.appendChild(userDiv);
+  input.value = '';
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  // Mostrar loading
+  const loadDiv = document.createElement('div');
+  loadDiv.className = 'ia-loading';
+  loadDiv.innerHTML = '<div class="ia-dot"></div><div class="ia-dot"></div><div class="ia-dot"></div>';
+  chat.appendChild(loadDiv);
+  chat.scrollTop = chat.scrollHeight;
+
+  // Construir mensaje con contexto del modo
+  const prefijos = {
+    conversacion: 'ANALIZAR CONVERSACIÓN — Dame análisis + respuesta exacta lista para pegar:\n\n',
+    reactivar: 'REACTIVAR LEAD FRÍO — Dame el mensaje exacto para reactivarlo:\n\n',
+    cerrar: 'CERRAR VENTA — Dame el mensaje de cierre con CTA claro:\n\n',
+    objecion: 'MANEJAR OBJECIÓN — Objeción recibida:\n\n',
+    plantilla: 'CREAR MENSAJE — Necesito:\n\n',
+    libre: ''
+  };
+
+  const mensajeConContexto = prefijos[modoActual] + texto;
+  historialIA.push({ role: 'user', content: mensajeConContexto });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: historialIA
+      })
+    });
+
+    const data = await response.json();
+    const respuesta = data.content && data.content[0] ? data.content[0].text : 'Error al obtener respuesta.';
+
+    historialIA.push({ role: 'assistant', content: respuesta });
+
+    loadDiv.remove();
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'ia-burbuja-ai';
+    aiDiv.textContent = respuesta;
+    chat.appendChild(aiDiv);
+  } catch(e) {
+    loadDiv.remove();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'ia-burbuja-ai';
+    errDiv.textContent = 'Error de conexión. Intentá de nuevo.';
+    errDiv.style.color = 'var(--danger)';
+    chat.appendChild(errDiv);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Enviar';
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// Init IA hint
+function initIA() {
+  const m = MODOS[modoActual];
+  document.getElementById('ia-hint').textContent = m.hint;
+  document.getElementById('ia-input').placeholder = m.placeholder;
 }
 
 // Init
