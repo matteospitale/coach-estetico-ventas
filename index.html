@@ -340,7 +340,8 @@ tbody tr:hover td { background: var(--surface2); }
           <div class="drill-title" id="inicio-drill-title"></div>
           <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="clearDrill()">Ver todos</button>
         </div>
-        <div class="table-wrap">
+        <div id="inicio-drill-cards" style="display:none;flex-direction:column;gap:10px"></div>
+        <div id="inicio-drill-table" class="table-wrap">
           <div class="table-scroll">
             <table><thead><tr>
               <th>Fecha</th><th>Hora</th><th>Canal</th><th>Monto USD</th><th>Pago</th><th>Curso</th><th>ID Lead</th><th>Código</th>
@@ -565,6 +566,10 @@ onValue(ventasRef, snap => {
 onValue(plantillasRef, snap => {
   plantillas = [];
   snap.forEach(c => plantillas.push({ _key: c.key, ...c.val() }));
+  if (plantillas.length === 0 && !plantillasInicializadas) {
+    plantillasInicializadas = true;
+    initPlantillas();
+  }
   renderPlantillas();
 });
 
@@ -669,20 +674,46 @@ window.filterDrill = function(asesor) {
   document.querySelectorAll('.metric-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('mc-'+asesor)?.classList.add('selected');
   const total = vf.reduce((s,v)=>s+parseFloat(v.monto||0),0);
-  document.getElementById('inicio-drill-title').textContent = `${asesor==='all'?'Todas las ventas':asesor} — ${vf.length} ventas · $${total.toLocaleString('en-US')} USD`;
+  document.getElementById('inicio-drill-title').textContent = `${asesor==='all'?'Todas las ventas':asesor} — ${vf.length} venta${vf.length!==1?'s':''} · $${total.toLocaleString('en-US')} USD`;
   document.getElementById('inicio-drill').style.display = 'block';
-  document.getElementById('inicio-drill-tbody').innerHTML = vf.length
-    ? vf.map(v=>`<tr>
-        <td class="mono">${v.fecha?.split('-').reverse().join('/')||'—'}</td>
-        <td class="mono" style="color:var(--text3)">${v.cargado?new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'—'}</td>
-        <td style="font-size:11px;font-weight:600;color:${canalColor(v.canal)}">${v.canal||'—'}</td>
-        <td class="mono" style="font-weight:600;color:var(--accent)">$${parseFloat(v.monto||0).toLocaleString('en-US')}</td>
-        <td style="font-size:11px">${v.pago||'—'}</td>
-        <td style="font-size:11px">${v.curso||'—'}</td>
-        <td class="mono">${v.lead?`<a href="https://coachestetico.kommo.com/leads/detail/${v.lead}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">${v.lead}</a>`:'—'}</td>
-        <td class="mono" style="color:var(--text3)">${v.codigo||'—'}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="8"><div class="empty-state">Sin ventas</div></td></tr>';
+  const isMobile = window.innerWidth <= 700;
+  if (isMobile) {
+    // Show as cards on mobile
+    document.getElementById('inicio-drill-table').style.display = 'none';
+    const cardsEl = document.getElementById('inicio-drill-cards');
+    cardsEl.style.display = 'flex';
+    cardsEl.innerHTML = vf.length ? vf.map(v => {
+      const h = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '—';
+      return `<div class="venta-card">
+        <div class="venta-card-header">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge badge-${(v.asesor||'').toLowerCase()}">${v.asesor}</span>
+            <span style="font-size:12px;font-weight:600;color:${canalColor(v.canal)}">${v.canal||'—'}</span>
+          </div>
+          <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--accent)">$${parseFloat(v.monto||0).toLocaleString('en-US')}</span>
+        </div>
+        <div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">${v.fecha?.split('-').reverse().join('/')||'—'} · ${h}</span></div>
+        <div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">${v.curso||'—'}</span></div>
+        <div class="venta-card-row"><span class="venta-card-label">Pago</span><span class="venta-card-val">${v.pago||'—'}</span></div>
+        ${v.lead?`<div class="venta-card-row"><span class="venta-card-label">Lead</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/detail/${v.lead}" target="_blank" style="color:var(--accent)">${v.lead}</a></span></div>`:''}
+      </div>`;
+    }).join('') : '<div class="empty-state">Sin ventas</div>';
+  } else {
+    document.getElementById('inicio-drill-table').style.display = 'block';
+    document.getElementById('inicio-drill-cards').style.display = 'none';
+    document.getElementById('inicio-drill-tbody').innerHTML = vf.length
+      ? vf.map(v=>`<tr>
+          <td class="mono">${v.fecha?.split('-').reverse().join('/')||'—'}</td>
+          <td class="mono" style="color:var(--text3)">${v.cargado?new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'—'}</td>
+          <td style="font-size:11px;font-weight:600;color:${canalColor(v.canal)}">${v.canal||'—'}</td>
+          <td class="mono" style="font-weight:600;color:var(--accent)">$${parseFloat(v.monto||0).toLocaleString('en-US')}</td>
+          <td style="font-size:11px">${v.pago||'—'}</td>
+          <td style="font-size:11px">${v.curso||'—'}</td>
+          <td class="mono">${v.lead?`<a href="https://coachestetico.kommo.com/leads/detail/${v.lead}" target="_blank" style="color:var(--accent);font-weight:600">${v.lead}</a>`:'—'}</td>
+          <td class="mono" style="color:var(--text3)">${v.codigo||'—'}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="8"><div class="empty-state">Sin ventas</div></td></tr>';
+  }
 };
 window.clearDrill = function() {
   inicioFiltro = null;
@@ -1206,8 +1237,6 @@ function renderAll(){
   if(active==='ventas')renderTabla();
   if(active==='stats')renderStats();
   if(active==='plantillas')renderPlantillas();
-  // Init plantillas if empty
-  if(plantillas.length===0&&!plantillasInicializadas) setTimeout(initPlantillas,2000);
 }
 
 // Init
