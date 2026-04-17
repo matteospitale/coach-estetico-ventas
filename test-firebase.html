@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Test Firebase</title></head>
+<body>
+<h2>Test Firebase REST API</h2>
+<div id="resultado">Cargando...</div>
+<script>
+fetch('https://coach-estetico-ventas-default-rtdb.firebaseio.com/ventas.json')
+  .then(r => r.json())
+  .then(data => {
+    if (!data) { document.getElementById('resultado').textContent = 'Sin datos'; return; }
+    const ventas = Object.entries(data);
+    document.getElementById('resultado').innerHTML = 
+      '<p style="color:green">✅ CONECTADO - ' + ventas.length + ' ventas encontradas</p>' +
+      ventas.map(([k,v]) => '<p>' + v.asesor + ' - ' + v.curso + ' - $' + v.monto + '</p>').join('');
+  })
+  .catch(e => {
+    document.getElementById('resultado').innerHTML = '<p style="color:red">❌ ERROR: ' + e.message + '</p>';
+  });
+</script>
+</body>
+</html>
