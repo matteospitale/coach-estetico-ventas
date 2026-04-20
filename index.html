@@ -264,6 +264,7 @@ tbody tr:hover td { background: var(--surface2); }
 .admin-badge-aprobado { background: #D4EDDA; color: #155724; }
 .admin-badge-pendiente { background: #CCE5FF; color: #004085; }
 .admin-badge-rechazada { background: #F8D7DA; color: #721C24; }
+.admin-field { display: flex; flex-direction: column; gap: 2px; }
 .ia-modo-btn { width:100%;padding:10px 14px;text-align:left;font-size:13px;font-weight:500;font-family:"DM Sans",sans-serif;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s; }
 .ia-modo-btn:hover { background:var(--surface2);color:var(--text); }
 .ia-modo-btn.active { background:var(--accent-light);color:var(--accent);border-color:var(--accent);font-weight:600; }
@@ -586,11 +587,11 @@ tbody tr:hover td { background: var(--surface2); }
           </div>
           <div class="form-group full">
             <label class="form-label">Comprobante (imagen)</label>
-            <label class="file-attach-btn" for="f-comprobante-file">
-              📎 Adjuntar imagen del comprobante
-            </label>
+            <div id="comprobante-drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--bg)" onclick="document.getElementById('f-comprobante-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleComprobanteDrop(event)">
+              <div style="font-size:13px;color:var(--text3)">📎 Hacé clic, arrastrá una imagen, o pegá con <strong>Ctrl+V</strong></div>
+            </div>
             <input type="file" id="f-comprobante-file" accept="image/*" style="display:none" onchange="previewComprobante(this)">
-            <div class="file-preview" id="f-comprobante-preview"></div>
+            <div id="f-comprobante-preview" style="margin-top:10px"></div>
           </div>
         </div>
         <div class="form-actions">
@@ -626,12 +627,7 @@ tbody tr:hover td { background: var(--surface2); }
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>Canal</th>
-              <th>Nombre y Apellido</th><th>País</th><th>Email</th><th>Teléfono</th>
-              <th>Curso</th><th>Promoción</th>
-              <th>Monto USD</th><th>Monto Local</th>
-              <th>Moneda</th><th>TC Referencia</th><th>Monto Neto USD</th><th>Comisión %</th><th>Monto Comisión</th>
-              <th>Estado</th><th>Comprobante</th><th>Notas Admin</th>
+              <th>Fecha</th><th>Asesor</th><th>Nombre y Apellido</th><th>Monto USD</th><th>Estado</th><th style="width:40px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -1032,7 +1028,7 @@ function renderTabla() {
       '<td style="font-size:12px">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
       '<td class="mono" style="color:var(--text3)">' + (v.codigo||'—') + '</td>' +
       '<td style="font-size:12px;color:var(--text2);max-width:180px" title="' + (v.nota||'') + '">' + (v.nota||'—') + '</td>' +
-      '<td>' + (v.comprobante ? '<a href="' + v.comprobante + '" target="_blank" style="color:var(--accent);font-size:12px">📎 Ver</a>' : '—') + '</td>' +
+      '<td onclick="v_compr_click(event)" style="cursor:pointer">' + (v.comprobante ? '<img src="' + v.comprobante + '" data-full="' + v._key + '" style="height:36px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="ventaComprobanteClick(event,ventas.find(function(x){return x._key===\'' + v._key + '\'}))">' : '—') + '</td>' +
       '<td><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
         '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
         '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
@@ -1513,23 +1509,194 @@ function closeCursoList() { document.getElementById('curso-list').style.display=
 // comprobante stored as base64 dataURL in memory
 let comprobanteData = null;
 
+function setComprobanteFromDataURL(dataURL) {
+  comprobanteData = dataURL;
+  const prev = document.getElementById('f-comprobante-preview');
+  prev.innerHTML =
+    '<div style="position:relative;display:inline-block;margin-top:4px">' +
+      '<img src="' + dataURL + '" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border);display:block;cursor:zoom-in" onclick="verComprobanteGrande(this.src)">' +
+      '<button onclick="clearComprobante()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;line-height:1">✕</button>' +
+    '</div>';
+  const zone = document.getElementById('comprobante-drop-zone');
+  if (zone) zone.style.borderColor = 'var(--accent)';
+}
+
+function verComprobanteGrande(src) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  overlay.onclick = function() { document.body.removeChild(overlay); };
+  const img = document.createElement('img');
+  img.src = src;
+  img.style.cssText = 'max-width:90vw;max-height:90vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.5)';
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+}
+
 function previewComprobante(input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(e) {
-    comprobanteData = e.target.result;
-    const prev = document.getElementById('f-comprobante-preview');
-    prev.innerHTML = '<span class="file-chip">📎 ' + file.name + ' <span style="cursor:pointer;color:var(--danger)" onclick="clearComprobante()">✕</span></span>' +
-      '<img src="' + comprobanteData + '" style="max-height:80px;border-radius:6px;border:1px solid var(--border);margin-top:4px;display:block">';
-  };
+  reader.onload = function(e) { setComprobanteFromDataURL(e.target.result); };
   reader.readAsDataURL(file);
 }
+
+function handleComprobanteDrop(event) {
+  event.preventDefault();
+  document.getElementById('comprobante-drop-zone').style.borderColor = 'var(--border)';
+  const file = event.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = function(e) { setComprobanteFromDataURL(e.target.result); };
+    reader.readAsDataURL(file);
+  }
+}
+
+// Global paste listener for comprobante
+document.addEventListener('paste', function(e) {
+  if (!document.getElementById('sec-cargar') || !document.getElementById('sec-cargar').classList.contains('active')) return;
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.startsWith('image/')) {
+      const file = items[i].getAsFile();
+      const reader = new FileReader();
+      reader.onload = function(ev) { setComprobanteFromDataURL(ev.target.result); };
+      reader.readAsDataURL(file);
+      break;
+    }
+  }
+});
 
 function clearComprobante() {
   comprobanteData = null;
   document.getElementById('f-comprobante-file').value = '';
   document.getElementById('f-comprobante-preview').innerHTML = '';
+  const zone = document.getElementById('comprobante-drop-zone');
+  if (zone) zone.style.borderColor = 'var(--border)';
+}
+
+function ventaComprobanteClick(event, v) {
+  event.stopPropagation();
+  if (v && v.comprobante) verComprobanteGrande(v.comprobante);
+}
+
+// ── ADMINISTRACIÓN ──
+let adminExpandidos = new Set();
+
+function toggleAdmin(key) {
+  if (adminExpandidos.has(key)) adminExpandidos.delete(key);
+  else adminExpandidos.add(key);
+  renderAdmin();
+}
+
+function renderAdmin() {
+  const asesor = document.getElementById('admin-fil-asesor').value;
+  const mes = document.getElementById('admin-fil-mes').value;
+  const estado = document.getElementById('admin-fil-estado').value;
+  const search = (document.getElementById('admin-fil-search').value||'').toLowerCase();
+  const vf = ventas.filter(function(v) {
+    if (asesor!=='all' && v.asesor!==asesor) return false;
+    if (mes!=='all' && !(v.fecha||'').startsWith(mes)) return false;
+    if (estado!=='all' && (v.estado||'Pendiente')!==estado) return false;
+    if (search) {
+      const haystack = [(v.nombre||''),(v.email||''),(v.lead||''),(v.curso||'')].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+  document.getElementById('admin-title').textContent = 'Administración — ' + vf.length + ' venta' + (vf.length!==1?'s':'');
+  const tbody = document.getElementById('admin-body');
+  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
+
+  tbody.innerHTML = vf.map(function(v) {
+    const est = v.estado || 'Pendiente';
+    const expanded = adminExpandidos.has(v._key);
+    const tc = parseFloat(v.adminTC||0);
+    const com = parseFloat(v.adminComision||0);
+    const montoUSD = parseFloat(v.monto||0);
+    const montoNeto = (tc > 0 && v.adminMontoLocal) ? (parseFloat(v.adminMontoLocal) / tc).toFixed(2) : '';
+    const montoComision = com > 0 ? (montoUSD * com / 100).toFixed(2) : '';
+
+    let expandedHtml = '';
+    if (expanded) {
+      expandedHtml = '<tr id="admin-exp-' + v._key + '" style="background:var(--surface2)">' +
+        '<td colspan="5" style="padding:0">' +
+          '<div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">' +
+
+            // Datos del lead
+            '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border)">Datos del lead</div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Nombre y Apellido</label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.nombre||'') + '" placeholder="Nombre completo" onchange="updateAdminField(\'' + v._key + '\',\'nombre\',this.value)"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">País</label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.pais||'') + '" placeholder="País" onchange="updateAdminField(\'' + v._key + '\',\'pais\',this.value)"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Email</label>' +
+              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.email||'—') + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Teléfono</label>' +
+              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.telefono||'—') + '</div></div>' +
+
+            // Datos de la venta
+            '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Venta</div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Curso</label>' +
+              '<div style="font-size:13px;padding:6px 2px;color:var(--text)">' + (v.curso||'—') + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Promoción</label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.promocion||'') + '" placeholder="Ej: Lanzamiento $125" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto USD</label>' +
+              '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + montoUSD.toLocaleString('en-US') + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto local cobrado</label>' +
+              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.montoLocal||'—') + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Forma de pago</label>' +
+              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.pago||'—') + '</div></div>' +
+
+            // Conversiones
+            '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Conversiones y comisiones</div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Moneda local</label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.adminMoneda||'') + '" placeholder="ARS / CLP / VES..." onchange="updateAdminField(\'' + v._key + '\',\'adminMoneda\',this.value)"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto local (admin)</label>' +
+              '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminMontoLocal||'') + '" placeholder="Monto en moneda local" onchange="updateAdminField(\'' + v._key + '\',\'adminMontoLocal\',this.value);renderAdmin()"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">TC referencia</label>' +
+              '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminTC||'') + '" placeholder="Tipo de cambio" onchange="updateAdminField(\'' + v._key + '\',\'adminTC\',this.value);renderAdmin()"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto neto USD</label>' +
+              '<div style="font-size:15px;font-weight:600;color:var(--text);padding:4px 2px">' + (montoNeto ? '$' + parseFloat(montoNeto).toLocaleString('en-US') : '—') + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Comisión %</label>' +
+              '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminComision||'') + '" placeholder="%" min="0" max="100" onchange="updateAdminField(\'' + v._key + '\',\'adminComision\',this.value);renderAdmin()"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto comisión USD</label>' +
+              '<div style="font-size:15px;font-weight:600;color:var(--text);padding:4px 2px">' + (montoComision ? '$' + parseFloat(montoComision).toLocaleString('en-US') : '—') + '</div></div>' +
+
+            // Estado y comprobante
+            '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Estado y verificación</div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Estado</label>' +
+              '<select class="estado-select ' + estadoClass(est) + '" style="margin-top:4px" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
+                '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
+                '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
+                '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
+              '</select></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Comprobante</label>' +
+              '<div style="margin-top:4px">' +
+                (v.comprobante
+                  ? '<img src="' + v.comprobante + '" style="max-height:120px;max-width:200px;border-radius:6px;border:1px solid var(--border);cursor:zoom-in" onclick="verComprobanteGrande(ventas.find(function(x){return x._key===\\\'' + v._key + '\\\'}).comprobante)">'
+                  : '<span style="font-size:12px;color:var(--text3)">Sin comprobante</span>') +
+              '</div></div>' +
+            '<div class="admin-field" style="grid-column:1/-1"><label class="form-label" style="font-size:11px">Notas admin</label>' +
+              '<textarea class="form-textarea" style="font-size:13px;min-height:60px" placeholder="Notas internas..." onchange="updateAdminField(\'' + v._key + '\',\'adminNota\',this.value)">' + (v.adminNota||'') + '</textarea></div>' +
+
+          '</div>' +
+        '</td>' +
+      '</tr>';
+    }
+
+    return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
+      '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
+      '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
+      '<td style="font-size:13px;font-weight:500">' + (v.nombre ? v.nombre : '<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
+      '<td class="mono" style="font-weight:600;color:var(--accent)">$' + montoUSD.toLocaleString('en-US') + '</td>' +
+      '<td><select class="estado-select ' + estadoClass(est) + '" onclick="event.stopPropagation()" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
+        '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
+        '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
+        '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
+      '</select></td>' +
+      '<td style="color:var(--text3);font-size:18px;text-align:center">' + (expanded ? '▲' : '▼') + '</td>' +
+    '</tr>' + expandedHtml;
+  }).join('');
 }
 
 async function cambiarEstado(key, sel) {
@@ -1602,58 +1769,6 @@ function limpiarForm() {
 function closeModal() { document.getElementById('modal-confirm').classList.remove('show'); }
 
 // ── ADMINISTRACIÓN ──
-function renderAdmin() {
-  const asesor = document.getElementById('admin-fil-asesor').value;
-  const mes = document.getElementById('admin-fil-mes').value;
-  const estado = document.getElementById('admin-fil-estado').value;
-  const search = (document.getElementById('admin-fil-search').value||'').toLowerCase();
-  const vf = ventas.filter(function(v) {
-    if (asesor!=='all' && v.asesor!==asesor) return false;
-    if (mes!=='all' && !(v.fecha||'').startsWith(mes)) return false;
-    if (estado!=='all' && (v.estado||'Pendiente')!==estado) return false;
-    if (search) {
-      const haystack = [(v.nombre||''),(v.email||''),(v.lead||''),(v.curso||'')].join(' ').toLowerCase();
-      if (!haystack.includes(search)) return false;
-    }
-    return true;
-  });
-  document.getElementById('admin-title').textContent = 'Administración — ' + vf.length + ' venta' + (vf.length!==1?'s':'');
-  const tbody = document.getElementById('admin-body');
-  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="19"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
-  tbody.innerHTML = vf.map(function(v) {
-    const est = v.estado || 'Pendiente';
-    const tc = parseFloat(v.adminTC||0);
-    const com = parseFloat(v.adminComision||0);
-    const montoUSD = parseFloat(v.monto||0);
-    const montoNeto = tc > 0 ? (parseFloat(v.adminMontoLocal||0) / tc).toFixed(2) : '—';
-    const montoComision = com > 0 ? (montoUSD * com / 100).toFixed(2) : '—';
-    return '<tr>' +
-      '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
-      '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
-      '<td style="font-size:12px;font-weight:600;color:' + canalColor(v.canal) + '">' + (v.canal||'—') + '</td>' +
-      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:150px" value="' + (v.nombre||'') + '" placeholder="Nombre y apellido" onchange="updateAdminField(\'' + v._key + '\',\'nombre\',this.value)"></td>' +
-      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:110px" value="' + (v.pais||'') + '" placeholder="País" onchange="updateAdminField(\'' + v._key + '\',\'pais\',this.value)"></td>' +
-      '<td style="font-size:12px">' + (v.email||'—') + '</td>' +
-      '<td style="font-size:12px">' + (v.telefono||'—') + '</td>' +
-      '<td style="font-size:12px">' + (v.curso||'—') + '</td>' +
-      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:110px" value="' + (v.promocion||'') + '" placeholder="Promoción" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></td>' +
-      '<td class="mono" style="font-weight:600;color:var(--accent)">$' + montoUSD.toLocaleString('en-US') + '</td>' +
-      '<td style="font-size:12px">' + (v.montoLocal||'—') + '</td>' +
-      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:80px" value="' + (v.adminMoneda||'') + '" placeholder="USD/ARS..." onchange="updateAdminField(\'' + v._key + '\',\'adminMoneda\',this.value)"></td>' +
-      '<td><input type="number" style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:80px" value="' + (v.adminTC||'') + '" placeholder="TC" onchange="updateAdminField(\'' + v._key + '\',\'adminTC\',this.value)"></td>' +
-      '<td class="mono">' + montoNeto + '</td>' +
-      '<td><input type="number" style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:70px" value="' + (v.adminComision||'') + '" placeholder="%" onchange="updateAdminField(\'' + v._key + '\',\'adminComision\',this.value)"></td>' +
-      '<td class="mono">' + montoComision + '</td>' +
-      '<td><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
-        '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
-        '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
-        '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
-      '</select></td>' +
-      '<td>' + (v.comprobante ? '<a href="' + v.comprobante + '" target="_blank" style="color:var(--accent);font-size:12px">📎 Ver</a>' : '—') + '</td>' +
-      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:160px" value="' + (v.adminNota||'') + '" placeholder="Notas admin..." onchange="updateAdminField(\'' + v._key + '\',\'adminNota\',this.value)"></td>' +
-    '</tr>';
-  }).join('');
-}
 
 async function updateAdminField(key, field, value) {
   await dbSet('/ventas/' + key + '/' + field, value);
