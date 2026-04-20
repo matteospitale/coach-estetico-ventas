@@ -1830,6 +1830,11 @@ async function enviarIA() {
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error('API error ' + response.status + ': ' + (data.error?.message || JSON.stringify(data)));
+    }
+    
     const respuesta = data.content && data.content[0] ? data.content[0].text : 'Error al obtener respuesta.';
 
     historialIA.push({ role: 'assistant', content: respuesta });
@@ -1843,7 +1848,7 @@ async function enviarIA() {
     loadDiv.remove();
     const errDiv = document.createElement('div');
     errDiv.className = 'ia-burbuja-ai';
-    errDiv.textContent = 'Error de conexión. Intentá de nuevo.';
+    errDiv.textContent = 'Error: ' + e.message;
     errDiv.style.color = 'var(--danger)';
     chat.appendChild(errDiv);
   }
