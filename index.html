@@ -1628,7 +1628,10 @@ function renderAdmin() {
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Nombre y Apellido</label>' +
               '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.nombre||'') + '" placeholder="Nombre completo" onchange="updateAdminField(\'' + v._key + '\',\'nombre\',this.value)"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">País</label>' +
-              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.pais||'') + '" placeholder="País" onchange="updateAdminField(\'' + v._key + '\',\'pais\',this.value)"></div>' +
+              '<select class="form-select" style="font-size:13px;padding:6px 10px" onchange="updateAdminField(\'' + v._key + '\',\'pais\',this.value)">' +
+                '<option value="">Seleccionar...</option>' +
+                PAISES_ADMIN.map(function(p){ return '<option' + ((v.pais||'')=== p?' selected':'') + '>' + p + '</option>'; }).join('') +
+              '</select></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Email</label>' +
               '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.email||'—') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Teléfono</label>' +
@@ -1776,20 +1779,75 @@ async function updateAdminField(key, field, value) {
   if (v) v[field] = value;
 }
 
+const PAISES_ADMIN = ['Alemania','Andorra','Aruba','Australia','Belice','Bolivia','Brasil','Canada','Chile','Colombia','Costa Rica','Cuba','Ecuador','El Salvador','España','Estados Unidos','Francia','Guatemala','Honduras','Israel','Italia','México','Nicaragua','Países Bajos','Panamá','Paraguay','Perú','Portugal','Puerto Rico','Reino Unido','República Checa','República Dominicana','Suiza','Trinidad y Tobago','Uruguay','Venezuela'];
+
 function exportAdminCSV() {
   if (!ventas.length) { showToast('No hay ventas para exportar'); return; }
-  const rows = [['Fecha','Asesor','Canal','Nombre','País','Email','Teléfono','Curso','Promoción','Monto USD','Monto Local','Moneda','TC','Monto Neto USD','Comisión %','Monto Comisión','Estado','Notas Admin']];
+  const headers = ['Fecha','Asesor','Canal','Nombre y Apellido','País','Email','Teléfono','Curso','Promoción','Monto USD','Monto Local Cobrado','Moneda','TC Referencia','Monto Neto USD','Comisión %','Monto Comisión USD','Estado','Notas Admin'];
+
+  // Build Excel XML (SpreadsheetML)
+  function esc(v) { return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function cell(val, isNum, bold, header) {
+    const style = header ? 'header' : (bold ? 'bold' : 'normal');
+    if (isNum && val !== '' && !isNaN(val)) return '<Cell ss:StyleID="' + style + '"><Data ss:Type="Number">' + val + '</Data></Cell>';
+    return '<Cell ss:StyleID="' + style + '"><Data ss:Type="String">' + esc(val) + '</Data></Cell>';
+  }
+
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<?mso-application progid="Excel.Sheet"?>\n';
+  xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+  xml += '<Styles>\n';
+  xml += '<Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#B61F3A" ss:Pattern="Solid"/><Alignment ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>\n';
+  xml += '<Style ss:ID="normal"><Alignment ss:WrapText="0"/></Style>\n';
+  xml += '<Style ss:ID="bold"><Font ss:Bold="1"/></Style>\n';
+  xml += '<Style ss:ID="green"><Interior ss:Color="#D4EDDA" ss:Pattern="Solid"/><Font ss:Color="#155724"/></Style>\n';
+  xml += '<Style ss:ID="blue"><Interior ss:Color="#CCE5FF" ss:Pattern="Solid"/><Font ss:Color="#004085"/></Style>\n';
+  xml += '<Style ss:ID="red"><Interior ss:Color="#F8D7DA" ss:Pattern="Solid"/><Font ss:Color="#721C24"/></Style>\n';
+  xml += '</Styles>\n';
+  xml += '<Worksheet ss:Name="Administración">\n';
+  xml += '<Table>\n';
+  // Column widths
+  const widths = [80,70,80,160,100,180,120,180,120,80,100,70,80,100,70,100,90,200];
+  widths.forEach(function(w){ xml += '<Column ss:Width="' + w + '"/>'; });
+  // Header row
+  xml += '<Row ss:Height="20">';
+  headers.forEach(function(h){ xml += cell(h, false, false, true); });
+  xml += '</Row>\n';
+  // Data rows
   ventas.forEach(function(v) {
     const tc = parseFloat(v.adminTC||0);
     const com = parseFloat(v.adminComision||0);
-    const montoNeto = tc > 0 ? (parseFloat(v.adminMontoLocal||0) / tc).toFixed(2) : '';
-    const montoComision = com > 0 ? (parseFloat(v.monto||0) * com / 100).toFixed(2) : '';
-    rows.push([v.fecha,v.asesor,v.canal||'',v.nombre||'',v.pais||'',v.email||'',v.telefono||'',v.curso,v.promocion||'',v.monto,v.montoLocal||'',v.adminMoneda||'',v.adminTC||'',montoNeto,v.adminComision||'',montoComision,v.estado||'Pendiente',v.adminNota||'']);
+    const montoUSD = parseFloat(v.monto||0);
+    const montoNeto = (tc > 0 && v.adminMontoLocal) ? (parseFloat(v.adminMontoLocal) / tc).toFixed(2) : '';
+    const montoComision = com > 0 ? (montoUSD * com / 100).toFixed(2) : '';
+    const est = v.estado || 'Pendiente';
+    const estStyle = est==='Aprobado'?'green':est==='Rechazada'?'red':'blue';
+    xml += '<Row>';
+    xml += cell(v.fecha);
+    xml += cell(v.asesor);
+    xml += cell(v.canal||'');
+    xml += cell(v.nombre||'');
+    xml += cell(v.pais||'');
+    xml += cell(v.email||'');
+    xml += cell(v.telefono||'');
+    xml += cell(v.curso||'');
+    xml += cell(v.promocion||'');
+    xml += cell(montoUSD, true);
+    xml += cell(v.montoLocal||'');
+    xml += cell(v.adminMoneda||'');
+    xml += cell(v.adminTC||'', true);
+    xml += cell(montoNeto, true);
+    xml += cell(v.adminComision||'', true);
+    xml += cell(montoComision, true);
+    xml += '<Cell ss:StyleID="' + estStyle + '"><Data ss:Type="String">' + esc(est) + '</Data></Cell>';
+    xml += cell(v.adminNota||'');
+    xml += '</Row>\n';
   });
-  const csv = rows.map(function(r){ return r.map(function(c){ return '"'+String(c||'').replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  xml += '</Table>\n</Worksheet>\n</Workbook>';
+
+  const blob = new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'admin_coach_estetico_' + new Date().toISOString().substring(0,10) + '.csv'; a.click();
+  a.download = 'admin_coach_estetico_' + new Date().toISOString().substring(0,10) + '.xls'; a.click();
 }
 
 function exportCSV() {
