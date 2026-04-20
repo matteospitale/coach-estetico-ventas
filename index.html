@@ -94,7 +94,7 @@ body { font-family: "DM Sans", sans-serif; background: var(--bg); color: var(--t
 }
 
 /* ── MAIN CONTENT ── */
-.main { padding: 28px; max-width: 1200px; }
+.main { padding: 28px; max-width: 100%; }
 @media(max-width: 768px) { .main { padding: 16px 12px; } }
 .section { display: none; }
 .section.active { display: block; }
@@ -248,7 +248,22 @@ tbody tr:hover td { background: var(--surface2); }
 .plant-count { font-size: 13px; color: var(--text3); margin-bottom: 14px; }
 
 /* ── MOBILE VENTAS CARDS ── */
-/* ── ASISTENTE IA ── */
+/* ── ESTADO BADGES ── */
+.estado-select { border: none; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 600; font-family: "DM Sans", sans-serif; cursor: pointer; outline: none; }
+.estado-aprobado { background: #D4EDDA; color: #155724; }
+.estado-pendiente { background: #CCE5FF; color: #004085; }
+.estado-rechazada { background: #F8D7DA; color: #721C24; }
+/* ── FILE ATTACH ── */
+.file-attach-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1.5px dashed var(--border); border-radius: var(--radius); font-size: 13px; color: var(--text2); cursor: pointer; background: none; font-family: "DM Sans", sans-serif; transition: all 0.15s; }
+.file-attach-btn:hover { border-color: var(--accent); color: var(--accent); }
+.file-preview { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--text2); flex-wrap: wrap; gap: 6px; }
+.file-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: 12px; }
+.file-chip a { color: var(--accent); text-decoration: none; }
+/* ── ADMIN SECTION ── */
+.admin-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.admin-badge-aprobado { background: #D4EDDA; color: #155724; }
+.admin-badge-pendiente { background: #CCE5FF; color: #004085; }
+.admin-badge-rechazada { background: #F8D7DA; color: #721C24; }
 .ia-modo-btn { width:100%;padding:10px 14px;text-align:left;font-size:13px;font-weight:500;font-family:"DM Sans",sans-serif;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s; }
 .ia-modo-btn:hover { background:var(--surface2);color:var(--text); }
 .ia-modo-btn.active { background:var(--accent-light);color:var(--accent);border-color:var(--accent);font-weight:600; }
@@ -313,6 +328,9 @@ tbody tr:hover td { background: var(--surface2); }
     </button>
     <button class="nav-item" id="nav-ia" onclick="switchTab('ia')">
       <span class="nav-icon">✦</span> Asistente IA
+    </button>
+    <button class="nav-item" id="nav-admin" onclick="switchTab('admin')">
+      <span class="nav-icon">🔐</span> Administración
     </button>
   </nav>
   <div class="sidebar-footer">
@@ -393,6 +411,12 @@ tbody tr:hover td { background: var(--surface2); }
           <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
           <option>Pesos Peruanos</option><option>PayPal</option>
         </select>
+        <select id="fil-estado" onchange="renderTabla()">
+          <option value="all">Todos los estados</option>
+          <option value="Aprobado">✅ Aprobado</option>
+          <option value="Pendiente">🔵 Pendiente</option>
+          <option value="Rechazada">🔴 Rechazada</option>
+        </select>
         <input id="fil-search" placeholder="Buscar curso o lead..." oninput="renderTabla()">
       </div>
       <div class="table-wrap">
@@ -402,7 +426,7 @@ tbody tr:hover td { background: var(--surface2); }
               <th>Fecha</th><th>Hora carga</th><th>Asesor</th><th>Canal</th>
               <th>Monto USD</th><th>Monto local</th><th>Forma de pago</th>
               <th>Curso / Producto</th><th>ID Lead</th><th>Teléfono</th>
-              <th>Email</th><th>Código</th><th>Aclaración</th>
+              <th>Email</th><th>Código</th><th>Aclaración</th><th>Comprobante</th><th>Estado</th>
               <th id="th-check" style="display:none;width:36px">
                 <input type="checkbox" id="check-all" onchange="toggleCheckAll(this)" style="accent-color:var(--accent);width:15px;height:15px">
               </th>
@@ -560,6 +584,14 @@ tbody tr:hover td { background: var(--surface2); }
             <label class="form-label">Aclaración (opcional)</label>
             <textarea class="form-textarea" id="f-nota" placeholder="Ej: Venta Mariel, alumna de Dermatocosmiatría..."></textarea>
           </div>
+          <div class="form-group full">
+            <label class="form-label">Comprobante (imagen)</label>
+            <label class="file-attach-btn" for="f-comprobante-file">
+              📎 Adjuntar imagen del comprobante
+            </label>
+            <input type="file" id="f-comprobante-file" accept="image/*" style="display:none" onchange="previewComprobante(this)">
+            <div class="file-preview" id="f-comprobante-preview"></div>
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn btn-accent" id="btn-confirmar" onclick="confirmarVenta()">Revisar y confirmar</button>
@@ -567,6 +599,46 @@ tbody tr:hover td { background: var(--surface2); }
         </div>
       </div>
     </section>
+
+    <!-- ADMINISTRACIÓN -->
+    <section class="section" id="sec-admin">
+      <div class="section-header">
+        <div class="section-title" id="admin-title">Administración</div>
+        <button class="btn btn-ghost" onclick="exportAdminCSV()">↓ CSV</button>
+      </div>
+      <div class="filters">
+        <select id="admin-fil-asesor" onchange="renderAdmin()">
+          <option value="all">Todos los asesores</option>
+          <option>Matteo</option><option>Facundo</option><option>Dianela</option>
+        </select>
+        <select id="admin-fil-mes" onchange="renderAdmin()">
+          <option value="all">Todos los meses</option>
+        </select>
+        <select id="admin-fil-estado" onchange="renderAdmin()">
+          <option value="all">Todos los estados</option>
+          <option value="Aprobado">✅ Aprobado</option>
+          <option value="Pendiente">🔵 Pendiente</option>
+          <option value="Rechazada">🔴 Rechazada</option>
+        </select>
+        <input id="admin-fil-search" placeholder="Buscar nombre, email o lead..." oninput="renderAdmin()">
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Asesor</th><th>Canal</th>
+              <th>Nombre y Apellido</th><th>País</th><th>Email</th><th>Teléfono</th>
+              <th>Curso</th><th>Promoción</th>
+              <th>Monto USD</th><th>Monto Local</th>
+              <th>Moneda</th><th>TC Referencia</th><th>Monto Neto USD</th><th>Comisión %</th><th>Monto Comisión</th>
+              <th>Estado</th><th>Comprobante</th><th>Notas Admin</th>
+            </tr></thead>
+            <tbody id="admin-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -677,8 +749,8 @@ function closeSidebar() {
 }
 
 // ── NAVIGATION ──
-const TABS = ['inicio','ventas','plantillas','stats','ia','cargar'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', cargar:'Cargar venta' };
+const TABS = ['inicio','ventas','plantillas','stats','ia','admin','cargar'];
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', cargar:'Cargar venta' };
 
 function switchTab(t) {
   TABS.forEach(s => {
@@ -691,7 +763,9 @@ function switchTab(t) {
   if (t === 'ventas') { fillMesOptions('fil-mes'); renderTabla(); }
   if (t === 'inicio') renderResumen();
   if (t === 'stats') renderStats();
+  if (t === 'plantillas') renderPlantillas();
   if (t === 'ia') initIA();
+  if (t === 'admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); }
   closeSidebar();
 }
 
@@ -742,11 +816,12 @@ function mesLabel(ym) {
   const m = parseInt(parts[1]);
   return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][m-1]+' '+parts[0];
 }
-function filteredVentas(asesor, mes, pago, search) {
+function filteredVentas(asesor, mes, pago, search, estado) {
   return ventas.filter(v => {
     if (asesor && asesor!=='all' && v.asesor!==asesor) return false;
     if (mes && mes!=='all' && !(v.fecha||'').startsWith(mes)) return false;
     if (pago && pago!=='all' && v.pago!==pago) return false;
+    if (estado && estado!=='all' && (v.estado||'Pendiente')!==estado) return false;
     if (search) {
       const q = search.toLowerCase();
       if (!(v.curso||'').toLowerCase().includes(q) && !(v.lead||'').includes(q)) return false;
@@ -886,12 +961,14 @@ function renderResumen() {
 }
 
 // ── RENDER TABLA VENTAS ──
+function estadoClass(e) { return e==='Aprobado'?'estado-aprobado':e==='Rechazada'?'estado-rechazada':'estado-pendiente'; }
 function renderTabla() {
   const asesor = document.getElementById('fil-asesor').value;
   const mes = document.getElementById('fil-mes').value;
   const pago = document.getElementById('fil-pago').value;
   const search = document.getElementById('fil-search').value;
-  const vf = filteredVentas(asesor, mes, pago, search);
+  const estado = document.getElementById('fil-estado').value;
+  const vf = filteredVentas(asesor, mes, pago, search, estado);
   const total = vf.reduce((s,v)=>s+parseFloat(v.monto||0),0);
   document.getElementById('ventas-title').textContent = vf.length + ' venta' + (vf.length!==1?'s':'') + ' · $' + total.toLocaleString('en-US') + ' USD';
   const tbody = document.getElementById('tabla-body');
@@ -899,7 +976,7 @@ function renderTabla() {
   const isMobile = window.innerWidth <= 700;
 
   if (!vf.length) {
-    tbody.innerHTML = '<tr><td colspan="14"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>';
     cardsEl.innerHTML = '<div class="empty-state">Sin ventas con esos filtros</div>';
     return;
   }
@@ -908,6 +985,7 @@ function renderTabla() {
   cardsEl.innerHTML = vf.map(function(v) {
     const h = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '—';
     const chk = modoEdicion ? '<input type="checkbox" class="row-check" data-key="' + v._key + '" ' + (seleccionados.has(v._key)?'checked':'') + ' onchange="toggleCheck(this)" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer">' : '';
+    const est = v.estado || 'Pendiente';
     return '<div class="venta-card" style="' + (seleccionados.has(v._key)?'border-color:var(--accent);background:var(--accent-light)':'') + '">' +
       '<div class="venta-card-header">' +
         '<div style="display:flex;align-items:center;gap:8px">' +
@@ -922,11 +1000,15 @@ function renderTabla() {
       '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + ' · ' + h + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (v.curso||'—') + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Pago</span><span class="venta-card-val">' + (v.pago||'—') + (v.montoLocal?' · '+v.montoLocal:'') + '</span></div>' +
+      '<div class="venta-card-row"><span class="venta-card-label">Estado</span><span class="venta-card-val"><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
+        '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
+        '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
+        '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
+      '</select></span></div>' +
       (v.lead ? '<div class="venta-card-row"><span class="venta-card-label">ID Lead</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);font-weight:600">' + v.lead + '</a></span></div>' : '') +
       (v.telefono ? '<div class="venta-card-row"><span class="venta-card-label">Teléfono</span><span class="venta-card-val">' + v.telefono + '</span></div>' : '') +
       (v.email ? '<div class="venta-card-row"><span class="venta-card-label">Email</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent)">' + v.email + '</a></span></div>' : '') +
-      (v.codigo ? '<div class="venta-card-row"><span class="venta-card-label">Código</span><span class="venta-card-val">' + v.codigo + '</span></div>' : '') +
-      (v.nota ? '<div class="venta-card-row"><span class="venta-card-label">Nota</span><span class="venta-card-val">' + v.nota + '</span></div>' : '') +
+      (v.comprobante ? '<div class="venta-card-row"><span class="venta-card-label">Comprobante</span><span class="venta-card-val"><a href="' + v.comprobante + '" target="_blank" style="color:var(--accent)">Ver imagen</a></span></div>' : '') +
     '</div>';
   }).join('');
 
@@ -934,6 +1016,7 @@ function renderTabla() {
   tbody.innerHTML = vf.map(function(v) {
     const h = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '—';
     const cc = canalColor(v.canal);
+    const est = v.estado || 'Pendiente';
     const chkTd = modoEdicion ? '<td style="text-align:center;padding:8px 10px"><input type="checkbox" class="row-check" data-key="' + v._key + '" ' + (seleccionados.has(v._key)?'checked':'') + ' onchange="toggleCheck(this)" style="accent-color:var(--accent);width:15px;height:15px;cursor:pointer"></td>' : '';
     return '<tr style="' + (seleccionados.has(v._key)?'background:var(--accent-light)':'') + '">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
@@ -949,6 +1032,12 @@ function renderTabla() {
       '<td style="font-size:12px">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
       '<td class="mono" style="color:var(--text3)">' + (v.codigo||'—') + '</td>' +
       '<td style="font-size:12px;color:var(--text2);max-width:180px" title="' + (v.nota||'') + '">' + (v.nota||'—') + '</td>' +
+      '<td>' + (v.comprobante ? '<a href="' + v.comprobante + '" target="_blank" style="color:var(--accent);font-size:12px">📎 Ver</a>' : '—') + '</td>' +
+      '<td><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
+        '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
+        '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
+        '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
+      '</select></td>' +
       chkTd +
       '</tr>';
   }).join('');
@@ -1225,6 +1314,13 @@ function renderPlantillas() {
   }
   lista.innerHTML = filtered.map(function(p) {
     const safeKey = p._key;
+    // Build attachments display
+    const adjuntos = p.adjuntos || {};
+    let adjHtml = '';
+    if (adjuntos.pdf) adjHtml += '<a href="' + adjuntos.pdf + '" target="_blank" class="file-chip">📄 PDF Temario</a> ';
+    if (adjuntos.imagen) adjHtml += '<a href="' + adjuntos.imagen + '" target="_blank" class="file-chip">🖼 Portada</a> ';
+    if (adjuntos.landing) adjHtml += '<a href="' + adjuntos.landing + '" target="_blank" class="file-chip">🔗 Landing</a> ';
+
     return '<div class="plantilla-card-wrap" id="pw-' + safeKey + '">' +
       '<div class="plantilla-card-header" data-toggle-key="' + safeKey + '">' +
         '<div class="plantilla-card-title">' + (p.titulo||'') + '</div>' +
@@ -1236,6 +1332,18 @@ function renderPlantillas() {
       '<div class="plantilla-body" id="pbody-' + safeKey + '">' +
         '<div class="plantilla-text" id="ptxt-' + safeKey + '" style="white-space:pre-wrap">' + (p.texto||'') + '</div>' +
         '<textarea class="plantilla-edit-area" id="pedit-' + safeKey + '" style="display:none">' + (p.texto||'') + '</textarea>' +
+        // Attachments section
+        '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">' +
+          '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Recursos</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">' + (adjHtml || '<span style="font-size:12px;color:var(--text3)">Sin archivos adjuntos</span>') + '</div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+            '<label class="file-attach-btn" style="font-size:11px;padding:5px 10px" for="pfile-pdf-' + safeKey + '">📄 PDF</label>' +
+            '<input type="file" id="pfile-pdf-' + safeKey + '" accept=".pdf" style="display:none" data-pkey="' + safeKey + '" data-ptype="pdf" onchange="adjuntarPlantillaArchivo(this)">' +
+            '<label class="file-attach-btn" style="font-size:11px;padding:5px 10px" for="pfile-img-' + safeKey + '">🖼 Portada</label>' +
+            '<input type="file" id="pfile-img-' + safeKey + '" accept="image/*" style="display:none" data-pkey="' + safeKey + '" data-ptype="imagen" onchange="adjuntarPlantillaArchivo(this)">' +
+            '<button class="file-attach-btn" style="font-size:11px;padding:5px 10px" data-landing-key="' + safeKey + '">🔗 Landing</button>' +
+          '</div>' +
+        '</div>' +
         '<div class="plantilla-actions">' +
           '<button class="p-btn p-btn-copy" data-copy-key="' + safeKey + '">Copiar</button>' +
           '<button class="p-btn p-btn-edit" id="pbtn-edit-' + safeKey + '" data-edit-key="' + safeKey + '">✎ Editar</button>' +
@@ -1265,6 +1373,12 @@ function renderPlantillas() {
   });
   lista.querySelectorAll('[data-delete-key]').forEach(function(el) {
     el.addEventListener('click', function() { eliminarPlantilla(this.dataset.deleteKey); });
+  });
+  lista.querySelectorAll('[data-landing-key]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      const url = prompt('URL de la landing page:');
+      if (url && url.trim()) adjuntarPlantillaURL(this.dataset.landingKey, url.trim());
+    });
   });
 }
 
@@ -1347,6 +1461,32 @@ async function abrirNuevaPlantilla() {
 }
 
 // ── VENTAS FORM ──
+// ── PLANTILLA ATTACHMENTS ──
+async function adjuntarPlantillaArchivo(input) {
+  const key = input.dataset.pkey;
+  const tipo = input.dataset.ptype;
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    await dbSet('/plantillas/' + key + '/adjuntos/' + tipo, e.target.result);
+    const p = plantillas.find(x=>x._key===key);
+    if (p) { if (!p.adjuntos) p.adjuntos={}; p.adjuntos[tipo] = e.target.result; }
+    showToast('Archivo adjuntado correctamente');
+    renderPlantillas();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function adjuntarPlantillaURL(key, url) {
+  await dbSet('/plantillas/' + key + '/adjuntos/landing', url);
+  const p = plantillas.find(x=>x._key===key);
+  if (p) { if (!p.adjuntos) p.adjuntos={}; p.adjuntos.landing = url; }
+  showToast('Landing guardada');
+  renderPlantillas();
+}
+
+// ── VENTAS FORM ──
 const CURSOS = ['Club Coach','Lifetime','Migración','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara Wood','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','Inmersión en Secuelas Post Acné','Manejo de la Pigmentación con Peeling Químico','Rosácea y Acné','Principios Activos con Dermapen','Protocolos en Fototipos Altos','Química Cosmética','Rebrote Acneico','Reestructuración en Pieles','Diagnóstico 0 - Pre Peeling','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
 
 function buscarCurso(q) {
@@ -1370,6 +1510,37 @@ function buscarCurso(q) {
 }
 function closeCursoList() { document.getElementById('curso-list').style.display='none'; }
 
+// comprobante stored as base64 dataURL in memory
+let comprobanteData = null;
+
+function previewComprobante(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    comprobanteData = e.target.result;
+    const prev = document.getElementById('f-comprobante-preview');
+    prev.innerHTML = '<span class="file-chip">📎 ' + file.name + ' <span style="cursor:pointer;color:var(--danger)" onclick="clearComprobante()">✕</span></span>' +
+      '<img src="' + comprobanteData + '" style="max-height:80px;border-radius:6px;border:1px solid var(--border);margin-top:4px;display:block">';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearComprobante() {
+  comprobanteData = null;
+  document.getElementById('f-comprobante-file').value = '';
+  document.getElementById('f-comprobante-preview').innerHTML = '';
+}
+
+async function cambiarEstado(key, sel) {
+  const nuevoEstado = sel.value;
+  sel.className = 'estado-select ' + estadoClass(nuevoEstado);
+  await dbSet('/ventas/' + key + '/estado', nuevoEstado);
+  const v = ventas.find(x=>x._key===key);
+  if (v) v.estado = nuevoEstado;
+  showToast('Estado actualizado: ' + nuevoEstado);
+}
+
 function confirmarVenta() {
   const asesor = document.getElementById('f-asesor').value;
   const fecha = document.getElementById('f-fecha').value;
@@ -1387,7 +1558,7 @@ function confirmarVenta() {
   if (!asesor||!fecha||!monto||!pago||!curso||!canal) { showToast('Completá todos los campos obligatorios (*)'); return; }
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  pendiente = { asesor:asesor, fecha:fecha, monto:monto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, montoLocal:montoLocal, nota:nota, cargado:ahora.toISOString() };
+  pendiente = { asesor:asesor, fecha:fecha, monto:monto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, montoLocal:montoLocal, nota:nota, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
     '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' + (montoLocal ? ' · <span style="color:var(--text3)">' + montoLocal + '</span>' : '') +
@@ -1396,6 +1567,7 @@ function confirmarVenta() {
     (lead ? '<br><span style="color:var(--text3)">Lead: ' + lead + '</span>' : '') +
     (codigo ? ' · <span style="color:var(--text3)">' + codigo + '</span>' : '') +
     (email ? '<br><span style="color:var(--text3)">Email: ' + email + '</span>' : '') +
+    (comprobanteData ? '<br><span style="color:var(--text3)">📎 Comprobante adjunto</span>' : '') +
     (nota ? '<br><em>' + nota + '</em>' : '');
   document.getElementById('modal-confirm').classList.add('show');
 }
@@ -1425,8 +1597,85 @@ function limpiarForm() {
   ['f-monto','f-curso','f-lead','f-codigo','f-email','f-telefono','f-monto-local','f-nota'].forEach(function(id){ document.getElementById(id).value=''; });
   document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked=false; });
   document.getElementById('f-fecha').valueAsDate = new Date();
+  clearComprobante();
 }
 function closeModal() { document.getElementById('modal-confirm').classList.remove('show'); }
+
+// ── ADMINISTRACIÓN ──
+function renderAdmin() {
+  const asesor = document.getElementById('admin-fil-asesor').value;
+  const mes = document.getElementById('admin-fil-mes').value;
+  const estado = document.getElementById('admin-fil-estado').value;
+  const search = (document.getElementById('admin-fil-search').value||'').toLowerCase();
+  const vf = ventas.filter(function(v) {
+    if (asesor!=='all' && v.asesor!==asesor) return false;
+    if (mes!=='all' && !(v.fecha||'').startsWith(mes)) return false;
+    if (estado!=='all' && (v.estado||'Pendiente')!==estado) return false;
+    if (search) {
+      const haystack = [(v.nombre||''),(v.email||''),(v.lead||''),(v.curso||'')].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+  document.getElementById('admin-title').textContent = 'Administración — ' + vf.length + ' venta' + (vf.length!==1?'s':'');
+  const tbody = document.getElementById('admin-body');
+  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="19"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
+  tbody.innerHTML = vf.map(function(v) {
+    const est = v.estado || 'Pendiente';
+    const tc = parseFloat(v.adminTC||0);
+    const com = parseFloat(v.adminComision||0);
+    const montoUSD = parseFloat(v.monto||0);
+    const montoNeto = tc > 0 ? (parseFloat(v.adminMontoLocal||0) / tc).toFixed(2) : '—';
+    const montoComision = com > 0 ? (montoUSD * com / 100).toFixed(2) : '—';
+    return '<tr>' +
+      '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
+      '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
+      '<td style="font-size:12px;font-weight:600;color:' + canalColor(v.canal) + '">' + (v.canal||'—') + '</td>' +
+      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:150px" value="' + (v.nombre||'') + '" placeholder="Nombre y apellido" onchange="updateAdminField(\'' + v._key + '\',\'nombre\',this.value)"></td>' +
+      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:110px" value="' + (v.pais||'') + '" placeholder="País" onchange="updateAdminField(\'' + v._key + '\',\'pais\',this.value)"></td>' +
+      '<td style="font-size:12px">' + (v.email||'—') + '</td>' +
+      '<td style="font-size:12px">' + (v.telefono||'—') + '</td>' +
+      '<td style="font-size:12px">' + (v.curso||'—') + '</td>' +
+      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:110px" value="' + (v.promocion||'') + '" placeholder="Promoción" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></td>' +
+      '<td class="mono" style="font-weight:600;color:var(--accent)">$' + montoUSD.toLocaleString('en-US') + '</td>' +
+      '<td style="font-size:12px">' + (v.montoLocal||'—') + '</td>' +
+      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:80px" value="' + (v.adminMoneda||'') + '" placeholder="USD/ARS..." onchange="updateAdminField(\'' + v._key + '\',\'adminMoneda\',this.value)"></td>' +
+      '<td><input type="number" style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:80px" value="' + (v.adminTC||'') + '" placeholder="TC" onchange="updateAdminField(\'' + v._key + '\',\'adminTC\',this.value)"></td>' +
+      '<td class="mono">' + montoNeto + '</td>' +
+      '<td><input type="number" style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:70px" value="' + (v.adminComision||'') + '" placeholder="%" onchange="updateAdminField(\'' + v._key + '\',\'adminComision\',this.value)"></td>' +
+      '<td class="mono">' + montoComision + '</td>' +
+      '<td><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
+        '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
+        '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
+        '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
+      '</select></td>' +
+      '<td>' + (v.comprobante ? '<a href="' + v.comprobante + '" target="_blank" style="color:var(--accent);font-size:12px">📎 Ver</a>' : '—') + '</td>' +
+      '<td><input style="border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg);width:160px" value="' + (v.adminNota||'') + '" placeholder="Notas admin..." onchange="updateAdminField(\'' + v._key + '\',\'adminNota\',this.value)"></td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function updateAdminField(key, field, value) {
+  await dbSet('/ventas/' + key + '/' + field, value);
+  const v = ventas.find(x=>x._key===key);
+  if (v) v[field] = value;
+}
+
+function exportAdminCSV() {
+  if (!ventas.length) { showToast('No hay ventas para exportar'); return; }
+  const rows = [['Fecha','Asesor','Canal','Nombre','País','Email','Teléfono','Curso','Promoción','Monto USD','Monto Local','Moneda','TC','Monto Neto USD','Comisión %','Monto Comisión','Estado','Notas Admin']];
+  ventas.forEach(function(v) {
+    const tc = parseFloat(v.adminTC||0);
+    const com = parseFloat(v.adminComision||0);
+    const montoNeto = tc > 0 ? (parseFloat(v.adminMontoLocal||0) / tc).toFixed(2) : '';
+    const montoComision = com > 0 ? (parseFloat(v.monto||0) * com / 100).toFixed(2) : '';
+    rows.push([v.fecha,v.asesor,v.canal||'',v.nombre||'',v.pais||'',v.email||'',v.telefono||'',v.curso,v.promocion||'',v.monto,v.montoLocal||'',v.adminMoneda||'',v.adminTC||'',montoNeto,v.adminComision||'',montoComision,v.estado||'Pendiente',v.adminNota||'']);
+  });
+  const csv = rows.map(function(r){ return r.map(function(c){ return '"'+String(c||'').replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'admin_coach_estetico_' + new Date().toISOString().substring(0,10) + '.csv'; a.click();
+}
 
 function exportCSV() {
   const asesor = document.getElementById('fil-asesor').value;
