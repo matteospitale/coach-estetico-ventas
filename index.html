@@ -627,7 +627,7 @@ tbody tr:hover td { background: var(--surface2); }
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>Nombre y Apellido</th><th>Monto USD</th><th>Estado</th><th style="width:40px"></th>
+              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre y Apellido</th><th>Monto USD</th><th>Estado</th><th style="width:40px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -1620,7 +1620,7 @@ function renderAdmin() {
     let expandedHtml = '';
     if (expanded) {
       expandedHtml = '<tr id="admin-exp-' + v._key + '" style="background:var(--surface2)">' +
-        '<td colspan="5" style="padding:0">' +
+        '<td colspan="6" style="padding:0">' +
           '<div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">' +
 
             // Datos del lead
@@ -1632,8 +1632,12 @@ function renderAdmin() {
                 '<option value="">Seleccionar...</option>' +
                 PAISES_ADMIN.map(function(p){ return '<option' + ((v.pais||'')=== p?' selected':'') + '>' + p + '</option>'; }).join('') +
               '</select></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">ID Lead Kommo</label>' +
+              '<div style="font-size:13px;padding:6px 2px">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + ' ↗</a>' : '<span style="color:var(--text3)">—</span>') + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Canal</label>' +
+              '<div style="font-size:13px;padding:6px 2px;font-weight:600;color:' + canalColor(v.canal) + '">' + (v.canal||'—') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Email</label>' +
-              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.email||'—') + '</div></div>' +
+              '<div style="font-size:13px;padding:6px 2px">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + ' ↗</a>' : '<span style="color:var(--text3)">—</span>') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Teléfono</label>' +
               '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.telefono||'—') + '</div></div>' +
 
@@ -1690,6 +1694,7 @@ function renderAdmin() {
     return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
+      '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="font-size:13px;font-weight:500">' + (v.nombre ? v.nombre : '<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
       '<td class="mono" style="font-weight:600;color:var(--accent)">$' + montoUSD.toLocaleString('en-US') + '</td>' +
       '<td><select class="estado-select ' + estadoClass(est) + '" onclick="event.stopPropagation()" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
