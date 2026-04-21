@@ -2283,20 +2283,28 @@ function generarHTMLBorrar(categories, stats) {
 
 function procesarCRM1(file) {
   if (!file) return;
-  const status = document.getElementById('crm1-status');
+  var status = document.getElementById('crm1-status');
   status.textContent = '⏳ Leyendo archivo...';
-  document.getElementById('crm1-botones').style.display = 'none';
-  const reader = new FileReader();
+  document.getElementById('crm1-tabs').style.display = 'none';
+
+  var reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const XLSX = window.XLSX;
-      if (!XLSX) { status.textContent = '❌ Error: XLSX no cargado'; return; }
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      var XLSX = window.XLSX;
+      if (!XLSX) { status.textContent = '❌ Error: XLSX no cargado. Recargá la página.'; return; }
+      status.textContent = '⏳ Parseando Excel...';
+      var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
       status.textContent = '⏳ Procesando ' + rows.length.toLocaleString() + ' leads...';
-      setTimeout(function() { analizarCRM(rows, status); }, 50);
-    } catch(err) { status.textContent = '❌ Error: ' + err.message; }
+      setTimeout(function() { analizarCRM(rows, status); }, 80);
+    } catch(err) {
+      status.textContent = '❌ Error al leer: ' + err.message;
+      console.error(err);
+    }
+  };
+  reader.onerror = function() {
+    status.textContent = '❌ Error al leer el archivo';
   };
   reader.readAsArrayBuffer(file);
 }
