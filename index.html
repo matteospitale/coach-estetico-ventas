@@ -6,6 +6,7 @@
 <title>Coach Estético — Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   --bg: #F7F5F0; --surface: #FFFFFF; --surface2: #F0EDE6; --border: #E2DDD4;
@@ -2215,8 +2216,9 @@ async function procesarCRM1(file) {
 
   try {
     const data = await file.arrayBuffer();
-    // Use SheetJS to parse
-    const XLSX = await import('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.mjs');
+    // Use SheetJS (loaded via script tag in head)
+    const XLSX = window.XLSX;
+    if (!XLSX) { status.textContent = '❌ Error: librería XLSX no cargada'; return; }
     const wb = XLSX.read(data);
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
