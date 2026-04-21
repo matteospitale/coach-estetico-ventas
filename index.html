@@ -646,18 +646,28 @@ tbody tr:hover td { background: var(--surface2); }
     <section class="section" id="sec-crm1">
       <div class="section-header">
         <div class="section-title">Análisis CRM</div>
-        <span style="font-size:12px;color:var(--text3)">Cargá el export de Kommo para analizar tu pipeline</span>
+        <span style="font-size:12px;color:var(--text3)">Cargá el export de Kommo para generar los reportes</span>
       </div>
       <div class="form-card" style="margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-          <div id="crm1-drop" style="border:2px dashed var(--border);border-radius:var(--radius);padding:20px 32px;text-align:center;cursor:pointer;transition:border-color 0.2s;flex:1;min-width:200px" onclick="document.getElementById('crm1-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleCRM1Drop(event)">
-            <div style="font-size:24px;margin-bottom:4px">📂</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text)">Subir export de Kommo</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">Arrastrá o hacé clic · .xlsx</div>
-          </div>
-          <input type="file" id="crm1-file" accept=".xlsx,.xls" style="display:none" onchange="procesarCRM1(this.files[0])">
-          <div id="crm1-status" style="font-size:13px;color:var(--text3)"></div>
+        <div id="crm1-drop" style="border:2px dashed var(--border);border-radius:var(--radius);padding:28px;text-align:center;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('crm1-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleCRM1Drop(event)">
+          <div style="font-size:32px;margin-bottom:8px">📂</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Subir export de Kommo (.xlsx)</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">Arrastrá o hacé clic para seleccionar</div>
         </div>
+        <input type="file" id="crm1-file" accept=".xlsx,.xls" style="display:none" onchange="procesarCRM1(this.files[0])">
+        <div id="crm1-status" style="font-size:13px;color:var(--text3);margin-top:12px;text-align:center"></div>
+      </div>
+      <div id="crm1-botones" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <button onclick="abrirDuplicados()" style="background:#1a1a2e;color:#7b61ff;border:2px solid #7b61ff;border-radius:12px;padding:20px;font-size:15px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:28px">🔄</span>
+          <span>Duplicados CRM</span>
+          <span id="crm1-dup-stat" style="font-size:12px;font-weight:400;opacity:0.7"></span>
+        </button>
+        <button onclick="abrirBorrar()" style="background:#1a0a0a;color:#ff6b6b;border:2px solid #ff6b6b;border-radius:12px;padding:20px;font-size:15px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:28px">❌</span>
+          <span>Leads a Borrar</span>
+          <span id="crm1-borrar-stat" style="font-size:12px;font-weight:400;opacity:0.7"></span>
+        </button>
       </div>
       <div id="crm1-resultado"></div>
     </section>
@@ -2231,193 +2241,202 @@ async function procesarCRM1(file) {
   }
 }
 
-function clasificarLeads(rows) {
-  const hoy = new Date();
+// ── CRM1: GENERADOR DE HTMLS ──
+let crm1DupData = null;
+let crm1BorrarData = null;
 
-  // Helper: parse date string
+function abrirDuplicados() {
+  if (!crm1DupData) { showToast('Cargá un Excel primero'); return; }
+  const w = window.open('', '_blank');
+  w.document.write(crm1DupData);
+  w.document.close();
+}
+
+function abrirBorrar() {
+  if (!crm1BorrarData) { showToast('Cargá un Excel primero'); return; }
+  const w = window.open('', '_blank');
+  w.document.write(crm1BorrarData);
+  w.document.close();
+}
+
+const DUP_CSS = "\n  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n\n  :root {\n    --bg: #0c0c0f;\n    --surface: #13131a;\n    --surface2: #1c1c27;\n    --border: #2a2a3a;\n    --accent: #7b61ff;\n    --accent2: #ff6b6b;\n    --accent3: #00e5a0;\n    --text: #e8e8f0;\n    --muted: #6b6b85;\n    --master: #00e5a0;\n    --fusionar: #7b61ff;\n    --alumno-bg: rgba(255,107,107,0.08);\n    --alumno-border: rgba(255,107,107,0.3);\n  }\n\n  body {\n    background: var(--bg);\n    color: var(--text);\n    font-family: 'DM Mono', monospace;\n    font-size: 13px;\n    min-height: 100vh;\n  }\n\n  /* HEADER */\n  .header {\n    padding: 32px 32px 24px;\n    border-bottom: 1px solid var(--border);\n    position: sticky;\n    top: 0;\n    background: var(--bg);\n    z-index: 100;\n    display: flex;\n    align-items: center;\n    gap: 32px;\n    flex-wrap: wrap;\n  }\n\n  .header-title {\n    font-family: 'Syne', sans-serif;\n    font-size: 20px;\n    font-weight: 800;\n    letter-spacing: -0.5px;\n  }\n\n  .header-title span { color: var(--accent); }\n\n  .stats-bar {\n    display: flex;\n    gap: 16px;\n    flex-wrap: wrap;\n    flex: 1;\n  }\n\n  .stat {\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n  }\n  .stat-num {\n    font-family: 'Syne', sans-serif;\n    font-size: 22px;\n    font-weight: 800;\n    line-height: 1;\n  }\n  .stat-label {\n    font-size: 10px;\n    color: var(--muted);\n    text-transform: uppercase;\n    letter-spacing: 0.08em;\n  }\n  .stat-num.acc { color: var(--accent); }\n  .stat-num.acc2 { color: var(--accent2); }\n  .stat-num.acc3 { color: var(--accent3); }\n\n  /* CONTROLS */\n  .controls {\n    padding: 16px 32px;\n    display: flex;\n    gap: 12px;\n    align-items: center;\n    flex-wrap: wrap;\n    border-bottom: 1px solid var(--border);\n    position: sticky;\n    top: 89px;\n    background: var(--bg);\n    z-index: 99;\n  }\n\n  .search-wrap {\n    position: relative;\n    flex: 1;\n    min-width: 200px;\n    max-width: 360px;\n  }\n  .search-wrap input {\n    width: 100%;\n    background: var(--surface);\n    border: 1px solid var(--border);\n    color: var(--text);\n    font-family: 'DM Mono', monospace;\n    font-size: 12px;\n    padding: 8px 12px 8px 32px;\n    outline: none;\n    transition: border-color 0.15s;\n  }\n  .search-wrap input:focus { border-color: var(--accent); }\n  .search-icon {\n    position: absolute;\n    left: 10px;\n    top: 50%;\n    transform: translateY(-50%);\n    color: var(--muted);\n    font-size: 14px;\n  }\n\n  .filter-btn {\n    background: var(--surface);\n    border: 1px solid var(--border);\n    color: var(--muted);\n    font-family: 'DM Mono', monospace;\n    font-size: 11px;\n    padding: 8px 14px;\n    cursor: pointer;\n    transition: all 0.15s;\n    text-transform: uppercase;\n    letter-spacing: 0.06em;\n  }\n  .filter-btn:hover { border-color: var(--accent); color: var(--text); }\n  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }\n\n  .count-label {\n    margin-left: auto;\n    color: var(--muted);\n    font-size: 11px;\n  }\n\n  /* GROUPS LIST */\n  .groups-container {\n    padding: 16px 32px 48px;\n    display: flex;\n    flex-direction: column;\n    gap: 10px;\n  }\n\n  .group-card {\n    border: 1px solid var(--border);\n    background: var(--surface);\n    overflow: hidden;\n    transition: border-color 0.15s;\n  }\n  .group-card.has-alumno {\n    border-color: rgba(255,107,107,0.25);\n    background: rgba(255,107,107,0.03);\n  }\n  .group-card:hover { border-color: var(--accent); }\n\n  .group-header {\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    padding: 10px 14px;\n    cursor: pointer;\n    user-select: none;\n  }\n\n  .group-num {\n    font-family: 'Syne', sans-serif;\n    font-size: 11px;\n    font-weight: 700;\n    color: var(--muted);\n    min-width: 52px;\n  }\n\n  .group-badge {\n    font-size: 10px;\n    padding: 2px 8px;\n    text-transform: uppercase;\n    letter-spacing: 0.08em;\n    font-weight: 500;\n  }\n  .badge-alumno { background: rgba(255,107,107,0.15); color: var(--accent2); border: 1px solid rgba(255,107,107,0.3); }\n  .badge-lead { background: rgba(123,97,255,0.12); color: var(--accent); border: 1px solid rgba(123,97,255,0.3); }\n\n  .group-match {\n    font-size: 11px;\n    color: var(--muted);\n    flex: 1;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n  .group-match .match-key {\n    color: var(--accent3);\n  }\n\n  .group-size {\n    font-size: 10px;\n    color: var(--muted);\n    white-space: nowrap;\n  }\n\n  .group-toggle {\n    color: var(--muted);\n    font-size: 12px;\n    transition: transform 0.2s;\n    flex-shrink: 0;\n  }\n  .group-card.open .group-toggle { transform: rotate(180deg); }\n\n  /* LEADS TABLE */\n  .group-body {\n    display: none;\n    border-top: 1px solid var(--border);\n  }\n  .group-card.open .group-body { display: block; }\n\n  .lead-row {\n    display: grid;\n    grid-template-columns: 130px 100px 1fr 160px 140px 90px 80px;\n    gap: 0;\n    border-bottom: 1px solid var(--border);\n    min-height: 36px;\n    align-items: stretch;\n  }\n  .lead-row:last-child { border-bottom: none; }\n\n  .lead-row.is-master {\n    background: rgba(0,229,160,0.04);\n  }\n  .lead-row.is-fusionar {\n    background: rgba(123,97,255,0.04);\n  }\n\n  .lead-cell {\n    padding: 8px 12px;\n    display: flex;\n    align-items: center;\n    border-right: 1px solid var(--border);\n    overflow: hidden;\n    font-size: 12px;\n  }\n  .lead-cell:last-child { border-right: none; }\n\n  .rol-badge {\n    font-size: 10px;\n    font-weight: 500;\n    padding: 2px 8px;\n    white-space: nowrap;\n  }\n  .rol-master { background: rgba(0,229,160,0.15); color: var(--master); border: 1px solid rgba(0,229,160,0.3); }\n  .rol-fusionar { background: rgba(123,97,255,0.12); color: var(--accent); border: 1px solid rgba(123,97,255,0.3); }\n\n  .lead-id {\n    font-size: 11px;\n    color: var(--muted);\n    font-family: 'DM Mono', monospace;\n  }\n\n  .lead-nombre {\n    font-weight: 500;\n    color: var(--text);\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  .lead-etapa {\n    font-size: 11px;\n    color: var(--muted);\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  .lead-compra {\n    font-size: 11px;\n    color: var(--accent3);\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n  .lead-compra.empty { color: var(--muted); }\n\n  .alumno-dot {\n    width: 6px;\n    height: 6px;\n    border-radius: 50%;\n    background: var(--accent2);\n    flex-shrink: 0;\n    margin-right: 6px;\n  }\n\n  .table-header {\n    display: grid;\n    grid-template-columns: 130px 100px 1fr 160px 140px 90px 80px;\n    background: var(--surface2);\n    border-bottom: 1px solid var(--border);\n  }\n  .th {\n    padding: 6px 12px;\n    font-size: 9px;\n    color: var(--muted);\n    text-transform: uppercase;\n    letter-spacing: 0.1em;\n    border-right: 1px solid var(--border);\n  }\n  .th:last-child { border-right: none; }\n\n  /* EMPTY */\n  .empty-state {\n    text-align: center;\n    padding: 64px;\n    color: var(--muted);\n  }\n  .empty-state .big { font-size: 40px; margin-bottom: 12px; }\n  .empty-state p { font-size: 13px; }\n\n  /* SCROLLTOP */\n  #scrolltop {\n    position: fixed;\n    bottom: 24px;\n    right: 24px;\n    background: var(--accent);\n    color: #fff;\n    border: none;\n    width: 36px;\n    height: 36px;\n    cursor: pointer;\n    font-size: 16px;\n    display: none;\n    align-items: center;\n    justify-content: center;\n    z-index: 200;\n  }\n  #scrolltop.visible { display: flex; }\n";
+const DUP_BODY = '<div class="header">\n  <div class="header-title">Coach Estético — <span>Duplicados CRM</span></div>\n  <div class="stats-bar">\n    <div class="stat"><div class="stat-num acc">716</div><div class="stat-label">Grupos</div></div>\n    <div class="stat"><div class="stat-num">1520</div><div class="stat-label">Leads involucrados</div></div>\n    <div class="stat"><div class="stat-num acc">804</div><div class="stat-label">Fusiones a hacer</div></div>\n    <div class="stat"><div class="stat-num acc2">362</div><div class="stat-label">Grupos con alumno</div></div>\n    <div class="stat"><div class="stat-num acc3">354</div><div class="stat-label">Solo leads</div></div>\n  </div>\n</div>\n\n<div class="controls">\n  <div class="search-wrap">\n    <span class="search-icon">⌕</span>\n    <input type="text" id="searchInput" placeholder="Buscar nombre, ID, teléfono, mail...">\n  </div>\n  <button class="filter-btn active" data-filter="all">Todos</button>\n  <button class="filter-btn" data-filter="alumno">Con alumno</button>\n  <button class="filter-btn" data-filter="lead">Solo leads</button>\n  <span class="count-label" id="countLabel">716 grupos</span>\n</div>\n\n<div class="groups-container" id="groupsContainer"></div>\n\n<button id="scrolltop" onclick="window.scrollTo({top:0,behavior:\'smooth\'})">↑</button>';
+const DUP_LOGIC = '\n\nconst groups = DATA.groups;\nlet currentFilter = \'all\';\nlet searchTerm = \'\';\n\nfunction formatMatch(str) {\n  if (!str) return \'—\';\n  return str.replace(/(TEL:[^ |]+)/g, \'<span class="match-key">$1</span>\')\n            .replace(/(MAIL:[^ |]+)/g, \'<span class="match-key">$1</span>\');\n}\n\nfunction renderGroups() {\n  const container = document.getElementById(\'groupsContainer\');\n  const label = document.getElementById(\'countLabel\');\n\n  let filtered = groups.filter(g => {\n    if (currentFilter === \'alumno\' && !g.tiene_alumno) return false;\n    if (currentFilter === \'lead\' && g.tiene_alumno) return false;\n    if (searchTerm) {\n      const q = searchTerm.toLowerCase();\n      const txt = JSON.stringify(g).toLowerCase();\n      if (!txt.includes(q)) return false;\n    }\n    return true;\n  });\n\n  label.textContent = filtered.length + \' grupos\';\n\n  if (filtered.length === 0) {\n    container.innerHTML = \'<div class="empty-state"><div class="big">🔍</div><p>No hay resultados para esa búsqueda.</p></div>\';\n    return;\n  }\n\n  container.innerHTML = filtered.map(g => {\n    const hasAlumno = g.tiene_alumno;\n    const leadsHtml = g.leads.map(l => {\n      const isMaster = l.rol.includes(\'⭐\');\n      const compraEmpty = l.compra_hoy === \'—\';\n      return `\n        <div class="lead-row ${isMaster ? \'is-master\' : \'is-fusionar\'}">\n          <div class="lead-cell">\n            <span class="rol-badge ${isMaster ? \'rol-master\' : \'rol-fusionar\'}">${isMaster ? \'⭐ MASTER\' : \'🔀 FUSIONAR\'}</span>\n          </div>\n          <div class="lead-cell lead-id">#${l.id}</div>\n          <div class="lead-cell">\n            ${l.es_alumno === \'SÍ\' ? \'<span class="alumno-dot"></span>\' : \'\'}\n            <span class="lead-nombre">${l.nombre}</span>\n          </div>\n          <div class="lead-cell lead-etapa">${l.etapa}</div>\n          <div class="lead-cell lead-compra ${compraEmpty ? \'empty\' : \'\'}">${l.compra_hoy}</div>\n          <div class="lead-cell lead-etapa">${l.telefonos !== \'—\' ? l.telefonos : l.emails}</div>\n          <div class="lead-cell lead-etapa" style="font-size:10px;color:var(--muted)">${l.modificado.split(\' \')[0] || \'—\'}</div>\n        </div>`;\n    }).join(\'\');\n\n    return `\n      <div class="group-card ${hasAlumno ? \'has-alumno\' : \'\'}" data-nro="${g.nro}">\n        <div class="group-header" onclick="toggleGroup(${g.nro})">\n          <span class="group-num">GRP #${g.nro}</span>\n          <span class="group-badge ${hasAlumno ? \'badge-alumno\' : \'badge-lead\'}">${hasAlumno ? \'🔒 alumno\' : \'◈ leads\'}</span>\n          <span class="group-match">${formatMatch(g.coincidencia)}</span>\n          <span class="group-size">${g.size} leads</span>\n          <span class="group-toggle">▾</span>\n        </div>\n        <div class="group-body">\n          <div class="table-header">\n            <div class="th">Rol</div>\n            <div class="th">Lead ID</div>\n            <div class="th">Nombre</div>\n            <div class="th">Etapa</div>\n            <div class="th">Compra Hoy</div>\n            <div class="th">Contacto</div>\n            <div class="th">Modificado</div>\n          </div>\n          ${leadsHtml}\n        </div>\n      </div>`;\n  }).join(\'\');\n}\n\nfunction toggleGroup(nro) {\n  const card = document.querySelector(`[data-nro="${nro}"]`);\n  card.classList.toggle(\'open\');\n}\n\ndocument.querySelectorAll(\'.filter-btn\').forEach(btn => {\n  btn.addEventListener(\'click\', () => {\n    document.querySelectorAll(\'.filter-btn\').forEach(b => b.classList.remove(\'active\'));\n    btn.classList.add(\'active\');\n    currentFilter = btn.dataset.filter;\n    renderGroups();\n  });\n});\n\nlet searchTimeout;\ndocument.getElementById(\'searchInput\').addEventListener(\'input\', e => {\n  clearTimeout(searchTimeout);\n  searchTimeout = setTimeout(() => {\n    searchTerm = e.target.value.trim();\n    renderGroups();\n  }, 250);\n});\n\nwindow.addEventListener(\'scroll\', () => {\n  document.getElementById(\'scrolltop\').classList.toggle(\'visible\', window.scrollY > 400);\n});\n\nrenderGroups();\n';
+const BORRAR_CSS = "\n*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n\n:root {\n  --bg: #f4f5f7;\n  --white: #ffffff;\n  --border: #e5e7eb;\n  --border2: #d1d5db;\n  --text: #111827;\n  --text2: #374151;\n  --muted: #6b7280;\n  --muted2: #9ca3af;\n}\n\nbody {\n  background: var(--bg);\n  color: var(--text);\n  font-family: 'Inter', sans-serif;\n  font-size: 14px;\n  line-height: 1.5;\n}\n\n/* BANNER */\n.banner {\n  background: #fff;\n  border-bottom: 2px solid var(--border);\n  padding: 18px 32px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 24px;\n  flex-wrap: wrap;\n  position: sticky;\n  top: 0;\n  z-index: 100;\n  box-shadow: 0 1px 4px rgba(0,0,0,0.06);\n}\n\n.banner-left { display: flex; flex-direction: column; gap: 3px; }\n.banner-title { font-size: 16px; font-weight: 700; }\n.banner-sub { font-size: 11px; color: var(--muted); }\n\n.banner-stats { display: flex; gap: 28px; flex-wrap: wrap; }\n.bstat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }\n.bstat-num { font-size: 24px; font-weight: 700; line-height: 1; }\n.bstat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }\n\n/* CONTROLS */\n.controls {\n  background: #fff;\n  border-bottom: 1px solid var(--border);\n  padding: 12px 32px;\n  display: flex;\n  gap: 8px;\n  align-items: center;\n  flex-wrap: wrap;\n  position: sticky;\n  top: 69px;\n  z-index: 99;\n  box-shadow: 0 1px 3px rgba(0,0,0,0.04);\n}\n\n.search-box {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  border: 1.5px solid var(--border2);\n  padding: 7px 12px;\n  border-radius: 6px;\n  flex: 1;\n  max-width: 300px;\n  transition: border-color 0.15s;\n}\n.search-box:focus-within { border-color: #4f46e5; }\n.search-box input {\n  border: none; background: transparent;\n  font-family: 'Inter', sans-serif; font-size: 13px;\n  color: var(--text); outline: none; width: 100%;\n}\n.search-box input::placeholder { color: var(--muted2); }\n\n.chip {\n  padding: 5px 13px;\n  border: 1.5px solid var(--border2);\n  border-radius: 20px;\n  font-size: 12px;\n  font-weight: 500;\n  color: var(--muted);\n  cursor: pointer;\n  white-space: nowrap;\n  transition: all 0.12s;\n  background: #fff;\n}\n.chip:hover { border-color: #4f46e5; color: #4f46e5; }\n.chip.active { background: #4f46e5; border-color: #4f46e5; color: #fff; }\n\n.ctrl-right { margin-left: auto; font-size: 12px; color: var(--muted); }\n\n/* MAIN */\n.main {\n  max-width: 1300px;\n  margin: 0 auto;\n  padding: 24px 32px 80px;\n  display: flex;\n  flex-direction: column;\n  gap: 14px;\n}\n\n/* LEGEND CARD */\n.legend {\n  background: #fff;\n  border: 1px solid var(--border);\n  border-radius: 8px;\n  padding: 18px 22px;\n}\n.legend-title {\n  font-size: 12px;\n  font-weight: 600;\n  color: var(--muted);\n  text-transform: uppercase;\n  letter-spacing: 0.07em;\n  margin-bottom: 12px;\n}\n.legend-grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));\n  gap: 8px;\n}\n.legend-item {\n  display: flex;\n  align-items: flex-start;\n  gap: 10px;\n  padding: 8px 12px;\n  border-radius: 6px;\n  border: 1px solid var(--border);\n}\n.legend-icon { font-size: 17px; flex-shrink: 0; margin-top: 1px; }\n.legend-text { font-size: 12px; color: var(--text2); line-height: 1.4; }\n.legend-text strong { font-weight: 600; display: block; font-size: 12px; }\n\n/* CATEGORY CARD */\n.cat-card {\n  background: #fff;\n  border: 1px solid var(--border);\n  border-radius: 8px;\n  overflow: hidden;\n}\n\n.cat-header {\n  padding: 14px 20px;\n  display: flex;\n  align-items: center;\n  gap: 14px;\n  cursor: pointer;\n  user-select: none;\n  transition: background 0.1s;\n}\n.cat-header:hover { background: var(--bg); }\n.cat-card.open .cat-header { border-bottom: 1px solid var(--border); }\n\n.cat-icon {\n  width: 38px; height: 38px;\n  border-radius: 8px;\n  display: flex; align-items: center; justify-content: center;\n  font-size: 17px; flex-shrink: 0;\n}\n.cat-meta { flex: 1; }\n.cat-name {\n  font-size: 14px; font-weight: 700;\n  display: flex; align-items: center; gap: 10px;\n}\n.cat-pill {\n  font-size: 11px; font-weight: 600;\n  padding: 2px 10px; border-radius: 20px;\n}\n.cat-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }\n.cat-arrow { font-size: 13px; color: var(--muted2); transition: transform 0.2s; }\n.cat-card.open .cat-arrow { transform: rotate(180deg); }\n\n/* TABLE */\n.cat-body { display: none; }\n.cat-card.open .cat-body { display: block; }\n\ntable {\n  width: 100%;\n  border-collapse: collapse;\n}\n\nthead tr { background: #f9fafb; }\nth {\n  padding: 8px 14px;\n  font-size: 10px; font-weight: 600;\n  color: var(--muted);\n  text-transform: uppercase; letter-spacing: 0.06em;\n  text-align: left;\n  border-bottom: 1px solid var(--border);\n  white-space: nowrap;\n}\nth.right { text-align: right; }\n\ntbody tr { border-bottom: 1px solid var(--border); transition: background 0.08s; }\ntbody tr:last-child { border-bottom: none; }\ntbody tr:hover { background: #f9fafb; }\n\ntd { padding: 9px 14px; font-size: 13px; vertical-align: middle; }\n\n.td-id {\n  font-family: 'IBM Plex Mono', monospace;\n  font-size: 11px; color: var(--muted2);\n  white-space: nowrap;\n}\n.td-nombre { font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.td-etapa { font-size: 12px; color: var(--text2); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.td-contacto {\n  font-family: 'IBM Plex Mono', monospace;\n  font-size: 11px; color: var(--text2);\n  max-width: 155px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\n}\n.no-data { color: var(--muted2); font-size: 12px; }\n\n/* TAGS */\n.tags-cell { max-width: 280px; }\n.tags-wrap { display: flex; flex-wrap: wrap; gap: 4px; }\n.tag {\n  display: inline-block;\n  font-size: 10px; font-weight: 500;\n  padding: 2px 7px;\n  border-radius: 10px;\n  background: #f0f9ff;\n  color: #0369a1;\n  border: 1px solid #bae6fd;\n  white-space: nowrap;\n}\n.tag.int { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }\n.tag.vta { background: #fef9c3; color: #854d0e; border-color: #fde68a; }\n.tag.dif { background: #fdf4ff; color: #7e22ce; border-color: #e9d5ff; }\n.tag.other { background: #f9fafb; color: #4b5563; border-color: #e5e7eb; }\n\n/* DAYS BADGE */\n.td-dias { text-align: right; white-space: nowrap; }\n.days-badge {\n  display: inline-block;\n  font-size: 11px; font-weight: 500;\n  padding: 2px 9px; border-radius: 12px;\n}\n.d-critical { background: #fef2f2; color: #b91c1c; }\n.d-high     { background: #fff7ed; color: #c2410c; }\n.d-mid      { background: #fefce8; color: #92400e; }\n.d-ok       { background: #f0fdf4; color: #166534; }\n.d-na       { background: #f9fafb; color: var(--muted2); }\n\n/* MORE ROW */\n.more-row td {\n  padding: 11px 14px;\n  text-align: center;\n  font-size: 12px;\n  color: var(--muted);\n  background: #f9fafb;\n  border-top: 1px solid var(--border);\n}\n.load-btn {\n  margin-left: 8px;\n  background: #4f46e5; color: #fff;\n  border: none; padding: 4px 14px;\n  border-radius: 12px; font-size: 12px;\n  cursor: pointer; font-family: 'Inter', sans-serif;\n  font-weight: 500;\n}\n.load-btn:hover { background: #4338ca; }\n\n/* EMPTY */\n.empty { text-align: center; padding: 60px; color: var(--muted); }\n.empty .big { font-size: 40px; margin-bottom: 12px; }\n\n/* SCROLL TOP */\n#scrolltop {\n  position: fixed; bottom: 24px; right: 24px;\n  background: #4f46e5; color: #fff;\n  border: none; width: 40px; height: 40px;\n  border-radius: 50%; cursor: pointer;\n  font-size: 16px; display: none;\n  align-items: center; justify-content: center;\n  box-shadow: 0 4px 14px rgba(79,70,229,0.35);\n  transition: opacity 0.2s;\n}\n#scrolltop.visible { display: flex; }\n";
+const BORRAR_BODY = '<div class="banner">\n  <div class="banner-left">\n    <div class="banner-title">Coach Estético — Leads a Borrar</div>\n    <div class="banner-sub">Excluidos: 2.885 alumnos protegidos · 1.520 duplicados (pendientes de fusión) · Ordenado de más antiguo a más reciente</div>\n  </div>\n  <div class="banner-stats">\n    <div class="bstat">\n      <div class="bstat-num" style="color:#dc2626" id="stat-total">—</div>\n      <div class="bstat-label">candidatos a borrar</div>\n    </div>\n    <div class="bstat">\n      <div class="bstat-num" style="color:#6b7280">24.740</div>\n      <div class="bstat-label">total en CRM</div>\n    </div>\n  </div>\n</div>\n\n<div class="controls">\n  <div class="search-box">\n    <svg width="14" height="14" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>\n    <input type="text" id="searchInput" placeholder="Buscar nombre, ID, teléfono, email, etiqueta...">\n  </div>\n  <button class="chip active" data-filter="all">Todos</button>\n  <span id="catChips"></span>\n  <div style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;flex-shrink:0"></div>\n  <span style="font-size:11px;color:#9ca3af;margin-right:2px;white-space:nowrap">Etiqueta:</span>\n  <button class="chip tag-chip" data-tag="all" style="border-color:#d1d5db;color:#6b7280">Todas</button>\n  <button class="chip tag-chip" data-tag="int" style="border-color:#bbf7d0;color:#15803d;background:#f0fdf4">🟢 Int (interés)</button>\n  <button class="chip tag-chip" data-tag="vta" style="border-color:#fde68a;color:#854d0e;background:#fefce8">🟡 Vta (venta)</button>\n  <button class="chip tag-chip" data-tag="dif" style="border-color:#e9d5ff;color:#7e22ce;background:#fdf4ff">🟣 Dif (campaña)</button>\n  <button class="chip tag-chip" data-tag="other" style="border-color:#e5e7eb;color:#4b5563;background:#f9fafb">⚪ Otras</button>\n  <span class="ctrl-right" id="resultsLabel">—</span>\n</div>\n\n<div class="main" id="main"></div>\n<button id="scrolltop" onclick="window.scrollTo({top:0,behavior:\'smooth\'})">↑</button>';
+const BORRAR_LOGIC = '\n\nconst PAGE = 50;\nlet filter = \'all\';\nlet tagFilter = \'all\';\nlet search = \'\';\nlet openCats = new Set();\nlet pages = {};\n\n// Inject category chips\nconst chipWrap = document.getElementById(\'catChips\');\nDATA.categories.forEach(c => {\n  const b = document.createElement(\'button\');\n  b.className = \'chip\';\n  b.dataset.filter = c.name;\n  b.innerHTML = c.icon + \' \' + c.name + \' <span style="opacity:.7">(\' + c.count.toLocaleString(\'es\') + \')</span>\';\n  b.addEventListener(\'click\', () => activate(b));\n  chipWrap.appendChild(b);\n});\n\ndocument.querySelectorAll(\'.chip[data-filter]\').forEach(b =>\n  b.addEventListener(\'click\', () => activate(b))\n);\n\n// Tag color filter chips\ndocument.querySelectorAll(\'.tag-chip\').forEach(b => {\n  b.addEventListener(\'click\', () => {\n    tagFilter = b.dataset.tag;\n    document.querySelectorAll(\'.tag-chip\').forEach(x => {\n      x.style.fontWeight = \'400\';\n      x.style.boxShadow = \'none\';\n    });\n    b.style.fontWeight = \'700\';\n    b.style.boxShadow = \'0 0 0 2px currentColor\';\n    pages = {};\n    render();\n  });\n});\n// Init: mark "Todas" as active\ndocument.querySelector(\'.tag-chip[data-tag="all"]\').style.fontWeight = \'700\';\n\nfunction activate(btn) {\n  filter = btn.dataset.filter;\n  document.querySelectorAll(\'.chip\').forEach(b => b.classList.remove(\'active\'));\n  btn.classList.add(\'active\');\n  pages = {};\n  render();\n}\n\ndocument.getElementById(\'stat-total\').textContent = DATA.candidatos.toLocaleString(\'es\');\n\nfunction tagClass(t) {\n  const tl = t.toLowerCase();\n  if (tl.startsWith(\'int \')) return \'tag int\';\n  if (tl.startsWith(\'vta \')) return \'tag vta\';\n  if (tl.startsWith(\'dif\')) return \'tag dif\';\n  return \'tag other\';\n}\n\nfunction daysInfo(d) {\n  if (d === null || d === undefined) return { cls: \'d-na\', label: \'—\' };\n  if (d > 730) return { cls: \'d-critical\', label: Math.floor(d/365) + \' años\' };\n  if (d > 365) return { cls: \'d-critical\', label: Math.floor(d/30) + \' meses\' };\n  if (d > 180) return { cls: \'d-high\', label: Math.floor(d/30) + \' meses\' };\n  if (d > 60)  return { cls: \'d-mid\', label: Math.floor(d/30) + \' meses\' };\n  return { cls: \'d-ok\', label: d + \' días\' };\n}\n\nfunction matchesTag(lead) {\n  if (tagFilter === \'all\') return true;\n  if (tagFilter === \'int\')   return lead.tags.some(t => t.toLowerCase().startsWith(\'int \'));\n  if (tagFilter === \'vta\')   return lead.tags.some(t => t.toLowerCase().startsWith(\'vta \'));\n  if (tagFilter === \'dif\')   return lead.tags.some(t => t.toLowerCase().startsWith(\'dif\'));\n  if (tagFilter === \'other\') return lead.tags.some(t => {\n    const tl = t.toLowerCase();\n    return !tl.startsWith(\'int \') && !tl.startsWith(\'vta \') && !tl.startsWith(\'dif\');\n  });\n  return true;\n}\n\nfunction matches(lead, catName) {\n  if (!search) return true;\n  const q = search.toLowerCase();\n  return (\n    String(lead.id).includes(q) ||\n    lead.nombre.toLowerCase().includes(q) ||\n    lead.etapa.toLowerCase().includes(q) ||\n    lead.tel.toLowerCase().includes(q) ||\n    lead.email.toLowerCase().includes(q) ||\n    lead.tags.some(t => t.toLowerCase().includes(q)) ||\n    catName.toLowerCase().includes(q)\n  );\n}\n\nfunction buildTable(cat, filteredLeads) {\n  if (!filteredLeads.length)\n    return \'<div style="padding:20px 16px;font-size:13px;color:#9ca3af">Sin resultados.</div>\';\n\n  const pg = pages[cat.name] || 1;\n  const shown = filteredLeads.slice(0, pg * PAGE);\n  const hasMore = filteredLeads.length > shown.length;\n\n  const rows = shown.map(l => {\n    const di = daysInfo(l.dias);\n    const contact = l.tel !== \'—\' ? l.tel : (l.email !== \'—\' ? l.email : null);\n    const tagsHtml = l.tags.length\n      ? \'<div class="tags-wrap">\' + l.tags.map(t => `<span class="${tagClass(t)}">${t}</span>`).join(\'\') + \'</div>\'\n      : \'<span class="no-data">—</span>\';\n    return `<tr>\n      <td class="td-id">#${l.id}</td>\n      <td class="td-nombre">${l.nombre}</td>\n      <td class="td-etapa">${l.etapa}</td>\n      <td class="td-contacto">${contact ? contact : \'<span class="no-data">sin contacto</span>\'}</td>\n      <td class="tags-cell">${tagsHtml}</td>\n      <td class="td-dias"><span class="days-badge ${di.cls}">${di.label}</span></td>\n    </tr>`;\n  }).join(\'\');\n\n  const moreRow = hasMore\n    ? `<tr class="more-row"><td colspan="6">\n        Mostrando ${shown.length.toLocaleString(\'es\')} de ${filteredLeads.length.toLocaleString(\'es\')} leads en esta categoría\n        ${cat.count > cat.showing ? ` (hay ${(cat.count - cat.showing).toLocaleString(\'es\')} más en el CSV)` : \'\'}.\n        <button class="load-btn" onclick="loadMore(\'${cat.name}\')">Cargar ${Math.min(PAGE, filteredLeads.length - shown.length)} más</button>\n       </td></tr>`\n    : `<tr class="more-row"><td colspan="6" style="color:#9ca3af">\n        ${filteredLeads.length.toLocaleString(\'es\')} leads mostrados${cat.count > cat.showing ? ` · El CSV tiene los ${cat.count.toLocaleString(\'es\')} completos` : \'\'}\n       </td></tr>`;\n\n  return `<table>\n    <thead><tr>\n      <th>ID</th><th>Nombre</th><th>Etapa</th><th>Contacto</th>\n      <th>Etiquetas</th><th class="right">Sin actividad</th>\n    </tr></thead>\n    <tbody>${rows}${moreRow}</tbody>\n  </table>`;\n}\n\nfunction render() {\n  const main = document.getElementById(\'main\');\n  let totalShown = 0;\n\n  const legendHtml = `<div class="legend">\n    <div class="legend-title">Por qué son candidatos a borrar</div>\n    <div class="legend-grid">\n      ${DATA.categories.map(c => `\n        <div class="legend-item">\n          <span class="legend-icon">${c.icon}</span>\n          <div class="legend-text">\n            <strong>${c.name} — ${c.count.toLocaleString(\'es\')} leads</strong>\n            ${c.desc}\n          </div>\n        </div>`).join(\'\')}\n    </div>\n  </div>`;\n\n  const sections = DATA.categories\n    .filter(c => filter === \'all\' || c.name === filter)\n    .map(cat => {\n      const fl = (search || tagFilter !== \'all\')\n        ? cat.leads.filter(l => matches(l, cat.name) && matchesTag(l))\n        : cat.leads;\n      if (search && fl.length === 0) return null;\n      totalShown += cat.count;\n      const isOpen = openCats.has(cat.name);\n      return `\n        <div class="cat-card ${isOpen ? \'open\' : \'\'}" id="cc-${cat.name}">\n          <div class="cat-header" onclick="toggle(\'${cat.name}\')">\n            <div class="cat-icon" style="background:${cat.bg}">${cat.icon}</div>\n            <div class="cat-meta">\n              <div class="cat-name">\n                ${cat.name}\n                <span class="cat-pill" style="background:${cat.bg};color:${cat.color}">${cat.count.toLocaleString(\'es\')} leads</span>\n              </div>\n              <div class="cat-desc">${cat.desc}</div>\n            </div>\n            <span class="cat-arrow">▾</span>\n          </div>\n          <div class="cat-body">${buildTable(cat, fl)}</div>\n        </div>`;\n    }).filter(Boolean);\n\n  document.getElementById(\'resultsLabel\').textContent = totalShown.toLocaleString(\'es\') + \' leads\';\n\n  if (!sections.length) {\n    main.innerHTML = legendHtml + \'<div class="cat-card"><div class="empty"><div class="big">🔍</div><p>Sin resultados para "<strong>\' + search + \'</strong>"</p></div></div>\';\n    return;\n  }\n\n  main.innerHTML = legendHtml + sections.join(\'\');\n}\n\nfunction toggle(name) {\n  openCats.has(name) ? openCats.delete(name) : openCats.add(name);\n  render();\n}\n\nfunction loadMore(name) {\n  pages[name] = (pages[name] || 1) + 1;\n  render();\n}\n\nwindow.loadMore = loadMore;\n\nlet t;\ndocument.getElementById(\'searchInput\').addEventListener(\'input\', e => {\n  clearTimeout(t);\n  t = setTimeout(() => { search = e.target.value.trim(); render(); }, 200);\n});\n\nwindow.addEventListener(\'scroll\', () =>\n  document.getElementById(\'scrolltop\').classList.toggle(\'visible\', scrollY > 400)\n);\n\nrender();\n';
+
+function generarHTMLDuplicados(grupos, stats) {
+  const dataJson = JSON.stringify({ stats, groups: grupos });
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Duplicados CRM — Coach Estético</title><style>' + DUP_CSS + '</style></head><body>' + DUP_BODY + '<script>const DATA = ' + dataJson + ';' + DUP_LOGIC + '<\/script></body></html>';
+}
+
+function generarHTMLBorrar(categories, stats) {
+  const dataJson = JSON.stringify({ ...stats, categories });
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Leads a Borrar — Coach Estético</title><style>' + BORRAR_CSS + '</style></head><body>' + BORRAR_BODY + '<script>const DATA = ' + dataJson + ';' + BORRAR_LOGIC + '<\/script></body></html>';
+}
+
+function procesarCRM1(file) {
+  if (!file) return;
+  const status = document.getElementById('crm1-status');
+  status.textContent = '⏳ Leyendo archivo...';
+  document.getElementById('crm1-botones').style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const XLSX = window.XLSX;
+      if (!XLSX) { status.textContent = '❌ Error: XLSX no cargado'; return; }
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      status.textContent = '⏳ Procesando ' + rows.length.toLocaleString() + ' leads...';
+      setTimeout(function() { analizarCRM(rows, status); }, 50);
+    } catch(err) { status.textContent = '❌ Error: ' + err.message; }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function handleCRM1Drop(e) {
+  e.preventDefault();
+  document.getElementById('crm1-drop').style.borderColor = 'var(--border)';
+  const file = e.dataTransfer.files[0];
+  if (file) procesarCRM1(file);
+}
+
+function analizarCRM(rows, status) {
+  const hoy = new Date();
   function parseDate(s) {
     if (!s) return null;
-    const parts = String(s).split(' ')[0].split('.');
-    if (parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
+    const str = String(s).split(' ')[0].split('.');
+    if (str.length === 3) return new Date(parseInt(str[2]), parseInt(str[1])-1, parseInt(str[0]));
     return new Date(s);
   }
-
-  function diasSin(row) {
+  function diasDe(row) {
     const d = parseDate(row['Última modificación el']);
-    if (!d || isNaN(d)) return 9999;
+    if (!d || isNaN(d)) return null;
     return Math.floor((hoy - d) / 86400000);
   }
+  function normC(s) { return String(s||'').toLowerCase().trim().replace(/[\s\.\-\_\+\(\)]/g,''); }
+  function normT(s) { return String(s||'').replace(/\D/g,'').trim(); }
+  function normE(s) { return String(s||'').toLowerCase().trim(); }
 
-  // ── CATEGORÍAS ──
-  const fusionar = []; // Duplicados por tel/email
-  const borrar = [];   // Piden gratis, no hay interés
-  const atacar = [];   // Querían comprar, algo los frenó
-  const asesorar = []; // Interés real pero sin guía
-  const malClasif = []; // Etapa incorrecta
-  const frios = [];    // Sin actividad + sin contexto claro
+  const ALUMNOS = new Set(['alumno inscrito','Ventas cerradas del mes','pago Recibido GENERAL',
+    'Acceso a Clase Online Otorgado','Revision administrativa Lista','Consultoría skincare',
+    'Diplomado en microneedling','Diplomado peeling químico','Temas/asesorias Dianela',
+    'Clientes Membresia Lifetime','Temas Administrativos','Errores en plataforma',
+    'Club Coach - Suscrito','En Espera - Mentoria','NO MIGRACIÓN','Conversaciones Dianela',
+    'Falta de Datos','en espera de pago']);
+  const ETAPAS_MUERTAS = new Set(['Lead Info Inicial','Lead Frio','Migracion de otros embudos y etapas viejas']);
 
-  // Detectar duplicados
-  const porTel = {}, porEmail = {};
-  rows.forEach(r => {
-    if (r['Teléfono']) {
-      const t = String(r['Teléfono']).trim();
-      if (!porTel[t]) porTel[t] = [];
-      porTel[t].push(r);
-    }
-    if (r['Email']) {
-      const e = String(r['Email']).trim().toLowerCase();
-      if (!porEmail[e]) porEmail[e] = [];
-      porEmail[e].push(r);
-    }
+  rows.forEach(function(r) { r._alumno = ALUMNOS.has(String(r['Estatus del lead']||'')); });
+  var totalAlumnos = rows.filter(function(r){return r._alumno;}).length;
+
+  // DUPLICADOS
+  var mapC = {}, mapT = {}, mapE = {};
+  rows.forEach(function(r) {
+    var c = normC(r['Contacto principal']);
+    var t = normT(r['Teléfono']);
+    var e = normE(r['Email']);
+    if (c.length >= 5 && !/^[&.,;:!?#@*/\\]+$/.test(c)) { if (!mapC[c]) mapC[c]=[]; mapC[c].push(r); }
+    if (t.length >= 7) { if (!mapT[t]) mapT[t]=[]; mapT[t].push(r); }
+    if (e.length >= 5 && e.indexOf('@')>=0) { if (!mapE[e]) mapE[e]=[]; mapE[e].push(r); }
   });
 
-  const idsDuplicados = new Set();
-  Object.values(porTel).filter(g => g.length > 1).forEach(g => g.forEach(r => {
-    fusionar.push({ ...r, _motivo: 'Mismo teléfono: ' + r['Teléfono'] });
-    idsDuplicados.add(r['ID']);
-  }));
-  Object.values(porEmail).filter(g => g.length > 1).forEach(g => g.forEach(r => {
-    if (!idsDuplicados.has(r['ID'])) {
-      fusionar.push({ ...r, _motivo: 'Mismo email: ' + r['Email'] });
-      idsDuplicados.add(r['ID']);
-    }
-  }));
+  var idsDup = {};
+  var grupos = [];
+  var nro = 0;
 
-  // Clasificar el resto
-  const tagsBasura = /sorteo|gratis|free|regalo|concurso|bono gratis|no compra|spam|guia gratis|clase gratis|no me interesa|eliminar/i;
-  const tagsAtacar = /dif\d{6,}|diferi|no pudo|falta plata|próximo mes|el mes que|cuotas|financ|esperar precio|quedo pendiente|volver|le aviso|lo pienso/i;
-  const tagsNoTocar = /clientes no vender|no vender/i;
-
-  rows.forEach(r => {
-    if (idsDuplicados.has(r['ID'])) return;
-    const estatus = String(r['Estatus del lead'] || '');
-    const interes = String(r['Interes'] || '');
-    const tags = String(r['Etiquetas del lead'] || '');
-    const notas = [r['Nota 1'], r['Nota 2'], r['Nota 3']].map(n => String(n||'')).join(' ');
-    const contexto = (tags + ' ' + notas + ' ' + interes).toLowerCase();
-    const dias = diasSin(r);
-
-    // No tocar
-    if (tagsNoTocar.test(estatus) || tagsNoTocar.test(tags)) return;
-    // Ya son alumnos — no están en el análisis
-    if (ETAPAS_ALUMNO.has(estatus)) return;
-    // Migración sin info = ignorar
-    if (estatus === 'Migracion de otros embudos y etapas viejas' && !interes) return;
-
-    // BORRAR: señales claras de no compra
-    if (tagsBasura.test(contexto)) {
-      borrar.push({ ...r, _motivo: 'Señales de no-compra en etiquetas/notas' }); return;
-    }
-
-    // ATACAR: diferimiento o señales de "quería pero no pudo"
-    if (tagsAtacar.test(contexto) || tagsAtacar.test(tags)) {
-      atacar.push({ ...r, _motivo: 'Señal de compra diferida o pausada' }); return;
-    }
-
-    // EN CONVERSACION parada > 48hs
-    if (estatus === 'Lead en Conversacion' && dias > 2) {
-      atacar.push({ ...r, _motivo: 'Conversación sin respuesta hace ' + dias + ' días' }); return;
-    }
-
-    // SEGUIMIENTO parado
-    if (estatus === 'Seguimiento' && dias > 7) {
-      atacar.push({ ...r, _motivo: 'Seguimiento sin actividad hace ' + dias + ' días' }); return;
-    }
-
-    // ASESORAR: interés definido pero sin tags de progreso
-    if (interes && interes !== 'Informacion' && interes !== 'Migracion') {
-      if (dias < 90) {
-        asesorar.push({ ...r, _motivo: 'Interés en ' + interes + ' — sin seguimiento claro' }); return;
-      }
-    }
-
-    // MAL CLASIFICADO: migración con interés definido
-    if (estatus === 'Migracion de otros embudos y etapas viejas' && interes) {
-      malClasif.push({ ...r, _motivo: 'En migración pero tiene interés: ' + interes }); return;
-    }
-
-    // MUY FRÍO
-    if (dias > 60) {
-      frios.push({ ...r, _motivo: 'Sin actividad hace ' + dias + ' días' });
-    }
-  });
-
-  renderCRM1(fusionar, borrar, atacar, asesorar, malClasif, frios);
-}
-
-function renderCRM1(fusionar, borrar, atacar, asesorar, malClasif, frios) {
-  const res = document.getElementById('crm1-resultado');
-
-  function tarjeta(emoji, titulo, color, bg, lista, info) {
-    const id = 'crm1-lista-' + titulo.replace(/\s/g,'');
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:12px" onclick="toggleCRM1Lista('${id}')">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:22px">${emoji}</span>
-          <div>
-            <div style="font-weight:700;font-size:15px;color:${color}">${titulo}</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:2px">${info}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="background:${bg};color:${color};font-weight:700;font-size:15px;padding:4px 14px;border-radius:20px">${lista.length}</span>
-          <span style="color:var(--text3);font-size:18px" id="${id}-arr">▼</span>
-        </div>
-      </div>
-      <div id="${id}" style="display:none">
-        ${lista.length === 0 ? '<div style="color:var(--text3);font-size:13px;padding:8px 0">Ninguno</div>' :
-          lista.slice(0,200).map(r =>
-            `<div style="border-top:1px solid var(--border);padding:10px 0;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
-              <div style="flex:1;min-width:180px">
-                <div style="font-size:13px;font-weight:600">${r['Nombre del lead']||'—'}</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px">${r['Estatus del lead']||''} · ${r['Interes']||'Sin interés'}</div>
-                <div style="font-size:11px;color:var(--accent);margin-top:2px">${r._motivo||''}</div>
-              </div>
-              <div style="display:flex;gap:6px;align-items:center">
-                <span style="font-size:11px;color:var(--text3)">ID: ${r['ID']}</span>
-                <a href="https://coachestetico.kommo.com/leads/detail/${r['ID']}" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);border-radius:6px;padding:2px 8px">Ver en Kommo</a>
-                <button onclick="analizarLeadDirecto('${r['ID']}','${(r['Nombre del lead']||'').replace(/'/g,'')}','${(r['Interes']||'').replace(/'/g,'')}','${(r['Etiquetas del lead']||'').replace(/'/g,'')}','${(r['Nota 1']||'').replace(/'/g,'').substring(0,100)}')" style="font-size:11px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:2px 10px;cursor:pointer;font-family:DM Sans,sans-serif">🤖 Analizar</button>
-              </div>
-            </div>`
-          ).join('') +
-          (lista.length > 200 ? `<div style="font-size:12px;color:var(--text3);padding-top:8px">... y ${lista.length-200} más</div>` : '')
-        }
-      </div>
-    </div>`;
+  function procGrupos(mapa, tipo) {
+    Object.keys(mapa).forEach(function(key) {
+      var grupo = mapa[key];
+      if (grupo.length < 2) return;
+      var ids = {};
+      grupo.forEach(function(r){ids[r['ID']]=1;});
+      if (Object.keys(ids).length < 2) return;
+      var nuevos = grupo.filter(function(r){return !idsDup[String(r['ID'])];});
+      if (nuevos.length === 0) return;
+      grupo.forEach(function(r){idsDup[String(r['ID'])]=1;});
+      var tieneAlumno = grupo.some(function(r){return r._alumno;});
+      var sorted = grupo.slice().sort(function(a,b) {
+        if (a._alumno && !b._alumno) return -1;
+        if (!a._alumno && b._alumno) return 1;
+        var dA = [a['Teléfono'],a['Email'],a['Interes']].filter(function(x){return x;}).length;
+        var dB = [b['Teléfono'],b['Email'],b['Interes']].filter(function(x){return x;}).length;
+        return dB - dA;
+      });
+      nro++;
+      grupos.push({
+        nro: nro, size: sorted.length, tiene_alumno: tieneAlumno,
+        coincidencia: tipo + ':' + key,
+        leads: sorted.map(function(r,i) {
+          return {
+            rol: i===0 ? '⭐ MASTER (queda)' : '🔀 FUSIONAR en master',
+            id: r['ID'], nombre: r['Nombre del lead']||r['Contacto principal']||'—',
+            etapa: r['Estatus del lead']||'—', compra_hoy: r['Interes']||'—',
+            es_alumno: r._alumno ? 'SÍ' : 'NO',
+            telefonos: r['Teléfono']||'—', emails: r['Email']||'—',
+            modificado: String(r['Última modificación el']||'').split(' ')[0]||'—',
+            datos: [r['Teléfono'],r['Email'],r['Interes'],r['Nombre del lead'],r['Contacto principal']].filter(function(x){return x&&String(x).trim();}).length
+          };
+        })
+      });
+    });
   }
 
-  res.innerHTML =
-    `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px">
-      ${[
-        ['🔄','Fusionar','#856404','#FFF3CD',fusionar.length],
-        ['❌','Borrar','#721C24','#F8D7DA',borrar.length],
-        ['🟢','Atacar ahora','#155724','#D4EDDA',atacar.length],
-        ['🎯','Asesorar','#004085','#CCE5FF',asesorar.length],
-        ['⚠️','Mal clasificado','#7B3F00','#FDE8D0',malClasif.length],
-        ['🧊','Muy fríos','#6C757D','#E9ECEF',frios.length],
-      ].map(([e,t,c,b,n]) =>
-        `<div style="background:${b};border-radius:var(--radius);padding:14px;text-align:center">
-          <div style="font-size:20px">${e}</div>
-          <div style="font-size:11px;font-weight:700;color:${c};margin-top:4px">${t}</div>
-          <div style="font-size:22px;font-weight:800;color:${c}">${n}</div>
-        </div>`
-      ).join('')}
-    </div>` +
-    tarjeta('🔄','Fusionar','#856404','#FFF3CD', fusionar, 'Misma persona con múltiples leads — fusionar en Kommo') +
-    tarjeta('❌','Borrar','#721C24','#F8D7DA', borrar, 'Piden gratis, sorteos o sin interés real de compra') +
-    tarjeta('🟢','Atacar ahora','#155724','#D4EDDA', atacar, 'Querían comprar pero algo los frenó — alta probabilidad de cierre') +
-    tarjeta('🎯','Asesorar','#004085','#CCE5FF', asesorar, 'Tienen interés pero necesitan más info y acompañamiento') +
-    tarjeta('⚠️','Mal clasificado','#7B3F00','#FDE8D0', malClasif, 'Etapa incorrecta en el CRM — requieren reclasificación') +
-    tarjeta('🧊','Muy fríos','#6C757D','#E9ECEF', frios, 'Sin actividad hace más de 60 días — necesitan reactivación');
-}
+  procGrupos(mapC, 'CONTACTO');
+  procGrupos(mapT, 'TEL');
+  procGrupos(mapE, 'MAIL');
 
-function toggleCRM1Lista(id) {
-  const el = document.getElementById(id);
-  const arr = document.getElementById(id + '-arr');
-  if (!el) return;
-  const open = el.style.display !== 'none';
-  el.style.display = open ? 'none' : 'block';
-  if (arr) arr.textContent = open ? '▼' : '▲';
+  var dupLeads = grupos.reduce(function(s,g){return s+g.leads.length;},0);
+  var dupConAlumno = grupos.filter(function(g){return g.tiene_alumno;}).length;
+  var dupSinAlumno = grupos.filter(function(g){return !g.tiene_alumno;}).length;
+  var fusiones = grupos.reduce(function(s,g){return s+g.leads.length-1;},0);
+  var dupStats = { grupos: grupos.length, leads: dupLeads, con_alumno: dupConAlumno, sin_alumno: dupSinAlumno, fusiones: fusiones };
+
+  // BORRAR
+  var cats = [
+    { name:'VACÍO TOTAL', desc:'Sin nombre, sin teléfono, sin email. No hay absolutamente nada.', color:'#dc2626', bg:'#fef2f2', icon:'🗑️', leads:[] },
+    { name:'SIN CONTACTO', desc:'Tiene nombre pero sin teléfono ni email. Imposible contactarlos.', color:'#ea580c', bg:'#fff7ed', icon:'🚫', leads:[] },
+    { name:'SOLO NÚMERO', desc:'Solo tienen un número o mail. Sin nombre, país, interés ni nada más.', color:'#7c3aed', bg:'#f5f3ff', icon:'📵', leads:[] },
+    { name:'SOLO NÚMERO + INACTIVO', desc:'Solo un contacto + más de 6 meses sin ningún movimiento en el CRM.', color:'#0369a1', bg:'#f0f9ff', icon:'🧊', leads:[] },
+    { name:'LEAD FRÍO 6M', desc:'En etapa muerta (Info Inicial, Frío, Migración) y sin actividad en 6+ meses.', color:'#374151', bg:'#f9fafb', icon:'❄️', leads:[] }
+  ];
+
+  rows.forEach(function(r) {
+    if (r._alumno || idsDup[String(r['ID'])]) return;
+    var nombre = String(r['Nombre del lead']||'').trim();
+    var contacto = normC(r['Contacto principal']);
+    var tel = normT(r['Teléfono']);
+    var email = normE(r['Email']);
+    var interes = String(r['Interes']||'').trim();
+    var estatus = String(r['Estatus del lead']||'');
+    var d = diasDe(r);
+    var tieneNombre = nombre.length > 1 && !['.',',','...'].includes(nombre);
+    var tieneTel = tel.length >= 7;
+    var tieneEmail = email.length >= 5 && email.indexOf('@')>=0;
+    var tieneContacto = contacto.length >= 5;
+    var tieneInteres = interes && ['Informacion','Migracion'].indexOf(interes)<0;
+    function toLead() { return { id:r['ID'], nombre:r['Nombre del lead']||r['Contacto principal']||'—', etapa:estatus, tel:r['Teléfono']||'—', email:r['Email']||'—', modificado:String(r['Última modificación el']||'').split(' ')[0]||'—', dias:d, tags:String(r['Etiquetas del lead']||'').split(',').map(function(t){return t.trim();}).filter(Boolean) }; }
+    if (!tieneNombre && !tieneTel && !tieneEmail && !tieneContacto) { cats[0].leads.push(toLead()); return; }
+    if (!tieneTel && !tieneEmail) { cats[1].leads.push(toLead()); return; }
+    if ((tieneTel||tieneEmail) && !tieneInteres && !tieneNombre) {
+      if (d !== null && d > 180) { cats[3].leads.push(toLead()); return; }
+      cats[2].leads.push(toLead()); return;
+    }
+    if (ETAPAS_MUERTAS.has(estatus) && d !== null && d >= 180) { cats[4].leads.push(toLead()); }
+  });
+
+  cats.forEach(function(c) { c.leads.sort(function(a,b){return (b.dias||0)-(a.dias||0);}); c.count=c.leads.length; c.showing=c.leads.length; });
+  var totalBorrar = cats.reduce(function(s,c){return s+c.leads.length;},0);
+  var borrarStats = { total_crm:rows.length, protegidos:totalAlumnos, duplicados:dupLeads, candidatos:totalBorrar };
+
+  crm1DupData = generarHTMLDuplicados(grupos, dupStats);
+  crm1BorrarData = generarHTMLBorrar(cats, borrarStats);
+
+  status.textContent = '✅ Listo — ' + rows.length.toLocaleString() + ' leads procesados';
+  document.getElementById('crm1-dup-stat').textContent = grupos.length + ' grupos · ' + dupLeads + ' leads · ' + fusiones + ' fusiones';
+  document.getElementById('crm1-borrar-stat').textContent = totalBorrar.toLocaleString() + ' candidatos a borrar';
+  document.getElementById('crm1-botones').style.display = 'grid';
 }
 
 // ── CRM2: BUSCADOR KOMMO + IA ──
@@ -2429,8 +2448,11 @@ async function buscarLeadKommo() {
 
   try {
     const resp = await fetch('/api/kommo-lead?q=' + encodeURIComponent(query));
-    const data = await resp.json();
-    if (data.error) { res.innerHTML = '<div style="padding:20px;color:var(--danger)">' + data.error + '</div>'; return; }
+    const text = await resp.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) { res.innerHTML = '<div style="padding:20px;color:var(--danger)">Error del servidor: ' + text.substring(0,200) + '</div>'; return; }
+    if (data.error) { res.innerHTML = '<div style="padding:20px;color:var(--danger)">❌ ' + data.error + '</div>'; return; }
     mostrarLeadKommo(data, res);
   } catch(e) {
     res.innerHTML = '<div style="padding:20px;color:var(--danger)">Error de conexión: ' + e.message + '</div>';
