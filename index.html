@@ -333,6 +333,12 @@ tbody tr:hover td { background: var(--surface2); }
     <button class="nav-item" id="nav-admin" onclick="switchTab('admin')">
       <span class="nav-icon">🔐</span> Administración
     </button>
+    <button class="nav-item" id="nav-crm1" onclick="switchTab('crm1')">
+      <span class="nav-icon">📊</span> Análisis CRM
+    </button>
+    <button class="nav-item" id="nav-crm2" onclick="switchTab('crm2')">
+      <span class="nav-icon">🔍</span> Lead IA
+    </button>
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
@@ -635,6 +641,42 @@ tbody tr:hover td { background: var(--surface2); }
       </div>
     </section>
 
+    <!-- ANÁLISIS CRM -->
+    <section class="section" id="sec-crm1">
+      <div class="section-header">
+        <div class="section-title">Análisis CRM</div>
+        <span style="font-size:12px;color:var(--text3)">Cargá el export de Kommo para analizar tu pipeline</span>
+      </div>
+      <div class="form-card" style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div id="crm1-drop" style="border:2px dashed var(--border);border-radius:var(--radius);padding:20px 32px;text-align:center;cursor:pointer;transition:border-color 0.2s;flex:1;min-width:200px" onclick="document.getElementById('crm1-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleCRM1Drop(event)">
+            <div style="font-size:24px;margin-bottom:4px">📂</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Subir export de Kommo</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Arrastrá o hacé clic · .xlsx</div>
+          </div>
+          <input type="file" id="crm1-file" accept=".xlsx,.xls" style="display:none" onchange="procesarCRM1(this.files[0])">
+          <div id="crm1-status" style="font-size:13px;color:var(--text3)"></div>
+        </div>
+      </div>
+      <div id="crm1-resultado"></div>
+    </section>
+
+    <!-- LEAD IA -->
+    <section class="section" id="sec-crm2">
+      <div class="section-header">
+        <div class="section-title">Lead IA</div>
+        <span style="font-size:12px;color:var(--text3)">Buscá un lead en Kommo y la IA analiza la conversación</span>
+      </div>
+      <div class="form-card" style="margin-bottom:20px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input id="crm2-buscar" class="form-input" style="flex:1;min-width:200px" placeholder="ID del lead o nombre exacto..." onkeydown="if(event.key==='Enter') buscarLeadKommo()">
+          <button class="btn btn-accent" onclick="buscarLeadKommo()">🔍 Buscar en Kommo</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px">Buscá por ID (más preciso) o por nombre. El sistema trae la conversación real y la IA te dice qué hacer.</div>
+      </div>
+      <div id="crm2-resultado"></div>
+    </section>
+
   </div>
 </div>
 
@@ -745,8 +787,8 @@ function closeSidebar() {
 }
 
 // ── NAVIGATION ──
-const TABS = ['inicio','ventas','plantillas','stats','ia','admin','cargar'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', cargar:'Cargar venta' };
+const TABS = ['inicio','ventas','plantillas','stats','ia','admin','crm1','crm2','cargar'];
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', crm1:'Análisis CRM', crm2:'Lead IA', cargar:'Cargar venta' };
 
 function switchTab(t) {
   TABS.forEach(s => {
@@ -762,6 +804,8 @@ function switchTab(t) {
   if (t === 'plantillas') renderPlantillas();
   if (t === 'ia') initIA();
   if (t === 'admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); }
+  if (t === 'crm1') initCRM1();
+  if (t === 'crm2') initCRM2();
   closeSidebar();
 }
 
@@ -2138,6 +2182,337 @@ function initIA() {
   const m = MODOS[modoActual];
   document.getElementById('ia-hint').textContent = m.hint;
   document.getElementById('ia-input').placeholder = m.placeholder;
+}
+
+// ── CRM1: ANALIZADOR DE EXCEL ──
+const KOMMO_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6Ijc1YjNhOTNjNzYwZjQxZWYyYTg1OWIyZmYxMGY4ZGUyMGE5ZjY4N2I0MzlhZmNlZTU4MjkzMzk3YzU5ZTM2ZmQ4MjUwODUwYTQ0NDBkYmY5In0.eyJhdWQiOiI2NTIwZDRjMi01NmZlLTRiZGYtYjgyMC1lMTA0M2U4ZDI5MTkiLCJqdGkiOiI3NWIzYTkzYzc2MGY0MWVmMmE4NTliMmZmMTBmOGRlMjBhOWY2ODdiNDM5YWZjZWU1ODI5MzM5N2M1OWUzNmZkODI1MDg1MGE0NDQwZGJmOSIsImlhdCI6MTc3Njc4NzI1OSwibmJmIjoxNzc2Nzg3MjU5LCJleHAiOjE5MzQ0OTYwMDAsInN1YiI6IjEzNzYxNDA4IiwiZ3JhbnRfdHlwZSI6IiIsImFjY291bnRfaWQiOjI5NzAwMjQ4LCJiYXNlX2RvbWFpbiI6ImtvbW1vLmNvbSIsInZlcnNpb24iOjIsInNjb3BlcyI6WyJwdXNoX25vdGlmaWNhdGlvbnMiLCJmaWxlcyIsImNybSIsImZpbGVzX2RlbGV0ZSIsIm5vdGlmaWNhdGlvbnMiXSwiaGFzaF91dWlkIjoiNzVlZTQ1N2UtMjdlMS00MzBhLTg4YjQtZjJhZTcwMGY0MGQxIiwiYXBpX2RvbWFpbiI6ImFwaS1nLmtvbW1vLmNvbSJ9.mDQekm9QWyoe5_F5G0xYsNHhv0G_P9_TErG6wj08i1-alm3OGmnTr1FwyyzsLWkg8h_SkdditZDtTUmDu7ES1usiCS90XRPFUBY4MvBYbWjBpn2m_qt3x7dVm4Fgycmyzu1_ukckxm9wU08xA5ivyAoTT4gWfzaG5r9pw-Ei3-U_cmSR6qrcPUq-PZZ6ErjNffOZgUHUitcmcC3LatyoQ6wvtfkO8YHQPWobR1VP0kVgqlHjzqnO7yWvopwIsW2YGQPp95CafUzxQB9kuxtffjdF2uX-eqJgkPi7WCFpL1IqQJ3GyJX4WdlIWP4bD-f8SVud5DwHcFPLM0BfBUlhPg';
+
+const ETAPAS_ALUMNO = new Set(['alumno inscrito','Ventas cerradas del mes','pago Recibido GENERAL',
+  'Acceso a Clase Online Otorgado','Revision administrativa Lista','Consultoría skincare',
+  'Diplomado en microneedling','Diplomado peeling químico','Temas/asesorias Dianela',
+  'Clientes Membresia Lifetime','Temas Administrativos','Errores en plataforma',
+  'Club Coach - Suscrito','En Espera - Mentoria','NO MIGRACIÓN','Conversaciones Dianela',
+  'Falta de Datos','en espera de pago']);
+
+let crm1Data = null;
+
+function initCRM1() {}
+function initCRM2() {}
+
+function handleCRM1Drop(e) {
+  e.preventDefault();
+  document.getElementById('crm1-drop').style.borderColor = 'var(--border)';
+  const file = e.dataTransfer.files[0];
+  if (file) procesarCRM1(file);
+}
+
+async function procesarCRM1(file) {
+  if (!file) return;
+  const status = document.getElementById('crm1-status');
+  const resultado = document.getElementById('crm1-resultado');
+  status.textContent = '⏳ Leyendo archivo...';
+  resultado.innerHTML = '';
+
+  try {
+    const data = await file.arrayBuffer();
+    // Use SheetJS to parse
+    const XLSX = await import('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.mjs');
+    const wb = XLSX.read(data);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+    status.textContent = `✅ ${rows.length} leads cargados — analizando...`;
+    crm1Data = rows;
+    clasificarLeads(rows);
+  } catch(e) {
+    status.textContent = '❌ Error al leer el archivo: ' + e.message;
+  }
+}
+
+function clasificarLeads(rows) {
+  const hoy = new Date();
+
+  // Helper: parse date string
+  function parseDate(s) {
+    if (!s) return null;
+    const parts = String(s).split(' ')[0].split('.');
+    if (parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
+    return new Date(s);
+  }
+
+  function diasSin(row) {
+    const d = parseDate(row['Última modificación el']);
+    if (!d || isNaN(d)) return 9999;
+    return Math.floor((hoy - d) / 86400000);
+  }
+
+  // ── CATEGORÍAS ──
+  const fusionar = []; // Duplicados por tel/email
+  const borrar = [];   // Piden gratis, no hay interés
+  const atacar = [];   // Querían comprar, algo los frenó
+  const asesorar = []; // Interés real pero sin guía
+  const malClasif = []; // Etapa incorrecta
+  const frios = [];    // Sin actividad + sin contexto claro
+
+  // Detectar duplicados
+  const porTel = {}, porEmail = {};
+  rows.forEach(r => {
+    if (r['Teléfono']) {
+      const t = String(r['Teléfono']).trim();
+      if (!porTel[t]) porTel[t] = [];
+      porTel[t].push(r);
+    }
+    if (r['Email']) {
+      const e = String(r['Email']).trim().toLowerCase();
+      if (!porEmail[e]) porEmail[e] = [];
+      porEmail[e].push(r);
+    }
+  });
+
+  const idsDuplicados = new Set();
+  Object.values(porTel).filter(g => g.length > 1).forEach(g => g.forEach(r => {
+    fusionar.push({ ...r, _motivo: 'Mismo teléfono: ' + r['Teléfono'] });
+    idsDuplicados.add(r['ID']);
+  }));
+  Object.values(porEmail).filter(g => g.length > 1).forEach(g => g.forEach(r => {
+    if (!idsDuplicados.has(r['ID'])) {
+      fusionar.push({ ...r, _motivo: 'Mismo email: ' + r['Email'] });
+      idsDuplicados.add(r['ID']);
+    }
+  }));
+
+  // Clasificar el resto
+  const tagsBasura = /sorteo|gratis|free|regalo|concurso|bono gratis|no compra|spam|guia gratis|clase gratis|no me interesa|eliminar/i;
+  const tagsAtacar = /dif\d{6,}|diferi|no pudo|falta plata|próximo mes|el mes que|cuotas|financ|esperar precio|quedo pendiente|volver|le aviso|lo pienso/i;
+  const tagsNoTocar = /clientes no vender|no vender/i;
+
+  rows.forEach(r => {
+    if (idsDuplicados.has(r['ID'])) return;
+    const estatus = String(r['Estatus del lead'] || '');
+    const interes = String(r['Interes'] || '');
+    const tags = String(r['Etiquetas del lead'] || '');
+    const notas = [r['Nota 1'], r['Nota 2'], r['Nota 3']].map(n => String(n||'')).join(' ');
+    const contexto = (tags + ' ' + notas + ' ' + interes).toLowerCase();
+    const dias = diasSin(r);
+
+    // No tocar
+    if (tagsNoTocar.test(estatus) || tagsNoTocar.test(tags)) return;
+    // Ya son alumnos — no están en el análisis
+    if (ETAPAS_ALUMNO.has(estatus)) return;
+    // Migración sin info = ignorar
+    if (estatus === 'Migracion de otros embudos y etapas viejas' && !interes) return;
+
+    // BORRAR: señales claras de no compra
+    if (tagsBasura.test(contexto)) {
+      borrar.push({ ...r, _motivo: 'Señales de no-compra en etiquetas/notas' }); return;
+    }
+
+    // ATACAR: diferimiento o señales de "quería pero no pudo"
+    if (tagsAtacar.test(contexto) || tagsAtacar.test(tags)) {
+      atacar.push({ ...r, _motivo: 'Señal de compra diferida o pausada' }); return;
+    }
+
+    // EN CONVERSACION parada > 48hs
+    if (estatus === 'Lead en Conversacion' && dias > 2) {
+      atacar.push({ ...r, _motivo: 'Conversación sin respuesta hace ' + dias + ' días' }); return;
+    }
+
+    // SEGUIMIENTO parado
+    if (estatus === 'Seguimiento' && dias > 7) {
+      atacar.push({ ...r, _motivo: 'Seguimiento sin actividad hace ' + dias + ' días' }); return;
+    }
+
+    // ASESORAR: interés definido pero sin tags de progreso
+    if (interes && interes !== 'Informacion' && interes !== 'Migracion') {
+      if (dias < 90) {
+        asesorar.push({ ...r, _motivo: 'Interés en ' + interes + ' — sin seguimiento claro' }); return;
+      }
+    }
+
+    // MAL CLASIFICADO: migración con interés definido
+    if (estatus === 'Migracion de otros embudos y etapas viejas' && interes) {
+      malClasif.push({ ...r, _motivo: 'En migración pero tiene interés: ' + interes }); return;
+    }
+
+    // MUY FRÍO
+    if (dias > 60) {
+      frios.push({ ...r, _motivo: 'Sin actividad hace ' + dias + ' días' });
+    }
+  });
+
+  renderCRM1(fusionar, borrar, atacar, asesorar, malClasif, frios);
+}
+
+function renderCRM1(fusionar, borrar, atacar, asesorar, malClasif, frios) {
+  const res = document.getElementById('crm1-resultado');
+
+  function tarjeta(emoji, titulo, color, bg, lista, info) {
+    const id = 'crm1-lista-' + titulo.replace(/\s/g,'');
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:12px" onclick="toggleCRM1Lista('${id}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px">${emoji}</span>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:${color}">${titulo}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px">${info}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:${bg};color:${color};font-weight:700;font-size:15px;padding:4px 14px;border-radius:20px">${lista.length}</span>
+          <span style="color:var(--text3);font-size:18px" id="${id}-arr">▼</span>
+        </div>
+      </div>
+      <div id="${id}" style="display:none">
+        ${lista.length === 0 ? '<div style="color:var(--text3);font-size:13px;padding:8px 0">Ninguno</div>' :
+          lista.slice(0,200).map(r =>
+            `<div style="border-top:1px solid var(--border);padding:10px 0;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:180px">
+                <div style="font-size:13px;font-weight:600">${r['Nombre del lead']||'—'}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${r['Estatus del lead']||''} · ${r['Interes']||'Sin interés'}</div>
+                <div style="font-size:11px;color:var(--accent);margin-top:2px">${r._motivo||''}</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <span style="font-size:11px;color:var(--text3)">ID: ${r['ID']}</span>
+                <a href="https://coachestetico.kommo.com/leads/detail/${r['ID']}" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);border-radius:6px;padding:2px 8px">Ver en Kommo</a>
+                <button onclick="analizarLeadDirecto('${r['ID']}','${(r['Nombre del lead']||'').replace(/'/g,'')}','${(r['Interes']||'').replace(/'/g,'')}','${(r['Etiquetas del lead']||'').replace(/'/g,'')}','${(r['Nota 1']||'').replace(/'/g,'').substring(0,100)}')" style="font-size:11px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:2px 10px;cursor:pointer;font-family:DM Sans,sans-serif">🤖 Analizar</button>
+              </div>
+            </div>`
+          ).join('') +
+          (lista.length > 200 ? `<div style="font-size:12px;color:var(--text3);padding-top:8px">... y ${lista.length-200} más</div>` : '')
+        }
+      </div>
+    </div>`;
+  }
+
+  res.innerHTML =
+    `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px">
+      ${[
+        ['🔄','Fusionar','#856404','#FFF3CD',fusionar.length],
+        ['❌','Borrar','#721C24','#F8D7DA',borrar.length],
+        ['🟢','Atacar ahora','#155724','#D4EDDA',atacar.length],
+        ['🎯','Asesorar','#004085','#CCE5FF',asesorar.length],
+        ['⚠️','Mal clasificado','#7B3F00','#FDE8D0',malClasif.length],
+        ['🧊','Muy fríos','#6C757D','#E9ECEF',frios.length],
+      ].map(([e,t,c,b,n]) =>
+        `<div style="background:${b};border-radius:var(--radius);padding:14px;text-align:center">
+          <div style="font-size:20px">${e}</div>
+          <div style="font-size:11px;font-weight:700;color:${c};margin-top:4px">${t}</div>
+          <div style="font-size:22px;font-weight:800;color:${c}">${n}</div>
+        </div>`
+      ).join('')}
+    </div>` +
+    tarjeta('🔄','Fusionar','#856404','#FFF3CD', fusionar, 'Misma persona con múltiples leads — fusionar en Kommo') +
+    tarjeta('❌','Borrar','#721C24','#F8D7DA', borrar, 'Piden gratis, sorteos o sin interés real de compra') +
+    tarjeta('🟢','Atacar ahora','#155724','#D4EDDA', atacar, 'Querían comprar pero algo los frenó — alta probabilidad de cierre') +
+    tarjeta('🎯','Asesorar','#004085','#CCE5FF', asesorar, 'Tienen interés pero necesitan más info y acompañamiento') +
+    tarjeta('⚠️','Mal clasificado','#7B3F00','#FDE8D0', malClasif, 'Etapa incorrecta en el CRM — requieren reclasificación') +
+    tarjeta('🧊','Muy fríos','#6C757D','#E9ECEF', frios, 'Sin actividad hace más de 60 días — necesitan reactivación');
+}
+
+function toggleCRM1Lista(id) {
+  const el = document.getElementById(id);
+  const arr = document.getElementById(id + '-arr');
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  if (arr) arr.textContent = open ? '▼' : '▲';
+}
+
+// ── CRM2: BUSCADOR KOMMO + IA ──
+async function buscarLeadKommo() {
+  const query = document.getElementById('crm2-buscar').value.trim();
+  if (!query) return;
+  const res = document.getElementById('crm2-resultado');
+  res.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px">🔍 Buscando en Kommo...</div>';
+
+  try {
+    const resp = await fetch('/api/kommo-lead?q=' + encodeURIComponent(query));
+    const data = await resp.json();
+    if (data.error) { res.innerHTML = '<div style="padding:20px;color:var(--danger)">' + data.error + '</div>'; return; }
+    mostrarLeadKommo(data, res);
+  } catch(e) {
+    res.innerHTML = '<div style="padding:20px;color:var(--danger)">Error de conexión: ' + e.message + '</div>';
+  }
+}
+
+function analizarLeadDirecto(id, nombre, interes, tags, nota) {
+  switchTab('crm2');
+  document.getElementById('crm2-buscar').value = id;
+  const res = document.getElementById('crm2-resultado');
+  res.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px">⏳ Cargando lead desde CRM...</div>';
+  fetch('/api/kommo-lead?q=' + id)
+    .then(r => r.json())
+    .then(data => { if (data.error) { res.innerHTML = '<div style="padding:20px;color:var(--danger)">' + data.error + '</div>'; return; } mostrarLeadKommo(data, res); })
+    .catch(e => { res.innerHTML = '<div style="padding:20px;color:var(--danger)">Error: ' + e.message + '</div>'; });
+}
+
+function mostrarLeadKommo(data, res) {
+  const lead = data.lead;
+  const notas = data.notas || [];
+
+  // Build conversation text for IA
+  const convTexto = notas.length > 0
+    ? notas.map(n => `[${n.fecha}] ${n.tipo}: ${n.texto}`).join('\n')
+    : 'Sin notas registradas en el CRM';
+
+  const leadInfo = `Lead: ${lead.nombre} | ID: ${lead.id} | Etapa: ${lead.etapa} | Interés: ${lead.interes||'—'} | Días sin actividad: ${lead.dias_sin_actividad}`;
+
+  res.innerHTML = `
+    <div class="form-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:17px;font-weight:700">${lead.nombre}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">${lead.etapa} · ${lead.interes||'Sin interés'} · <a href="https://coachestetico.kommo.com/leads/detail/${lead.id}" target="_blank" style="color:var(--accent)">Ver en Kommo ↗</a></div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text3)">Sin actividad</div>
+          <div style="font-size:20px;font-weight:700;color:${lead.dias_sin_actividad > 30 ? 'var(--danger)' : lead.dias_sin_actividad > 7 ? '#856404' : '#155724'}">${lead.dias_sin_actividad} días</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-card" style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px">Conversación en CRM (${notas.length} registros)</div>
+      <div style="font-size:12px;font-family:DM Mono,monospace;color:var(--text2);max-height:250px;overflow-y:auto;white-space:pre-wrap;background:var(--bg);padding:12px;border-radius:8px;line-height:1.6">${notas.length > 0 ? notas.map(n => `<span style="color:var(--text3)">[${n.fecha}]</span> <span style="color:${n.tipo==='entrante'?'#155724':'#004085'};font-weight:600">${n.tipo==='entrante'?'👤 Lead':'💬 Asesor'}</span>\n${n.texto}\n`).join('\n') : '<span style="color:var(--text3)">Sin registros de conversación</span>'}</div>
+    </div>
+    <div class="form-card">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Análisis IA</div>
+      <div id="crm2-ia-resultado" style="min-height:60px;font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.6;margin-bottom:12px">Hacé clic en "Analizar con IA" para obtener el diagnóstico y el mensaje exacto a enviar.</div>
+      <button onclick="analizarConIA('${lead.id}', \`${leadInfo.replace(/`/g,"'")}\`, \`${convTexto.substring(0,3000).replace(/`/g,"'")}\`)" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif">🤖 Analizar con IA</button>
+    </div>`;
+}
+
+async function analizarConIA(leadId, leadInfo, conversacion) {
+  const el = document.getElementById('crm2-ia-resultado');
+  el.textContent = '⏳ Analizando conversación...';
+
+  const prompt = `Sos el asistente de ventas de Coach Estético. Analizá este lead y decime exactamente qué hacer.
+
+DATOS DEL LEAD:
+${leadInfo}
+
+CONVERSACIÓN EN EL CRM:
+${conversacion}
+
+CONTEXTO: Coach Estético es una academia online de estética líder en Latinoamérica. Vendemos cursos de peeling químico, dermapen, HIFU, cosmiatría, radiofrecuencia, entre otros.
+
+Respondé con:
+1. DIAGNÓSTICO (2-3 líneas): ¿Qué pasó en esta conversación? ¿Por qué no compró?
+2. VEREDICTO: Atacar / Asesorar / Borrar / Enfriar — y por qué en 1 línea
+3. PRÓXIMO PASO: Qué hacer exactamente hoy
+4. MENSAJE LISTO: El texto exacto para mandar por WhatsApp o Instagram ahora (máximo 4 líneas, tono humano y directo)`;
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 800, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const texto = data.content && data.content[0] ? data.content[0].text : 'Error al obtener respuesta';
+    el.textContent = texto;
+  } catch(e) {
+    el.textContent = 'Error: ' + e.message;
+  }
 }
 
 // Init
