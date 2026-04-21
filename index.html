@@ -1656,6 +1656,14 @@ function renderAdmin() {
 
             // Conversiones
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Conversiones y comisiones</div>' +
+            '<div class="admin-field" style="grid-column:1/-1">' +
+              '<label class="form-label" style="font-size:11px">Tipo de cambio Wise</label>' +
+              '<div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">' +
+                '<span style="font-size:12px;color:var(--text3)">Moneda detectada: <strong id="wise-moneda-' + v._key + '">' + (v.pais ? (PAIS_MONEDA[v.pais]||'—') : '—') + '</strong> · Fecha venta: <strong>' + (v.fecha||'—') + '</strong></span>' +
+                '<button onclick="obtenerTCWise(\'' + v._key + '\')" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif">⇄ Obtener TC Wise</button>' +
+                '<span id="wise-status-' + v._key + '" style="font-size:12px;color:var(--text3)"></span>' +
+              '</div>' +
+            '</div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Moneda local</label>' +
               '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.adminMoneda||'') + '" placeholder="ARS / CLP / VES..." onchange="updateAdminField(\'' + v._key + '\',\'adminMoneda\',this.value)"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto local (admin)</label>' +
@@ -1785,6 +1793,58 @@ async function updateAdminField(key, field, value) {
 }
 
 const PAISES_ADMIN = ['Alemania','Andorra','Argentina','Aruba','Australia','Belice','Bolivia','Brasil','Canadá','Chile','Colombia','Costa Rica','Cuba','Ecuador','El Salvador','España','Estados Unidos','Francia','Guatemala','Honduras','Israel','Italia','México','Nicaragua','Países Bajos','Panamá','Paraguay','Perú','Portugal','Puerto Rico','Reino Unido','República Checa','República Dominicana','Suiza','Trinidad y Tobago','Uruguay','Venezuela'];
+
+const PAIS_MONEDA = {
+  'Alemania':'EUR','Andorra':'EUR','Argentina':'ARS','Aruba':'AWG','Australia':'AUD',
+  'Belice':'BZD','Bolivia':'BOB','Brasil':'BRL','Canadá':'CAD','Chile':'CLP',
+  'Colombia':'COP','Costa Rica':'CRC','Cuba':'CUP','Ecuador':'USD','El Salvador':'USD',
+  'España':'EUR','Estados Unidos':'USD','Francia':'EUR','Guatemala':'GTQ','Honduras':'HNL',
+  'Israel':'ILS','Italia':'EUR','México':'MXN','Nicaragua':'NIO','Países Bajos':'EUR',
+  'Panamá':'USD','Paraguay':'PYG','Perú':'PEN','Portugal':'EUR','Puerto Rico':'USD',
+  'Reino Unido':'GBP','República Checa':'CZK','República Dominicana':'DOP',
+  'Suiza':'CHF','Trinidad y Tobago':'TTD','Uruguay':'UYU','Venezuela':'VES'
+};
+
+async function obtenerTCWise(key) {
+  const v = ventas.find(x=>x._key===key);
+  if (!v) return;
+  const pais = v.pais;
+  const moneda = PAIS_MONEDA[pais];
+  const fecha = v.fecha; // YYYY-MM-DD
+  const statusEl = document.getElementById('wise-status-' + key);
+
+  if (!pais || !moneda) { if(statusEl) statusEl.textContent = '⚠ Seleccioná el país primero'; return; }
+  if (!fecha) { if(statusEl) statusEl.textContent = '⚠ Sin fecha de venta'; return; }
+  if (moneda === 'USD') { if(statusEl) statusEl.textContent = '✓ La moneda ya es USD (TC = 1)'; return; }
+
+  if(statusEl) { statusEl.textContent = 'Consultando Wise...'; statusEl.style.color = 'var(--text3)'; }
+
+  try {
+    const resp = await fetch('/api/wise-rate?source=USD&target=' + moneda + '&date=' + fecha);
+    const data = await resp.json();
+
+    if (!resp.ok || data.error) {
+      if(statusEl) { statusEl.textContent = '✗ Error: ' + (data.error||'Sin respuesta'); statusEl.style.color = 'var(--danger)'; }
+      return;
+    }
+
+    const tc = parseFloat(data.rate).toFixed(4);
+    const montoUSD = parseFloat(v.monto||0);
+    const montoLocal = (montoUSD * parseFloat(tc)).toFixed(2);
+
+    // Update Firebase and local state
+    await updateAdminField(key, 'adminTC', tc);
+    await updateAdminField(key, 'adminMoneda', moneda);
+    await updateAdminField(key, 'adminMontoLocal', montoLocal);
+
+    if(statusEl) { statusEl.textContent = '✓ TC obtenido: 1 USD = ' + parseFloat(tc).toLocaleString('es-AR') + ' ' + moneda; statusEl.style.color = '#155724'; }
+
+    // Re-render to show updated values
+    renderAdmin();
+  } catch(e) {
+    if(statusEl) { statusEl.textContent = '✗ Error de conexión'; statusEl.style.color = 'var(--danger)'; }
+  }
+}
 
 function exportAdminCSV() {
   if (!ventas.length) { showToast('No hay ventas para exportar'); return; }
