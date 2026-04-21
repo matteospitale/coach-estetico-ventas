@@ -657,19 +657,22 @@ tbody tr:hover td { background: var(--surface2); }
         <input type="file" id="crm1-file" accept=".xlsx,.xls" style="display:none" onchange="procesarCRM1(this.files[0])">
         <div id="crm1-status" style="font-size:13px;color:var(--text3);margin-top:12px;text-align:center"></div>
       </div>
-      <div id="crm1-botones" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-        <button onclick="abrirDuplicados()" style="background:#1a1a2e;color:#7b61ff;border:2px solid #7b61ff;border-radius:12px;padding:20px;font-size:15px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;display:flex;flex-direction:column;align-items:center;gap:8px">
-          <span style="font-size:28px">🔄</span>
-          <span>Duplicados CRM</span>
-          <span id="crm1-dup-stat" style="font-size:12px;font-weight:400;opacity:0.7"></span>
-        </button>
-        <button onclick="abrirBorrar()" style="background:#1a0a0a;color:#ff6b6b;border:2px solid #ff6b6b;border-radius:12px;padding:20px;font-size:15px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;display:flex;flex-direction:column;align-items:center;gap:8px">
-          <span style="font-size:28px">❌</span>
-          <span>Leads a Borrar</span>
-          <span id="crm1-borrar-stat" style="font-size:12px;font-weight:400;opacity:0.7"></span>
-        </button>
+      <div id="crm1-tabs" style="display:none;margin-top:4px">
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:0;flex-wrap:wrap">
+          <button id="crm1-tab-dup" onclick="switchCRM1Tab('dup')" style="padding:10px 20px;border:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;background:transparent;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">🔄 Duplicados <span id="crm1-dup-stat" style="font-weight:400;opacity:0.7"></span></button>
+          <button id="crm1-tab-borrar" onclick="switchCRM1Tab('borrar')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">❌ Leads a Borrar <span id="crm1-borrar-stat" style="font-weight:400;opacity:0.7"></span></button>
+          <button id="crm1-tab-atacar" onclick="switchCRM1Tab('atacar')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">🟢 Atacar <span id="crm1-atacar-stat" style="font-weight:400;opacity:0.7"></span></button>
+          <button id="crm1-tab-asesorar" onclick="switchCRM1Tab('asesorar')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">🎯 Asesorar <span id="crm1-asesorar-stat" style="font-weight:400;opacity:0.7"></span></button>
+          <button id="crm1-tab-malc" onclick="switchCRM1Tab('malc')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">⚠️ Mal clasificado <span id="crm1-malc-stat" style="font-weight:400;opacity:0.7"></span></button>
+          <button id="crm1-tab-frios" onclick="switchCRM1Tab('frios')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">🧊 Muy fríos <span id="crm1-frios-stat" style="font-weight:400;opacity:0.7"></span></button>
+        </div>
+        <div id="crm1-panel-dup" style="margin-top:0"></div>
+        <div id="crm1-panel-borrar" style="margin-top:0;display:none"></div>
+        <div id="crm1-panel-atacar" style="margin-top:16px;display:none"></div>
+        <div id="crm1-panel-asesorar" style="margin-top:16px;display:none"></div>
+        <div id="crm1-panel-malc" style="margin-top:16px;display:none"></div>
+        <div id="crm1-panel-frios" style="margin-top:16px;display:none"></div>
       </div>
-      <div id="crm1-resultado"></div>
     </section>
 
     <!-- LEAD IA -->
@@ -2245,18 +2248,20 @@ async function procesarCRM1(file) {
 let crm1DupData = null;
 let crm1BorrarData = null;
 
-function abrirDuplicados() {
-  if (!crm1DupData) { showToast('Cargá un Excel primero'); return; }
-  const w = window.open('', '_blank');
-  w.document.write(crm1DupData);
-  w.document.close();
-}
+const CRM1_TABS = ['dup','borrar','atacar','asesorar','malc','frios'];
 
-function abrirBorrar() {
-  if (!crm1BorrarData) { showToast('Cargá un Excel primero'); return; }
-  const w = window.open('', '_blank');
-  w.document.write(crm1BorrarData);
-  w.document.close();
+function switchCRM1Tab(tab) {
+  crm1TabActual = tab;
+  CRM1_TABS.forEach(function(t) {
+    var panel = document.getElementById('crm1-panel-' + t);
+    var btn = document.getElementById('crm1-tab-' + t);
+    if (!panel || !btn) return;
+    var active = t === tab;
+    panel.style.display = active ? 'block' : 'none';
+    btn.style.color = active ? 'var(--accent)' : 'var(--text3)';
+    btn.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
+    btn.style.fontWeight = active ? '700' : '500';
+  });
 }
 
 const DUP_CSS = "\n  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n\n  :root {\n    --bg: #0c0c0f;\n    --surface: #13131a;\n    --surface2: #1c1c27;\n    --border: #2a2a3a;\n    --accent: #7b61ff;\n    --accent2: #ff6b6b;\n    --accent3: #00e5a0;\n    --text: #e8e8f0;\n    --muted: #6b6b85;\n    --master: #00e5a0;\n    --fusionar: #7b61ff;\n    --alumno-bg: rgba(255,107,107,0.08);\n    --alumno-border: rgba(255,107,107,0.3);\n  }\n\n  body {\n    background: var(--bg);\n    color: var(--text);\n    font-family: 'DM Mono', monospace;\n    font-size: 13px;\n    min-height: 100vh;\n  }\n\n  /* HEADER */\n  .header {\n    padding: 32px 32px 24px;\n    border-bottom: 1px solid var(--border);\n    position: sticky;\n    top: 0;\n    background: var(--bg);\n    z-index: 100;\n    display: flex;\n    align-items: center;\n    gap: 32px;\n    flex-wrap: wrap;\n  }\n\n  .header-title {\n    font-family: 'Syne', sans-serif;\n    font-size: 20px;\n    font-weight: 800;\n    letter-spacing: -0.5px;\n  }\n\n  .header-title span { color: var(--accent); }\n\n  .stats-bar {\n    display: flex;\n    gap: 16px;\n    flex-wrap: wrap;\n    flex: 1;\n  }\n\n  .stat {\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n  }\n  .stat-num {\n    font-family: 'Syne', sans-serif;\n    font-size: 22px;\n    font-weight: 800;\n    line-height: 1;\n  }\n  .stat-label {\n    font-size: 10px;\n    color: var(--muted);\n    text-transform: uppercase;\n    letter-spacing: 0.08em;\n  }\n  .stat-num.acc { color: var(--accent); }\n  .stat-num.acc2 { color: var(--accent2); }\n  .stat-num.acc3 { color: var(--accent3); }\n\n  /* CONTROLS */\n  .controls {\n    padding: 16px 32px;\n    display: flex;\n    gap: 12px;\n    align-items: center;\n    flex-wrap: wrap;\n    border-bottom: 1px solid var(--border);\n    position: sticky;\n    top: 89px;\n    background: var(--bg);\n    z-index: 99;\n  }\n\n  .search-wrap {\n    position: relative;\n    flex: 1;\n    min-width: 200px;\n    max-width: 360px;\n  }\n  .search-wrap input {\n    width: 100%;\n    background: var(--surface);\n    border: 1px solid var(--border);\n    color: var(--text);\n    font-family: 'DM Mono', monospace;\n    font-size: 12px;\n    padding: 8px 12px 8px 32px;\n    outline: none;\n    transition: border-color 0.15s;\n  }\n  .search-wrap input:focus { border-color: var(--accent); }\n  .search-icon {\n    position: absolute;\n    left: 10px;\n    top: 50%;\n    transform: translateY(-50%);\n    color: var(--muted);\n    font-size: 14px;\n  }\n\n  .filter-btn {\n    background: var(--surface);\n    border: 1px solid var(--border);\n    color: var(--muted);\n    font-family: 'DM Mono', monospace;\n    font-size: 11px;\n    padding: 8px 14px;\n    cursor: pointer;\n    transition: all 0.15s;\n    text-transform: uppercase;\n    letter-spacing: 0.06em;\n  }\n  .filter-btn:hover { border-color: var(--accent); color: var(--text); }\n  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }\n\n  .count-label {\n    margin-left: auto;\n    color: var(--muted);\n    font-size: 11px;\n  }\n\n  /* GROUPS LIST */\n  .groups-container {\n    padding: 16px 32px 48px;\n    display: flex;\n    flex-direction: column;\n    gap: 10px;\n  }\n\n  .group-card {\n    border: 1px solid var(--border);\n    background: var(--surface);\n    overflow: hidden;\n    transition: border-color 0.15s;\n  }\n  .group-card.has-alumno {\n    border-color: rgba(255,107,107,0.25);\n    background: rgba(255,107,107,0.03);\n  }\n  .group-card:hover { border-color: var(--accent); }\n\n  .group-header {\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    padding: 10px 14px;\n    cursor: pointer;\n    user-select: none;\n  }\n\n  .group-num {\n    font-family: 'Syne', sans-serif;\n    font-size: 11px;\n    font-weight: 700;\n    color: var(--muted);\n    min-width: 52px;\n  }\n\n  .group-badge {\n    font-size: 10px;\n    padding: 2px 8px;\n    text-transform: uppercase;\n    letter-spacing: 0.08em;\n    font-weight: 500;\n  }\n  .badge-alumno { background: rgba(255,107,107,0.15); color: var(--accent2); border: 1px solid rgba(255,107,107,0.3); }\n  .badge-lead { background: rgba(123,97,255,0.12); color: var(--accent); border: 1px solid rgba(123,97,255,0.3); }\n\n  .group-match {\n    font-size: 11px;\n    color: var(--muted);\n    flex: 1;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n  .group-match .match-key {\n    color: var(--accent3);\n  }\n\n  .group-size {\n    font-size: 10px;\n    color: var(--muted);\n    white-space: nowrap;\n  }\n\n  .group-toggle {\n    color: var(--muted);\n    font-size: 12px;\n    transition: transform 0.2s;\n    flex-shrink: 0;\n  }\n  .group-card.open .group-toggle { transform: rotate(180deg); }\n\n  /* LEADS TABLE */\n  .group-body {\n    display: none;\n    border-top: 1px solid var(--border);\n  }\n  .group-card.open .group-body { display: block; }\n\n  .lead-row {\n    display: grid;\n    grid-template-columns: 130px 100px 1fr 160px 140px 90px 80px;\n    gap: 0;\n    border-bottom: 1px solid var(--border);\n    min-height: 36px;\n    align-items: stretch;\n  }\n  .lead-row:last-child { border-bottom: none; }\n\n  .lead-row.is-master {\n    background: rgba(0,229,160,0.04);\n  }\n  .lead-row.is-fusionar {\n    background: rgba(123,97,255,0.04);\n  }\n\n  .lead-cell {\n    padding: 8px 12px;\n    display: flex;\n    align-items: center;\n    border-right: 1px solid var(--border);\n    overflow: hidden;\n    font-size: 12px;\n  }\n  .lead-cell:last-child { border-right: none; }\n\n  .rol-badge {\n    font-size: 10px;\n    font-weight: 500;\n    padding: 2px 8px;\n    white-space: nowrap;\n  }\n  .rol-master { background: rgba(0,229,160,0.15); color: var(--master); border: 1px solid rgba(0,229,160,0.3); }\n  .rol-fusionar { background: rgba(123,97,255,0.12); color: var(--accent); border: 1px solid rgba(123,97,255,0.3); }\n\n  .lead-id {\n    font-size: 11px;\n    color: var(--muted);\n    font-family: 'DM Mono', monospace;\n  }\n\n  .lead-nombre {\n    font-weight: 500;\n    color: var(--text);\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  .lead-etapa {\n    font-size: 11px;\n    color: var(--muted);\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  .lead-compra {\n    font-size: 11px;\n    color: var(--accent3);\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n  .lead-compra.empty { color: var(--muted); }\n\n  .alumno-dot {\n    width: 6px;\n    height: 6px;\n    border-radius: 50%;\n    background: var(--accent2);\n    flex-shrink: 0;\n    margin-right: 6px;\n  }\n\n  .table-header {\n    display: grid;\n    grid-template-columns: 130px 100px 1fr 160px 140px 90px 80px;\n    background: var(--surface2);\n    border-bottom: 1px solid var(--border);\n  }\n  .th {\n    padding: 6px 12px;\n    font-size: 9px;\n    color: var(--muted);\n    text-transform: uppercase;\n    letter-spacing: 0.1em;\n    border-right: 1px solid var(--border);\n  }\n  .th:last-child { border-right: none; }\n\n  /* EMPTY */\n  .empty-state {\n    text-align: center;\n    padding: 64px;\n    color: var(--muted);\n  }\n  .empty-state .big { font-size: 40px; margin-bottom: 12px; }\n  .empty-state p { font-size: 13px; }\n\n  /* SCROLLTOP */\n  #scrolltop {\n    position: fixed;\n    bottom: 24px;\n    right: 24px;\n    background: var(--accent);\n    color: #fff;\n    border: none;\n    width: 36px;\n    height: 36px;\n    cursor: pointer;\n    font-size: 16px;\n    display: none;\n    align-items: center;\n    justify-content: center;\n    z-index: 200;\n  }\n  #scrolltop.visible { display: flex; }\n";
@@ -2430,13 +2435,164 @@ function analizarCRM(rows, status) {
   var totalBorrar = cats.reduce(function(s,c){return s+c.leads.length;},0);
   var borrarStats = { total_crm:rows.length, protegidos:totalAlumnos, duplicados:dupLeads, candidatos:totalBorrar };
 
-  crm1DupData = generarHTMLDuplicados(grupos, dupStats);
-  crm1BorrarData = generarHTMLBorrar(cats, borrarStats);
+  var dupHTML = generarHTMLDuplicados(grupos, dupStats);
+  var borrarHTML = generarHTMLBorrar(cats, borrarStats);
 
+  // Render inside hub using iframes (keeps original CSS isolated)
+  function makeIframe(html) {
+    var iframe = document.createElement('iframe');
+    iframe.style.cssText = 'width:100%;border:none;border-radius:8px;display:block;min-height:600px';
+    iframe.scrolling = 'no';
+    // Use srcdoc for clean isolated render
+    iframe.srcdoc = html;
+    // Auto-resize iframe to content
+    iframe.onload = function() {
+      try {
+        var body = iframe.contentDocument.body;
+        iframe.style.height = (body.scrollHeight + 40) + 'px';
+        // Observe size changes
+        if (window.ResizeObserver) {
+          new ResizeObserver(function() {
+            iframe.style.height = (body.scrollHeight + 40) + 'px';
+          }).observe(body);
+        }
+      } catch(e) {}
+    };
+    return iframe;
+  }
+
+  var panelDup = document.getElementById('crm1-panel-dup');
+  var panelBorrar = document.getElementById('crm1-panel-borrar');
+  panelDup.innerHTML = '';
+  panelBorrar.innerHTML = '';
+  panelDup.appendChild(makeIframe(dupHTML));
+  panelBorrar.appendChild(makeIframe(borrarHTML));
+
+  // ── ATACAR ──
+  var atacarDif = [], atacarConv = [], atacarSeg = [];
+  var borrarIds = {};
+  cats.forEach(function(c){ c.leads.forEach(function(l){ borrarIds[l.id]=1; }); });
+
+  rows.forEach(function(r) {
+    if (r._alumno || idsDup[String(r['ID'])] || borrarIds[r['ID']]) return;
+    var estatus = String(r['Estatus del lead']||'');
+    var tags = String(r['Etiquetas del lead']||'');
+    var d = diasDe(r);
+    if (/dif\d{4,}/i.test(tags)) { atacarDif.push(r); return; }
+    if (estatus === 'Lead en Conversacion' && d !== null && d > 2) { atacarConv.push(r); return; }
+    if (estatus === 'Seguimiento' && d !== null && d > 7) { atacarSeg.push(r); }
+  });
+
+  // ── ASESORAR ──
+  var atacarIds = {};
+  atacarDif.concat(atacarConv).concat(atacarSeg).forEach(function(r){ atacarIds[r['ID']]=1; });
+  var asesorar = [];
+  rows.forEach(function(r) {
+    if (r._alumno || idsDup[String(r['ID'])] || borrarIds[r['ID']] || atacarIds[r['ID']]) return;
+    var interes = String(r['Interes']||'').trim();
+    var d = diasDe(r);
+    if (interes && ['Informacion','Migracion',''].indexOf(interes)<0 && d !== null && d < 90) {
+      asesorar.push(r);
+    }
+  });
+
+  // ── MAL CLASIFICADO ──
+  var asesorarIds = {};
+  asesorar.forEach(function(r){ asesorarIds[r['ID']]=1; });
+  var malClasif = [];
+  rows.forEach(function(r) {
+    if (r._alumno || idsDup[String(r['ID'])] || borrarIds[r['ID']] || atacarIds[r['ID']] || asesorarIds[r['ID']]) return;
+    var estatus = String(r['Estatus del lead']||'');
+    var interes = String(r['Interes']||'').trim();
+    if (estatus === 'Migracion de otros embudos y etapas viejas' && interes && interes !== 'Migracion') {
+      malClasif.push(r);
+    }
+  });
+
+  // ── MUY FRÍOS ──
+  var malIds = {};
+  malClasif.forEach(function(r){ malIds[r['ID']]=1; });
+  var frios = [];
+  rows.forEach(function(r) {
+    if (r._alumno || idsDup[String(r['ID'])] || borrarIds[r['ID']] || atacarIds[r['ID']] || asesorarIds[r['ID']] || malIds[r['ID']]) return;
+    var d = diasDe(r);
+    if (d !== null && d > 60) frios.push(r);
+  });
+
+  function renderLeadPanel(panelId, secciones) {
+    var panel = document.getElementById(panelId);
+    panel.innerHTML = secciones.map(function(s) {
+      if (!s.lista.length) return '';
+      var rows2 = s.lista.slice(0,100).map(function(r) {
+        var nombre = r['Nombre del lead'] || r['Contacto principal'] || '—';
+        var interes = r['Interes'] || '';
+        var estatus = r['Estatus del lead'] || '';
+        var tags = String(r['Etiquetas del lead']||'').split(',').slice(0,3).map(function(t){return t.trim();}).filter(Boolean).join(', ');
+        var d = diasDe(r);
+        return '<tr style="border-bottom:1px solid var(--border)">' +
+          '<td style="padding:8px 12px;font-size:11px;color:var(--text3);font-family:DM Mono,monospace">' + r['ID'] + '</td>' +
+          '<td style="padding:8px 12px;font-size:13px;font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + nombre + '</td>' +
+          '<td style="padding:8px 12px;font-size:11px;color:var(--text2)">' + estatus + '</td>' +
+          '<td style="padding:8px 12px;font-size:11px;color:var(--accent)">' + interes + '</td>' +
+          '<td style="padding:8px 12px;font-size:11px;color:var(--text3)">' + (tags||'—') + '</td>' +
+          '<td style="padding:8px 12px;font-size:11px;color:var(--text3);text-align:right">' + (d !== null ? d + 'd' : '—') + '</td>' +
+          '<td style="padding:8px 12px">' +
+            '<a href="https://coachestetico.kommo.com/leads/detail/' + r['ID'] + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);border-radius:6px;padding:2px 8px;white-space:nowrap">Kommo ↗</a>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px">' +
+        '<div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:var(--surface2)" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">' +
+          '<div>' +
+            '<span style="font-size:15px;font-weight:700">' + s.emoji + ' ' + s.titulo + '</span>' +
+            '<span style="margin-left:10px;background:var(--bg);color:var(--text3);font-size:12px;padding:2px 10px;border-radius:12px">' + s.lista.length.toLocaleString() + '</span>' +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--text3)">' + s.desc + ' ▼</div>' +
+        '</div>' +
+        '<div style="display:none">' +
+          '<table style="width:100%;border-collapse:collapse">' +
+            '<thead><tr style="background:var(--surface2)">' +
+              '<th style="padding:7px 12px;font-size:10px;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:0.07em">ID</th>' +
+              '<th style="padding:7px 12px;font-size:10px;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:0.07em">Nombre</th>' +
+              '<th style="padding:7px 12px;font-size:10px;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:0.07em">Etapa</th>' +
+              '<th style="padding:7px 12px;font-size:10px;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:0.07em">Interés</th>' +
+              '<th style="padding:7px 12px;font-size:10px;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:0.07em">Etiquetas</th>' +
+              '<th style="padding:7px 12px;font-size:10px;color:var(--text3);text-align:right;text-transform:uppercase;letter-spacing:0.07em">Sin actividad</th>' +
+              '<th style="padding:7px 12px"></th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows2 + '</tbody>' +
+          '</table>' +
+          (s.lista.length > 100 ? '<div style="padding:10px 16px;font-size:12px;color:var(--text3)">... y ' + (s.lista.length-100).toLocaleString() + ' más</div>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  renderLeadPanel('crm1-panel-atacar', [
+    { emoji:'🎯', titulo:'Diferimiento', desc:'Querían comprar pero lo dejaron para después', lista: atacarDif },
+    { emoji:'💬', titulo:'Conversación parada +2d', desc:'En conversación pero sin respuesta hace más de 2 días', lista: atacarConv },
+    { emoji:'📋', titulo:'Seguimiento abandonado', desc:'En seguimiento sin actividad hace más de 7 días', lista: atacarSeg }
+  ]);
+  renderLeadPanel('crm1-panel-asesorar', [
+    { emoji:'🎯', titulo:'Asesorar', desc:'Tienen interés definido pero sin seguimiento en los últimos 90 días', lista: asesorar }
+  ]);
+  renderLeadPanel('crm1-panel-malc', [
+    { emoji:'⚠️', titulo:'Mal clasificados', desc:'En migración pero con interés definido — requieren reclasificación', lista: malClasif }
+  ]);
+  renderLeadPanel('crm1-panel-frios', [
+    { emoji:'🧊', titulo:'Muy fríos', desc:'Sin actividad hace más de 60 días', lista: frios }
+  ]);
+
+  var totalAtacar = atacarDif.length + atacarConv.length + atacarSeg.length;
   status.textContent = '✅ Listo — ' + rows.length.toLocaleString() + ' leads procesados';
-  document.getElementById('crm1-dup-stat').textContent = grupos.length + ' grupos · ' + dupLeads + ' leads · ' + fusiones + ' fusiones';
-  document.getElementById('crm1-borrar-stat').textContent = totalBorrar.toLocaleString() + ' candidatos a borrar';
-  document.getElementById('crm1-botones').style.display = 'grid';
+  document.getElementById('crm1-dup-stat').textContent = '(' + grupos.length + ' grupos · ' + dupLeads + ' leads)';
+  document.getElementById('crm1-borrar-stat').textContent = '(' + totalBorrar.toLocaleString() + ')';
+  document.getElementById('crm1-atacar-stat').textContent = '(' + totalAtacar.toLocaleString() + ')';
+  document.getElementById('crm1-asesorar-stat').textContent = '(' + asesorar.length.toLocaleString() + ')';
+  document.getElementById('crm1-malc-stat').textContent = '(' + malClasif.length.toLocaleString() + ')';
+  document.getElementById('crm1-frios-stat').textContent = '(' + frios.length.toLocaleString() + ')';
+  document.getElementById('crm1-tabs').style.display = 'block';
+  switchCRM1Tab('dup');
 }
 
 // ── CRM2: BUSCADOR KOMMO + IA ──
