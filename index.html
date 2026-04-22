@@ -337,13 +337,11 @@ tbody tr:hover td { background: var(--surface2); }
     <button class="nav-item" id="nav-crm1" onclick="switchTab('crm1')">
       <span class="nav-icon">📊</span> Análisis CRM
     </button>
-    <button class="nav-item" id="nav-crm2" onclick="switchTab('crm2')">
-      <span class="nav-icon">🔍</span> Lead IA
-    </button>
+
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.1</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.2</div>
   </div>
 </aside>
 
@@ -677,20 +675,7 @@ tbody tr:hover td { background: var(--surface2); }
     </section>
 
     <!-- LEAD IA -->
-    <section class="section" id="sec-crm2">
-      <div class="section-header">
-        <div class="section-title">Lead IA</div>
-        <span style="font-size:12px;color:var(--text3)">Buscá un lead en Kommo y la IA analiza la conversación</span>
-      </div>
-      <div class="form-card" style="margin-bottom:20px">
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <input id="crm2-buscar" class="form-input" style="flex:1;min-width:200px" placeholder="ID del lead o nombre exacto..." onkeydown="if(event.key==='Enter') buscarLeadKommo()">
-          <button class="btn btn-accent" onclick="buscarLeadKommo()">🔍 Buscar en Kommo</button>
-        </div>
-        <div style="font-size:11px;color:var(--text3);margin-top:8px">Buscá por ID (más preciso) o por nombre. El sistema trae la conversación real y la IA te dice qué hacer.</div>
-      </div>
-      <div id="crm2-resultado"></div>
-    </section>
+
 
   </div>
 </div>
@@ -802,8 +787,8 @@ function closeSidebar() {
 }
 
 // ── NAVIGATION ──
-const TABS = ['inicio','ventas','plantillas','stats','ia','admin','crm1','crm2','cargar'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', crm1:'Análisis CRM', crm2:'Lead IA', cargar:'Cargar venta' };
+const TABS = ['inicio','ventas','plantillas','stats','ia','admin','crm1','cargar'];
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', crm1:'Análisis CRM', cargar:'Cargar venta' };
 
 function switchTab(t) {
   TABS.forEach(s => {
@@ -820,7 +805,7 @@ function switchTab(t) {
   if (t === 'ia') initIA();
   if (t === 'admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); }
   if (t === 'crm1') initCRM1();
-  if (t === 'crm2') initCRM2();
+
   closeSidebar();
 }
 
@@ -2602,106 +2587,6 @@ function analizarCRM(rows, status) {
   document.getElementById('crm1-frios-stat').textContent = '(' + frios.length.toLocaleString() + ')';
   document.getElementById('crm1-tabs').style.display = 'block';
   switchCRM1Tab('dup');
-}
-
-// ── CRM2: BUSCADOR KOMMO + IA ──
-async function buscarLeadKommo() {
-  const query = document.getElementById('crm2-buscar').value.trim();
-  if (!query) return;
-  const res = document.getElementById('crm2-resultado');
-  res.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px">🔍 Buscando en Kommo...</div>';
-
-  try {
-    const resp = await fetch('/api/kommo-lead?q=' + encodeURIComponent(query));
-    const text = await resp.text();
-    let data;
-    try { data = JSON.parse(text); }
-    catch(e) { res.innerHTML = '<div style="padding:20px;color:var(--danger)">Error del servidor: ' + text.substring(0,200) + '</div>'; return; }
-    if (data.error) { res.innerHTML = '<div style="padding:20px;color:var(--danger)">❌ ' + data.error + '</div>'; return; }
-    mostrarLeadKommo(data, res);
-  } catch(e) {
-    res.innerHTML = '<div style="padding:20px;color:var(--danger)">Error de conexión: ' + e.message + '</div>';
-  }
-}
-
-function analizarLeadDirecto(id, nombre, interes, tags, nota) {
-  switchTab('crm2');
-  document.getElementById('crm2-buscar').value = id;
-  const res = document.getElementById('crm2-resultado');
-  res.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px">⏳ Cargando lead desde CRM...</div>';
-  fetch('/api/kommo-lead?q=' + id)
-    .then(r => r.json())
-    .then(data => { if (data.error) { res.innerHTML = '<div style="padding:20px;color:var(--danger)">' + data.error + '</div>'; return; } mostrarLeadKommo(data, res); })
-    .catch(e => { res.innerHTML = '<div style="padding:20px;color:var(--danger)">Error: ' + e.message + '</div>'; });
-}
-
-function mostrarLeadKommo(data, res) {
-  const lead = data.lead;
-  const notas = data.notas || [];
-
-  // Build conversation text for IA
-  const convTexto = notas.length > 0
-    ? notas.map(n => `[${n.fecha}] ${n.tipo}: ${n.texto}`).join('\n')
-    : 'Sin notas registradas en el CRM';
-
-  const leadInfo = `Lead: ${lead.nombre} | ID: ${lead.id} | Etapa: ${lead.etapa} | Interés: ${lead.interes||'—'} | Días sin actividad: ${lead.dias_sin_actividad}`;
-
-  res.innerHTML = `
-    <div class="form-card" style="margin-bottom:16px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div>
-          <div style="font-size:17px;font-weight:700">${lead.nombre}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:4px">${lead.etapa} · ${lead.interes||'Sin interés'} · <a href="https://coachestetico.kommo.com/leads/detail/${lead.id}" target="_blank" style="color:var(--accent)">Ver en Kommo ↗</a></div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:11px;color:var(--text3)">Sin actividad</div>
-          <div style="font-size:20px;font-weight:700;color:${lead.dias_sin_actividad > 30 ? 'var(--danger)' : lead.dias_sin_actividad > 7 ? '#856404' : '#155724'}">${lead.dias_sin_actividad} días</div>
-        </div>
-      </div>
-    </div>
-    <div class="form-card" style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px">Conversación en CRM (${notas.length} registros)</div>
-      <div style="font-size:12px;font-family:DM Mono,monospace;color:var(--text2);max-height:250px;overflow-y:auto;white-space:pre-wrap;background:var(--bg);padding:12px;border-radius:8px;line-height:1.6">${notas.length > 0 ? notas.map(n => `<span style="color:var(--text3)">[${n.fecha}]</span> <span style="color:${n.tipo==='entrante'?'#155724':'#004085'};font-weight:600">${n.tipo==='entrante'?'👤 Lead':'💬 Asesor'}</span>\n${n.texto}\n`).join('\n') : '<span style="color:var(--text3)">Sin registros de conversación</span>'}</div>
-    </div>
-    <div class="form-card">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Análisis IA</div>
-      <div id="crm2-ia-resultado" style="min-height:60px;font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.6;margin-bottom:12px">Hacé clic en "Analizar con IA" para obtener el diagnóstico y el mensaje exacto a enviar.</div>
-      <button onclick="analizarConIA('${lead.id}', \`${leadInfo.replace(/`/g,"'")}\`, \`${convTexto.substring(0,3000).replace(/`/g,"'")}\`)" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif">🤖 Analizar con IA</button>
-    </div>`;
-}
-
-async function analizarConIA(leadId, leadInfo, conversacion) {
-  const el = document.getElementById('crm2-ia-resultado');
-  el.textContent = '⏳ Analizando conversación...';
-
-  const prompt = `Sos el asistente de ventas de Coach Estético. Analizá este lead y decime exactamente qué hacer.
-
-DATOS DEL LEAD:
-${leadInfo}
-
-CONVERSACIÓN EN EL CRM:
-${conversacion}
-
-CONTEXTO: Coach Estético es una academia online de estética líder en Latinoamérica. Vendemos cursos de peeling químico, dermapen, HIFU, cosmiatría, radiofrecuencia, entre otros.
-
-Respondé con:
-1. DIAGNÓSTICO (2-3 líneas): ¿Qué pasó en esta conversación? ¿Por qué no compró?
-2. VEREDICTO: Atacar / Asesorar / Borrar / Enfriar — y por qué en 1 línea
-3. PRÓXIMO PASO: Qué hacer exactamente hoy
-4. MENSAJE LISTO: El texto exacto para mandar por WhatsApp o Instagram ahora (máximo 4 líneas, tono humano y directo)`;
-
-  try {
-    const resp = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 800, messages: [{ role: 'user', content: prompt }] })
-    });
-    const data = await resp.json();
-    const texto = data.content && data.content[0] ? data.content[0].text : 'Error al obtener respuesta';
-    el.textContent = texto;
-  } catch(e) {
-    el.textContent = 'Error: ' + e.message;
-  }
 }
 
 // Init
