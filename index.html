@@ -163,6 +163,9 @@ tbody tr:hover td { background: var(--surface2); }
 .btn-accent:hover { background: var(--accent-dark); }
 .btn-ghost { background: none; color: var(--text2); border: 1px solid var(--border); }
 .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.crm-tab { padding:10px 18px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all 0.15s; }
+.crm-tab:hover { color:var(--text); }
+.crm-tab.active { border-bottom-color:var(--accent);color:var(--accent);font-weight:700; }
 .btn-danger { background: none; color: var(--danger); border: 1px solid transparent; padding: 5px 10px; font-size: 12px; }
 .btn-danger:hover { background: var(--danger-bg); }
 
@@ -341,7 +344,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.2</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.3</div>
   </div>
 </aside>
 
@@ -645,36 +648,271 @@ tbody tr:hover td { background: var(--surface2); }
     <section class="section" id="sec-crm1">
       <div class="section-header">
         <div class="section-title">Análisis CRM</div>
-        <span style="font-size:12px;color:var(--text3)">Cargá el export de Kommo para generar los reportes</span>
+        <span style="font-size:12px;color:var(--text3)">Export del 22/04/2026 · 25.973 leads analizados</span>
       </div>
-      <div class="form-card" style="margin-bottom:20px">
-        <div id="crm1-drop" style="border:2px dashed var(--border);border-radius:var(--radius);padding:28px;text-align:center;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('crm1-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleCRM1Drop(event)">
-          <div style="font-size:32px;margin-bottom:8px">📂</div>
-          <div style="font-size:15px;font-weight:700;color:var(--text)">Subir export de Kommo (.xlsx)</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:4px">Arrastrá o hacé clic para seleccionar</div>
-        </div>
-        <input type="file" id="crm1-file" accept=".xlsx,.xls" style="display:none" onchange="procesarCRM1(this.files[0])">
-        <div id="crm1-status" style="font-size:13px;color:var(--text3);margin-top:12px;text-align:center"></div>
-      </div>
-      <div id="crm1-tabs" style="display:none;margin-top:4px">
-        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:0;flex-wrap:wrap">
-          <button id="crm1-tab-dup" onclick="switchCRM1Tab('dup')" style="padding:10px 20px;border:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;background:transparent;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">🔄 Duplicados <span id="crm1-dup-stat" style="font-weight:400;opacity:0.7"></span></button>
-          <button id="crm1-tab-borrar" onclick="switchCRM1Tab('borrar')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">❌ Leads a Borrar <span id="crm1-borrar-stat" style="font-weight:400;opacity:0.7"></span></button>
-          <button id="crm1-tab-atacar" onclick="switchCRM1Tab('atacar')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">🟢 Atacar <span id="crm1-atacar-stat" style="font-weight:400;opacity:0.7"></span></button>
-          <button id="crm1-tab-asesorar" onclick="switchCRM1Tab('asesorar')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">🎯 Asesorar <span id="crm1-asesorar-stat" style="font-weight:400;opacity:0.7"></span></button>
-          <button id="crm1-tab-malc" onclick="switchCRM1Tab('malc')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">⚠️ Mal clasificado <span id="crm1-malc-stat" style="font-weight:400;opacity:0.7"></span></button>
-          <button id="crm1-tab-frios" onclick="switchCRM1Tab('frios')" style="padding:10px 20px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:transparent;color:var(--text3);font-weight:500;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif">🧊 Muy fríos <span id="crm1-frios-stat" style="font-weight:400;opacity:0.7"></span></button>
-        </div>
-        <div id="crm1-panel-dup" style="margin-top:0"></div>
-        <div id="crm1-panel-borrar" style="margin-top:0;display:none"></div>
-        <div id="crm1-panel-atacar" style="margin-top:16px;display:none"></div>
-        <div id="crm1-panel-asesorar" style="margin-top:16px;display:none"></div>
-        <div id="crm1-panel-malc" style="margin-top:16px;display:none"></div>
-        <div id="crm1-panel-frios" style="margin-top:16px;display:none"></div>
-      </div>
-    </section>
 
-    <!-- LEAD IA -->
+      <!-- TABS NAV -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px;flex-wrap:wrap">
+        <button class="crm-tab active" onclick="switchCRMTab('resumen')">📊 Resumen</button>
+        <button class="crm-tab" onclick="switchCRMTab('duplicados')">🔄 Duplicados</button>
+        <button class="crm-tab" onclick="switchCRMTab('borrar')">🗑️ Para borrar</button>
+        <button class="crm-tab" onclick="switchCRMTab('trabajar')">✅ Para trabajar</button>
+        <button class="crm-tab" onclick="switchCRMTab('migracion')">📦 Migración</button>
+      </div>
+
+      <!-- RESUMEN -->
+      <div id="crm-panel-resumen">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px">
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:28px;font-weight:800;color:var(--text)">25.973</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;font-weight:500">Total leads</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:28px;font-weight:800;color:#155724">3.541</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;font-weight:500">Alumnos confirmados</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:28px;font-weight:800;color:var(--accent)">1.769</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;font-weight:500">Para trabajar</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:28px;font-weight:800;color:#856404">475</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;font-weight:500">Alumnos fríos</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:28px;font-weight:800;color:var(--text2)">692</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;font-weight:500">Grupos duplicados</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:28px;font-weight:800;color:var(--danger)">13.593</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;font-weight:500">Candidatos a borrar</div>
+          </div>
+        </div>
+        <div class="form-card">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">Distribución del pipeline</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:12px;color:var(--text2);width:160px;flex-shrink:0">Alumnos confirmados</div>
+              <div style="flex:1;background:var(--surface2);border-radius:4px;height:10px"><div style="width:13.6%;height:100%;background:#155724;border-radius:4px"></div></div>
+              <div style="font-size:12px;font-weight:700;color:var(--text);width:40px;text-align:right">3.541</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:12px;color:var(--text2);width:160px;flex-shrink:0">Para trabajar</div>
+              <div style="flex:1;background:var(--surface2);border-radius:4px;height:10px"><div style="width:6.8%;height:100%;background:var(--accent);border-radius:4px"></div></div>
+              <div style="font-size:12px;font-weight:700;color:var(--text);width:40px;text-align:right">1.769</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:12px;color:var(--text2);width:160px;flex-shrink:0">Alumnos fríos</div>
+              <div style="flex:1;background:var(--surface2);border-radius:4px;height:10px"><div style="width:1.8%;height:100%;background:#856404;border-radius:4px"></div></div>
+              <div style="font-size:12px;font-weight:700;color:var(--text);width:40px;text-align:right">475</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:12px;color:var(--text2);width:160px;flex-shrink:0">Migración (revisar)</div>
+              <div style="flex:1;background:var(--surface2);border-radius:4px;height:10px"><div style="width:25.7%;height:100%;background:var(--text3);border-radius:4px"></div></div>
+              <div style="font-size:12px;font-weight:700;color:var(--text);width:40px;text-align:right">6.683</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:12px;color:var(--text2);width:160px;flex-shrink:0">Duplicados</div>
+              <div style="flex:1;background:var(--surface2);border-radius:4px;height:10px"><div style="width:5.7%;height:100%;background:var(--text3);border-radius:4px"></div></div>
+              <div style="font-size:12px;font-weight:700;color:var(--text);width:40px;text-align:right">1.483</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:12px;color:var(--text2);width:160px;flex-shrink:0">Candidatos a borrar</div>
+              <div style="flex:1;background:var(--surface2);border-radius:4px;height:10px"><div style="width:52.3%;height:100%;background:var(--danger);border-radius:4px"></div></div>
+              <div style="font-size:12px;font-weight:700;color:var(--text);width:40px;text-align:right">13.593</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DUPLICADOS -->
+      <div id="crm-panel-duplicados" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:26px;font-weight:800;color:var(--text)">692</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px">Grupos de duplicados</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:26px;font-weight:800;color:#856404">429</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px">Grupos con alumno</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:20px 12px">
+            <div style="font-size:26px;font-weight:800;color:var(--text2)">263</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px">Grupos sin alumno</div>
+          </div>
+        </div>
+        <div class="form-card" style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">¿Cómo se detectaron?</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6">Se normalizaron todos los teléfonos a los últimos 9 dígitos y todos los emails a minúscula. Si dos leads comparten teléfono o email → son la misma persona. Se usó Union-Find para detectar cadenas transitivas (A comparte tel con B, B comparte email con C → mismo grupo).</div>
+        </div>
+        <div class="form-card" style="background:var(--accent-light);border:1px solid var(--accent)">
+          <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px">⚠️ Acción recomendada</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6">Los <strong>429 grupos con alumno</strong> hay que fusionarlos manualmente en Kommo antes de borrar nada — el alumno tiene que quedar como lead master. Los <strong>263 grupos sin alumno</strong> se pueden fusionar directamente (queda el que tiene más datos completos).</div>
+        </div>
+      </div>
+
+      <!-- PARA BORRAR -->
+      <div id="crm-panel-borrar" style="display:none">
+        <div class="form-card" style="margin-bottom:16px;background:var(--danger-bg);border:1px solid #f5c6cb">
+          <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:4px">Total candidatos a borrar: 13.593 leads</div>
+          <div style="font-size:12px;color:var(--text2)">Distribuidos en 3 categorías según el criterio de descarte. Exportá cada lista antes de borrar.</div>
+        </div>
+
+        <!-- Cat 1 -->
+        <div class="form-card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text)">Vacío total</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Sin nombre, sin teléfono, sin email. No existe ningún dato accionable.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:22px;font-weight:800;color:var(--danger)">185</div>
+              <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="exportCRMExcel('borrar_vacio')">⬇ Excel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cat 2 -->
+        <div class="form-card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text)">Solo nombre sin contacto</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Tienen nombre o handle de Instagram pero cero teléfono ni email. No hay canal para contactarlos.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:22px;font-weight:800;color:var(--danger)">13.158</div>
+              <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="exportCRMExcel('borrar_sin_contacto')">⬇ Excel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cat 3 -->
+        <div class="form-card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text)">Datos mínimos + inactivo +6 meses</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Tienen contacto pero sin nombre ni interés, y llevan más de 6 meses sin actividad.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:22px;font-weight:800;color:var(--danger)">63</div>
+              <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="exportCRMExcel('borrar_minimo')">⬇ Excel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cat frios -->
+        <div class="form-card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text)">Leads fríos clásicos +6 meses</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Tienen datos e interés definido, pero en etapa pasiva y más de 6 meses sin actividad.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                <span style="font-size:11px;background:var(--surface2);border-radius:20px;padding:2px 10px;color:var(--text2)">MC Dermapen <strong>182</strong></span>
+                <span style="font-size:11px;background:var(--surface2);border-radius:20px;padding:2px 10px;color:var(--text2)">Dip. Aparatología <strong>66</strong></span>
+                <span style="font-size:11px;background:var(--surface2);border-radius:20px;padding:2px 10px;color:var(--text2)">Información <strong>38</strong></span>
+                <span style="font-size:11px;background:var(--surface2);border-radius:20px;padding:2px 10px;color:var(--text2)">Dip. Dermatocosmiatría <strong>7</strong></span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:22px;font-weight:800;color:var(--danger)">327</div>
+              <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="exportCRMExcel('frios_6m')">⬇ Excel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARA TRABAJAR -->
+      <div id="crm-panel-trabajar" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+          <div class="form-card">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">🎯 Para trabajar ahora</div>
+                <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Tienen nombre, contacto e interés definido, activos en los últimos 6 meses.</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Peeling Químico <strong>318</strong></span>
+                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Información <strong>363</strong></span>
+                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Cosmiatría <strong>208</strong></span>
+                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Dip. Microneedling <strong>136</strong></span>
+                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Nutriskin <strong>52</strong></span>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:30px;font-weight:800;color:var(--accent)">1.769</div>
+                <button class="btn btn-accent" style="font-size:12px;padding:6px 14px;margin-top:8px" onclick="exportCRMExcel('revivir')">⬇ Excel</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-card">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">🔥 Alumnos fríos — Recompra</div>
+                <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Compraron antes (etiqueta Vta) pero están en etapa fría. Alta probabilidad de recompra.</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <span style="font-size:11px;background:#fff3cd;border-radius:20px;padding:2px 10px;color:#856404">MC Dermapen <strong>200</strong></span>
+                  <span style="font-size:11px;background:#fff3cd;border-radius:20px;padding:2px 10px;color:#856404">Nutriskin <strong>19</strong></span>
+                  <span style="font-size:11px;background:#fff3cd;border-radius:20px;padding:2px 10px;color:#856404">Dip. Aparatología <strong>20</strong></span>
+                  <span style="font-size:11px;background:#fff3cd;border-radius:20px;padding:2px 10px;color:#856404">Dip. Microneedling <strong>16</strong></span>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:30px;font-weight:800;color:#856404">475</div>
+                <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px;margin-top:8px" onclick="exportCRMExcel('alumnos_frios')">⬇ Excel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-card" style="background:#d4edda;border:1px solid #c3e6cb">
+          <div style="font-size:13px;font-weight:700;color:#155724;margin-bottom:4px">💡 Prioridad de ataque recomendada</div>
+          <div style="font-size:13px;color:#155724;line-height:1.6">1. <strong>Alumnos fríos (475)</strong> — ya compraron, la barrera de venta es baja. Arrancar con MC Dermapen (200 leads).<br>2. <strong>Para trabajar (1.769)</strong> — tienen interés declarado y estuvieron activos. Peeling Químico y Cosmiatría primero.</div>
+        </div>
+      </div>
+
+      <!-- MIGRACIÓN -->
+      <div id="crm-panel-migracion" style="display:none">
+        <div class="form-card" style="margin-bottom:16px;background:var(--surface2);border:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📦 Embudo de migración — 6.683 leads</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6">Estos leads vienen del CRM anterior. No usaban el sistema de etiquetas actual, por lo que no se pueden clasificar automáticamente. Se dividen en tres grupos según las señales disponibles.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">
+          <div class="form-card" style="border-top:3px solid #155724">
+            <div style="font-size:11px;font-weight:700;color:#155724;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">✅ Alumnos detectados</div>
+            <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:6px">979</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Tienen Compra Hoy, Cursos Realizados o etiqueta T/E del CRM viejo. Confirmados como alumnos.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
+              <span style="font-size:10px;background:#d4edda;border-radius:20px;padding:2px 8px;color:#155724">Migración <strong>124</strong></span>
+              <span style="font-size:10px;background:#d4edda;border-radius:20px;padding:2px 8px;color:#155724">Información <strong>28</strong></span>
+              <span style="font-size:10px;background:#d4edda;border-radius:20px;padding:2px 8px;color:#155724">Dip. Microneedling <strong>13</strong></span>
+              <span style="font-size:10px;background:#d4edda;border-radius:20px;padding:2px 8px;color:#155724">Zoom IESBI <strong>13</strong></span>
+            </div>
+            <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px;width:100%" onclick="exportCRMExcel('mig_alumno')">⬇ Excel</button>
+          </div>
+          <div class="form-card" style="border-top:3px solid #856404">
+            <div style="font-size:11px;font-weight:700;color:#856404;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">⚠️ Sin señal — revisar</div>
+            <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:6px">5.690</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Tienen datos de contacto pero sin señal clara de compra. No sabemos si son alumnos o leads. Requieren revisión manual.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
+              <span style="font-size:10px;background:#fff3cd;border-radius:20px;padding:2px 8px;color:#856404">Información <strong>559</strong></span>
+              <span style="font-size:10px;background:#fff3cd;border-radius:20px;padding:2px 8px;color:#856404">MC Dermapen <strong>7</strong></span>
+              <span style="font-size:10px;background:#fff3cd;border-radius:20px;padding:2px 8px;color:#856404">Peeling Quimico <strong>5</strong></span>
+            </div>
+            <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px;width:100%" onclick="exportCRMExcel('mig_sin_senal')">⬇ Excel</button>
+          </div>
+          <div class="form-card" style="border-top:3px solid var(--danger)">
+            <div style="font-size:11px;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">🗑️ Sin datos — borrar</div>
+            <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:6px">14</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Sin contacto ni señal de ningún tipo. No hay forma de saber quiénes son ni de contactarlos.</div>
+            <div style="height:36px;margin-bottom:12px"></div>
+            <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px;width:100%" onclick="exportCRMExcel('mig_sin_nada')">⬇ Excel</button>
+          </div>
+        </div>
+        <div class="form-card" style="background:var(--accent-light);border:1px solid var(--accent)">
+          <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px">🔍 Cómo abordar la revisión manual (5.690)</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6">Exportá el Excel de "Sin señal", filtrá por interés y revisá lead por lead en Kommo. Para cada uno: si tiene conversación de compra → mover a etapa de alumno. Si es solo un lead → mover a Lead Frío. Si no hay nada → marcar para borrar.</div>
+        </div>
+      </div>
+
+    </section>
 
 
   </div>
@@ -2587,6 +2825,58 @@ function analizarCRM(rows, status) {
   document.getElementById('crm1-frios-stat').textContent = '(' + frios.length.toLocaleString() + ')';
   document.getElementById('crm1-tabs').style.display = 'block';
   switchCRM1Tab('dup');
+}
+
+// ── ANÁLISIS CRM ──
+function switchCRMTab(tab) {
+  var panels = ['resumen','duplicados','borrar','trabajar','migracion'];
+  panels.forEach(function(p) {
+    var el = document.getElementById('crm-panel-' + p);
+    if (el) el.style.display = p === tab ? '' : 'none';
+  });
+  document.querySelectorAll('.crm-tab').forEach(function(btn, i) {
+    btn.classList.toggle('active', panels[i] === tab);
+  });
+}
+
+var CRM_DATA = null;
+
+async function exportCRMExcel(key) {
+  var labels = {
+    borrar_vacio: 'Borrar - Vacío Total',
+    borrar_sin_contacto: 'Borrar - Sin Contacto',
+    borrar_minimo: 'Borrar - Datos Mínimos',
+    frios_6m: 'Leads Fríos +6 meses',
+    revivir: 'Para Trabajar',
+    alumnos_frios: 'Alumnos Fríos - Recompra',
+    mig_alumno: 'Migración - Alumnos',
+    mig_sin_senal: 'Migración - Sin Señal',
+    mig_sin_nada: 'Migración - Sin Datos',
+  };
+
+  if (!CRM_DATA) {
+    showToast('Cargando datos...');
+    try {
+      var resp = await fetch('https://coach-estetico-ventas-default-rtdb.firebaseio.com/crm_export.json');
+      CRM_DATA = await resp.json();
+    } catch(e) {
+      showToast('Error cargando datos: ' + e.message);
+      return;
+    }
+  }
+
+  var rows = CRM_DATA[key];
+  if (!rows || rows.length === 0) { showToast('Sin datos para exportar'); return; }
+
+  var cols = Object.keys(rows[0]);
+  var ws_data = [cols].concat(rows.map(function(r) { return cols.map(function(c) { return r[c] || ''; }); }));
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(ws_data);
+  ws['!cols'] = cols.map(function() { return { wch: 22 }; });
+  XLSX.utils.book_append_sheet(wb, ws, (labels[key] || key).substring(0, 31));
+  XLSX.writeFile(wb, 'CRM_' + key + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('Excel generado ✓');
 }
 
 // Init
