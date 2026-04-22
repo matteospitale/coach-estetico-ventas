@@ -344,7 +344,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.3</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.4</div>
   </div>
 </aside>
 
@@ -654,10 +654,149 @@ tbody tr:hover td { background: var(--surface2); }
       <!-- TABS NAV -->
       <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px;flex-wrap:wrap">
         <button class="crm-tab active" onclick="switchCRMTab('resumen')">📊 Resumen</button>
+        <button class="crm-tab" onclick="switchCRMTab('alumnos')">🎓 Alumnos</button>
         <button class="crm-tab" onclick="switchCRMTab('duplicados')">🔄 Duplicados</button>
         <button class="crm-tab" onclick="switchCRMTab('borrar')">🗑️ Para borrar</button>
         <button class="crm-tab" onclick="switchCRMTab('trabajar')">✅ Para trabajar</button>
         <button class="crm-tab" onclick="switchCRMTab('migracion')">📦 Migración</button>
+      </div>
+
+      <!-- ALUMNOS -->
+      <div id="crm-panel-alumnos" style="display:none">
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px">
+          <div class="form-card" style="text-align:center;padding:18px 10px">
+            <div style="font-size:26px;font-weight:800;color:#155724">3.541</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Total alumnos</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:18px 10px">
+            <div style="font-size:26px;font-weight:800;color:var(--accent)">940</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Activos últimos 30 días</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:18px 10px">
+            <div style="font-size:26px;font-weight:800;color:#856404">712</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Sin actividad +6 meses</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:18px 10px">
+            <div style="font-size:26px;font-weight:800;color:var(--text)">96</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Días promedio inactivo</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <!-- Cursos más vendidos -->
+          <div class="form-card">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">Cursos más comprados</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">MC Activos con Dermapen</span><span style="font-size:12px;font-weight:700;color:var(--accent)">593</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">Peeling Químico (Vta)</span><span style="font-size:12px;font-weight:700;color:var(--accent)">409</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">Diplomado Microneedling</span><span style="font-size:12px;font-weight:700;color:var(--accent)">383</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">MC Activos con Dermapen (compra)</span><span style="font-size:12px;font-weight:700;color:var(--accent)">320</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">Dip. Internacional Microneedling</span><span style="font-size:12px;font-weight:700;color:var(--accent)">208</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">Diplomado Tecnologías</span><span style="font-size:12px;font-weight:700;color:var(--accent)">120</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">P Consultoría SkinCare</span><span style="font-size:12px;font-weight:700;color:var(--accent)">119</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">MC Dig 0 - Pre Peeling</span><span style="font-size:12px;font-weight:700;color:var(--accent)">107</span></div>
+            </div>
+          </div>
+
+          <!-- País -->
+          <div class="form-card">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">Distribución por país</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text2);width:130px;flex-shrink:0">Venezuela</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:8px"><div style="width:100%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:30px;text-align:right">871</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text2);width:130px;flex-shrink:0">Argentina</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:8px"><div style="width:75%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:30px;text-align:right">656</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text2);width:130px;flex-shrink:0">Estados Unidos</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:8px"><div style="width:45%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:30px;text-align:right">421</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text2);width:130px;flex-shrink:0">Chile</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:8px"><div style="width:22%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:30px;text-align:right">189</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text2);width:130px;flex-shrink:0">Rep. Dominicana</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:8px"><div style="width:25%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:30px;text-align:right">224</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text2);width:130px;flex-shrink:0">Colombia</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:8px"><div style="width:20%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:30px;text-align:right">171</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text2);width:130px;flex-shrink:0">España</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:8px"><div style="width:16%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:30px;text-align:right">140</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text2);width:130px;flex-shrink:0">México</div><div style="flex:1;background:var(--surface2);border-radius:3px;height:8px"><div style="width:18%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:30px;text-align:right">161</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <!-- Por asesor -->
+          <div class="form-card">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">Cierres por asesor</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--dianela);flex-shrink:0"></div>
+                <span style="font-size:12px;color:var(--text2);flex:1">Dianela</span>
+                <div style="width:100px;background:var(--surface2);border-radius:3px;height:8px"><div style="width:100%;height:100%;background:var(--dianela);border-radius:3px"></div></div>
+                <span style="font-size:12px;font-weight:700;width:35px;text-align:right">1.317</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--facundo);flex-shrink:0"></div>
+                <span style="font-size:12px;color:var(--text2);flex:1">Facundo</span>
+                <div style="width:100px;background:var(--surface2);border-radius:3px;height:8px"><div style="width:84%;height:100%;background:var(--facundo);border-radius:3px"></div></div>
+                <span style="font-size:12px;font-weight:700;width:35px;text-align:right">1.103</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--matteo);flex-shrink:0"></div>
+                <span style="font-size:12px;color:var(--text2);flex:1">Matteo</span>
+                <div style="width:100px;background:var(--surface2);border-radius:3px;height:8px"><div style="width:82%;height:100%;background:var(--matteo);border-radius:3px"></div></div>
+                <span style="font-size:12px;font-weight:700;width:35px;text-align:right">1.076</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0"></div>
+                <span style="font-size:12px;color:var(--text2);flex:1">Stefany</span>
+                <div style="width:100px;background:var(--surface2);border-radius:3px;height:8px"><div style="width:3%;height:100%;background:var(--text3);border-radius:3px"></div></div>
+                <span style="font-size:12px;font-weight:700;width:35px;text-align:right">45</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actividad -->
+          <div class="form-card">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">Actividad reciente</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#d4edda;border-radius:8px">
+                <span style="font-size:12px;color:#155724;font-weight:600">Activos últimos 30 días</span>
+                <span style="font-size:16px;font-weight:800;color:#155724">940</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fff3cd;border-radius:8px">
+                <span style="font-size:12px;color:#856404;font-weight:600">30 a 90 días sin actividad</span>
+                <span style="font-size:16px;font-weight:800;color:#856404">1.042</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--accent-light);border-radius:8px">
+                <span style="font-size:12px;color:var(--accent);font-weight:600">90 a 180 días sin actividad</span>
+                <span style="font-size:16px;font-weight:800;color:var(--accent)">847</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--danger-bg);border-radius:8px">
+                <span style="font-size:12px;color:var(--danger);font-weight:600">Más de 6 meses sin actividad</span>
+                <span style="font-size:16px;font-weight:800;color:var(--danger)">712</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insights y patrones -->
+        <div class="form-card" style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">🔍 Patrones detectados</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="padding:12px;background:var(--surface2);border-radius:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Venezuela lidera la base</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.5">871 alumnos venezolanos (24.6% del total). El mercado de mayor penetración. Peeling Químico y MC Dermapen son los cursos con más tracción ahí.</div>
+            </div>
+            <div style="padding:12px;background:var(--surface2);border-radius:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">MC Dermapen domina en ventas</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.5">593 ventas registradas con etiqueta Vta MC Activos con Dermapen. Es el producto con mayor volumen de compra, seguido por Peeling Químico (409).</div>
+            </div>
+            <div style="padding:12px;background:var(--surface2);border-radius:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">712 alumnos sin contacto hace +6 meses</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.5">El 20% de la base de alumnos no tuvo actividad en más de 6 meses. Son candidatos directos a campaña de recompra o activación de Club Coach.</div>
+            </div>
+            <div style="padding:12px;background:var(--surface2);border-radius:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Dianela y Facundo dominan cierres</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.5">Los 3 asesores principales tienen volúmenes parejos (1.076–1.317). Stefany tiene apenas 45 cierres — hay que ver si es nueva o si tiene un pipeline diferente.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-ghost" style="font-size:12px" onclick="exportCRMExcel('alumnos')">⬇ Exportar lista completa de alumnos</button>
+        </div>
       </div>
 
       <!-- RESUMEN -->
@@ -727,27 +866,55 @@ tbody tr:hover td { background: var(--surface2); }
 
       <!-- DUPLICADOS -->
       <div id="crm-panel-duplicados" style="display:none">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">
-          <div class="form-card" style="text-align:center;padding:20px 12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px">
+          <div class="form-card" style="text-align:center;padding:18px 10px">
             <div style="font-size:26px;font-weight:800;color:var(--text)">692</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:4px">Grupos de duplicados</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Grupos de duplicados</div>
           </div>
-          <div class="form-card" style="text-align:center;padding:20px 12px">
+          <div class="form-card" style="text-align:center;padding:18px 10px">
             <div style="font-size:26px;font-weight:800;color:#856404">429</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:4px">Grupos con alumno</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Grupos con alumno — fusionar primero</div>
           </div>
-          <div class="form-card" style="text-align:center;padding:20px 12px">
+          <div class="form-card" style="text-align:center;padding:18px 10px">
             <div style="font-size:26px;font-weight:800;color:var(--text2)">263</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:4px">Grupos sin alumno</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Grupos sin alumno — fusión directa</div>
           </div>
         </div>
-        <div class="form-card" style="margin-bottom:16px">
-          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">¿Cómo se detectaron?</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.6">Se normalizaron todos los teléfonos a los últimos 9 dígitos y todos los emails a minúscula. Si dos leads comparten teléfono o email → son la misma persona. Se usó Union-Find para detectar cadenas transitivas (A comparte tel con B, B comparte email con C → mismo grupo).</div>
+        <div class="form-card" style="margin-bottom:14px;background:var(--accent-light);border:1px solid var(--accent)">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">⚠️ Acción recomendada</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5">Empezá por los <strong>429 grupos con alumno</strong> — fusionar en Kommo dejando el alumno como master antes de borrar cualquier duplicado. Los <strong>263 sin alumno</strong> se pueden fusionar directamente (queda el lead con más campos completos).</div>
         </div>
-        <div class="form-card" style="background:var(--accent-light);border:1px solid var(--accent)">
-          <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px">⚠️ Acción recomendada</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.6">Los <strong>429 grupos con alumno</strong> hay que fusionarlos manualmente en Kommo antes de borrar nada — el alumno tiene que quedar como lead master. Los <strong>263 grupos sin alumno</strong> se pueden fusionar directamente (queda el que tiene más datos completos).</div>
+        <div class="form-card" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Tabla de duplicados (1.483 leads en 692 grupos)</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="dup-filter" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:DM Sans,sans-serif" onchange="filterDupTable()">
+                <option value="todos">Todos los grupos</option>
+                <option value="con_alumno">Con alumno</option>
+                <option value="sin_alumno">Sin alumno</option>
+              </select>
+              <button class="btn btn-ghost" style="font-size:12px;padding:5px 14px" onclick="exportCRMExcel('duplicados')">⬇ Excel</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table id="dup-table" style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr style="background:var(--surface2)">
+                  <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap">Grupo</th>
+                  <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border)">ID Kommo</th>
+                  <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border)">Nombre</th>
+                  <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border)">Etapa</th>
+                  <th style="padding:8px 10px;text-align:center;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border)">Alumno</th>
+                  <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border)">Vinculado por</th>
+                  <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border)">Última actividad</th>
+                </tr>
+              </thead>
+              <tbody id="dup-tbody">
+                <tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">⏳ Cargando duplicados...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="dup-pagination" style="display:flex;justify-content:center;gap:8px;margin-top:12px;align-items:center"></div>
         </div>
       </div>
 
@@ -823,48 +990,138 @@ tbody tr:hover td { background: var(--surface2); }
 
       <!-- PARA TRABAJAR -->
       <div id="crm-panel-trabajar" style="display:none">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
-          <div class="form-card">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-              <div style="flex:1">
-                <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">🎯 Para trabajar ahora</div>
-                <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Tienen nombre, contacto e interés definido, activos en los últimos 6 meses.</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px">
-                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Peeling Químico <strong>318</strong></span>
-                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Información <strong>363</strong></span>
-                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Cosmiatría <strong>208</strong></span>
-                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Dip. Microneedling <strong>136</strong></span>
-                  <span style="font-size:11px;background:var(--accent-light);border-radius:20px;padding:2px 10px;color:var(--accent)">Nutriskin <strong>52</strong></span>
-                </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+          <div class="form-card" style="text-align:center;padding:18px 10px">
+            <div style="font-size:26px;font-weight:800;color:var(--accent)">1.769</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Leads para trabajar — activos &lt;6 meses</div>
+          </div>
+          <div class="form-card" style="text-align:center;padding:18px 10px">
+            <div style="font-size:26px;font-weight:800;color:#856404">475</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Alumnos fríos — alta probabilidad recompra</div>
+          </div>
+        </div>
+
+        <!-- Plan de acción por segmento -->
+        <div class="form-card" style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">🎯 Plan de acción por interés</div>
+
+          <!-- Peeling Quimico 318 -->
+          <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);cursor:pointer" onclick="togglePlan('plan1')">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:20px;padding:2px 10px">318 leads</span>
+                <span style="font-size:13px;font-weight:700;color:var(--text)">Peeling Químico</span>
               </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:30px;font-weight:800;color:var(--accent)">1.769</div>
-                <button class="btn btn-accent" style="font-size:12px;padding:6px 14px;margin-top:8px" onclick="exportCRMExcel('revivir')">⬇ Excel</button>
-              </div>
+              <span id="plan1-arrow" style="color:var(--text3);font-size:14px">▼</span>
+            </div>
+            <div id="plan1" style="padding:14px;display:none">
+              <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5"><strong>Producto a ofrecer:</strong> Diplomado Peeling Químico. Leads con interés definido que no convirtieron. El gancho es demostrar profundidad técnica vs. lo que ya saben.</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Mensaje sugerido</div>
+              <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">Hola [nombre], ¿cómo estás? Te escribo porque hace un tiempo estuviste interesada en el Diplomado de Peeling Químico y nunca avanzamos.
+
+Justo esta semana estamos cerrando los últimos lugares de la edición actual, con acceso de por vida y doble certificación.
+
+¿Querés que te mande la info completa?</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:8px">Siguiente paso si no responde: seguimiento a los 3 días con caso de éxito de alumna.</div>
             </div>
           </div>
-          <div class="form-card">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-              <div style="flex:1">
-                <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">🔥 Alumnos fríos — Recompra</div>
-                <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Compraron antes (etiqueta Vta) pero están en etapa fría. Alta probabilidad de recompra.</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px">
-                  <span style="font-size:11px;background:#fff3cd;border-radius:20px;padding:2px 10px;color:#856404">MC Dermapen <strong>200</strong></span>
-                  <span style="font-size:11px;background:#fff3cd;border-radius:20px;padding:2px 10px;color:#856404">Nutriskin <strong>19</strong></span>
-                  <span style="font-size:11px;background:#fff3cd;border-radius:20px;padding:2px 10px;color:#856404">Dip. Aparatología <strong>20</strong></span>
-                  <span style="font-size:11px;background:#fff3cd;border-radius:20px;padding:2px 10px;color:#856404">Dip. Microneedling <strong>16</strong></span>
-                </div>
+
+          <!-- Información 363 -->
+          <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);cursor:pointer" onclick="togglePlan('plan2')">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;font-weight:700;background:var(--text2);color:#fff;border-radius:20px;padding:2px 10px">363 leads</span>
+                <span style="font-size:13px;font-weight:700;color:var(--text)">Información general</span>
               </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:30px;font-weight:800;color:#856404">475</div>
-                <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px;margin-top:8px" onclick="exportCRMExcel('alumnos_frios')">⬇ Excel</button>
+              <span id="plan2-arrow" style="color:var(--text3);font-size:14px">▼</span>
+            </div>
+            <div id="plan2" style="padding:14px;display:none">
+              <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5"><strong>Acción:</strong> Estos leads no tienen interés específico. Primero calificar — no vender. Identificar qué área de la estética trabajan y redirigir al curso correcto.</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Mensaje sugerido</div>
+              <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">Hola [nombre]! Te escribo porque en su momento estuviste consultando sobre nuestras formaciones.
+
+Antes de enviarte info, quería preguntarte: ¿qué área trabajás actualmente — aparatología, tratamientos faciales, cosmiatría?
+
+Así te oriento directo al programa que más sentido tiene para vos.</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:8px">Objetivo de esta conversación: identificar interés específico antes de presentar precio.</div>
+            </div>
+          </div>
+
+          <!-- Cosmiatria 208 -->
+          <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);cursor:pointer" onclick="togglePlan('plan3')">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;font-weight:700;background:#155724;color:#fff;border-radius:20px;padding:2px 10px">208 leads</span>
+                <span style="font-size:13px;font-weight:700;color:var(--text)">Cosmiatría / F Cosmiatría Prof</span>
               </div>
+              <span id="plan3-arrow" style="color:var(--text3);font-size:14px">▼</span>
+            </div>
+            <div id="plan3" style="padding:14px;display:none">
+              <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5"><strong>Producto a ofrecer:</strong> Diplomado Dermatocosmiatría o Formación en Cosmiatría Profesional e Integral. Leads con perfil técnico — buscan fundamentación clínica.</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Mensaje sugerido</div>
+              <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">Hola [nombre]! Hace un tiempo preguntaste por nuestra formación en cosmiatría.
+
+Hoy tenemos el Diplomado en Dermatocosmiatría con doble certificación internacional — es el programa más completo que tenemos en esa área.
+
+¿Querés que te mande el temario y el precio de lanzamiento?</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:8px">Perfil de alto valor. Si responden, ir directo a cierre en la misma conversación.</div>
+            </div>
+          </div>
+
+          <!-- Diplomado Microneedling 136 -->
+          <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);cursor:pointer" onclick="togglePlan('plan4')">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:20px;padding:2px 10px">136 leads</span>
+                <span style="font-size:13px;font-weight:700;color:var(--text)">Diplomado Microneedling</span>
+              </div>
+              <span id="plan4-arrow" style="color:var(--text3);font-size:14px">▼</span>
+            </div>
+            <div id="plan4" style="padding:14px;display:none">
+              <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5"><strong>Producto a ofrecer:</strong> Diplomado Internacional de Microneedling (el más reciente, con IESBI México). Leads que ya vieron el diplomado pero no cerraron — pueden haber estado esperando precio o fecha de inicio.</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Mensaje sugerido</div>
+              <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">Hola [nombre], ¡buen día! 
+
+Te contacto porque en su momento mostraste interés en el Diplomado de Microneedling y quedó pendiente.
+
+Lanzamos la edición 2026 con doble certificación internacional (Coach Estético + IESBI México) y el precio de lanzamiento está disponible esta semana.
+
+¿Lo vemos ahora?</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:8px">Urgencia real: precio de lanzamiento. Usar si hay un deadline real disponible.</div>
             </div>
           </div>
         </div>
-        <div class="form-card" style="background:#d4edda;border:1px solid #c3e6cb">
-          <div style="font-size:13px;font-weight:700;color:#155724;margin-bottom:4px">💡 Prioridad de ataque recomendada</div>
-          <div style="font-size:13px;color:#155724;line-height:1.6">1. <strong>Alumnos fríos (475)</strong> — ya compraron, la barrera de venta es baja. Arrancar con MC Dermapen (200 leads).<br>2. <strong>Para trabajar (1.769)</strong> — tienen interés declarado y estuvieron activos. Peeling Químico y Cosmiatría primero.</div>
+
+        <!-- Alumnos fríos -->
+        <div class="form-card" style="margin-bottom:14px;border-top:3px solid #856404">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text)">🔥 Alumnos fríos — Estrategia de recompra</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">475 alumnos con etiqueta Vta en etapa fría. Ya compraron — la barrera es baja.</div>
+            </div>
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 14px" onclick="exportCRMExcel('alumnos_frios')">⬇ Excel</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="padding:10px 12px;background:#fff3cd;border-radius:8px">
+              <div style="font-size:11px;font-weight:700;color:#856404;margin-bottom:4px">MC Dermapen — 200 leads</div>
+              <div style="font-size:11px;color:#856404;line-height:1.5">Compraron la masterclass. Ofrecer el siguiente paso: Diplomado Internacional de Microneedling como upgrade natural.</div>
+            </div>
+            <div style="padding:10px 12px;background:#fff3cd;border-radius:8px">
+              <div style="font-size:11px;font-weight:700;color:#856404;margin-bottom:4px">Dip. Aparatología / Nutriskin — 39 leads</div>
+              <div style="font-size:11px;color:#856404;line-height:1.5">Compraron formación de aparatología o skin. Ofrecer complemento: Diplomado Dermatocosmiatría o Peeling Químico.</div>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Mensaje recompra sugerido</div>
+          <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">Hola [nombre], ¿cómo te fue aplicando lo que viste en [curso anterior]?
+
+Quería comentarte que tenemos una nueva edición del [curso siguiente] y estamos dando prioridad a ex alumnos con un acceso especial.
+
+¿Querés que te cuente de qué se trata?</div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-accent" style="font-size:12px" onclick="exportCRMExcel('revivir')">⬇ Excel — Para trabajar (1.769)</button>
+          <button class="btn btn-ghost" style="font-size:12px" onclick="exportCRMExcel('alumnos_frios')">⬇ Excel — Alumnos fríos (475)</button>
         </div>
       </div>
 
@@ -2828,15 +3085,92 @@ function analizarCRM(rows, status) {
 }
 
 // ── ANÁLISIS CRM ──
+var CRM_PANELS = ['resumen','alumnos','duplicados','borrar','trabajar','migracion'];
+var CRM_DUP_DATA = null;
+var CRM_DUP_PAGE = 1;
+var CRM_DUP_FILTER = 'todos';
+var CRM_DUP_PAGE_SIZE = 50;
+
 function switchCRMTab(tab) {
-  var panels = ['resumen','duplicados','borrar','trabajar','migracion'];
-  panels.forEach(function(p) {
+  CRM_PANELS.forEach(function(p) {
     var el = document.getElementById('crm-panel-' + p);
     if (el) el.style.display = p === tab ? '' : 'none';
   });
   document.querySelectorAll('.crm-tab').forEach(function(btn, i) {
-    btn.classList.toggle('active', panels[i] === tab);
+    btn.classList.toggle('active', CRM_PANELS[i] === tab);
   });
+  if (tab === 'duplicados' && !CRM_DUP_DATA) loadDupTable();
+}
+
+function togglePlan(id) {
+  var el = document.getElementById(id);
+  var arrow = document.getElementById(id + '-arrow');
+  var open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : '';
+  if (arrow) arrow.textContent = open ? '▼' : '▲';
+}
+
+async function loadDupTable() {
+  if (!CRM_DATA) {
+    try {
+      var resp = await fetch('https://coach-estetico-ventas-default-rtdb.firebaseio.com/crm_export.json');
+      CRM_DATA = await resp.json();
+    } catch(e) {
+      document.getElementById('dup-tbody').innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--danger)">Error cargando datos</td></tr>';
+      return;
+    }
+  }
+  CRM_DUP_DATA = CRM_DATA.duplicados || [];
+  renderDupTable();
+}
+
+function filterDupTable() {
+  CRM_DUP_FILTER = document.getElementById('dup-filter').value;
+  CRM_DUP_PAGE = 1;
+  renderDupTable();
+}
+
+function renderDupTable() {
+  var data = CRM_DUP_DATA;
+  if (CRM_DUP_FILTER === 'con_alumno') data = data.filter(function(r) { return r['Grupo tiene alumno'] === 'Sí'; });
+  if (CRM_DUP_FILTER === 'sin_alumno') data = data.filter(function(r) { return r['Grupo tiene alumno'] === 'No'; });
+
+  var total = data.length;
+  var pages = Math.ceil(total / CRM_DUP_PAGE_SIZE);
+  var start = (CRM_DUP_PAGE - 1) * CRM_DUP_PAGE_SIZE;
+  var page = data.slice(start, start + CRM_DUP_PAGE_SIZE);
+
+  var lastGrupo = null;
+  var html = page.map(function(r) {
+    var isNewGroup = r['Grupo'] !== lastGrupo;
+    lastGrupo = r['Grupo'];
+    var rowBg = isNewGroup ? 'background:var(--surface2)' : '';
+    var alumnoCell = r['Es alumno'] === 'Sí'
+      ? '<span style="background:#d4edda;color:#155724;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">Sí</span>'
+      : '<span style="background:var(--surface2);color:var(--text3);font-size:10px;padding:2px 7px;border-radius:10px">No</span>';
+    var kommoUrl = 'https://coachestetico.kommo.com/leads/detail/' + r['ID'];
+    return '<tr style="' + rowBg + ';border-bottom:1px solid var(--border)">' +
+      '<td style="padding:7px 10px;font-size:11px;font-weight:700;color:var(--text3)">Grp ' + r['Grupo'] + '</td>' +
+      '<td style="padding:7px 10px"><a href="' + kommoUrl + '" target="_blank" style="color:var(--accent);font-size:11px">' + r['ID'] + ' ↗</a></td>' +
+      '<td style="padding:7px 10px;font-size:12px;color:var(--text)">' + (r['Nombre'] || '—') + '</td>' +
+      '<td style="padding:7px 10px;font-size:11px;color:var(--text2)">' + (r['Etapa'] || '—') + '</td>' +
+      '<td style="padding:7px 10px;text-align:center">' + alumnoCell + '</td>' +
+      '<td style="padding:7px 10px;font-size:11px;color:var(--text3)">' + (r['Vinculado por'] || '—') + '</td>' +
+      '<td style="padding:7px 10px;font-size:11px;color:var(--text3)">' + (r['Última actividad'] || '—').substring(0,10) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('dup-tbody').innerHTML = html || '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">Sin resultados</td></tr>';
+
+  // Pagination
+  var pag = '';
+  if (pages > 1) {
+    pag += '<span style="font-size:12px;color:var(--text3)">Página ' + CRM_DUP_PAGE + ' de ' + pages + ' (' + total + ' registros)</span>';
+    pag += '&nbsp;&nbsp;';
+    if (CRM_DUP_PAGE > 1) pag += '<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="CRM_DUP_PAGE--;renderDupTable()">← Anterior</button>&nbsp;';
+    if (CRM_DUP_PAGE < pages) pag += '<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="CRM_DUP_PAGE++;renderDupTable()">Siguiente →</button>';
+  }
+  document.getElementById('dup-pagination').innerHTML = pag;
 }
 
 var CRM_DATA = null;
