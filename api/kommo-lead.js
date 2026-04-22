@@ -41,6 +41,7 @@ module.exports = async function handler(req, res) {
       return f ? (f.values && f.values[0] && f.values[0].value || '') : '';
     }
 
+    // Fetch ALL notes - no type filter to catch WhatsApp/Instagram messages
     var notas = [];
     try {
       var notesR = await fetch(BASE + '/leads/' + lead.id + '/notes?limit=50&order[id]=asc', { headers: headers });
@@ -49,20 +50,24 @@ module.exports = async function handler(req, res) {
         var notesData = JSON.parse(notesText);
         var notesList = notesData && notesData._embedded && notesData._embedded.notes || [];
         notas = notesList
-          .filter(function(n) {
-            var t = n.note_type;
-            return t === 'common' || t === 'inbox_message' || t === 'outbox_message' ||
-                   t === 4 || t === 12 || t === 13 || t === 'service_message';
-          })
           .map(function(n) {
             var d = new Date(n.created_at * 1000);
             var fecha = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
                         ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-            var tipo = (n.note_type === 'inbox_message' || n.note_type === 4) ? 'entrante' : 'saliente';
-            var texto = (n.params && (n.params.text || n.params.service)) || n.text || '';
-            return { fecha: fecha, tipo: tipo, texto: String(texto).substring(0, 600) };
+            // Detect direction: inbox/entrante types
+            var tipoNum = n.note_type;
+            var esEntrante = tipoNum === 4 || tipoNum === 102 || tipoNum === 'inbox_message';
+            var tipo = esEntrante ? 'entrante' : 'saliente';
+            // Extract text from all possible locations
+            var texto = '';
+            if (n.params) {
+              texto = n.params.text || n.params.service || n.params.body || n.params.message || '';
+            }
+            if (!texto && n.text) texto = n.text;
+            if (!texto && typeof n.params === 'string') texto = n.params;
+            return { fecha: fecha, tipo: tipo, texto: String(texto).substring(0, 600), note_type: tipoNum };
           })
-          .filter(function(n) { return n.texto.length > 2; });
+          .filter(function(n) { return n.texto && n.texto.trim().length > 2; });
       }
     } catch(e) { /* notas stays empty */ }
 
