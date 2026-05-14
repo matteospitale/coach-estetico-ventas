@@ -535,12 +535,36 @@ tbody tr:hover td { background: var(--surface2); }
             <input type="date" class="form-input" id="f-fecha">
           </div>
           <div class="form-group">
-            <label class="form-label">Monto USD *</label>
+            <label class="form-label">Nombre del alumno *</label>
+            <input type="text" class="form-input" id="f-nombre-alumno" placeholder="Ej: María García" onkeypress="if(event.key === '.') event.preventDefault()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">País *</label>
+            <select class="form-select" id="f-pais">
+              <option value="">Seleccionar...</option>
+              <option>Argentina</option><option>Bolivia</option><option>Brasil</option>
+              <option>Chile</option><option>Colombia</option><option>Costa Rica</option>
+              <option>Cuba</option><option>Ecuador</option><option>El Salvador</option>
+              <option>España</option><option>Estados Unidos</option><option>Guatemala</option>
+              <option>Haití</option><option>Honduras</option><option>Jamaica</option>
+              <option>México</option><option>Nicaragua</option><option>Panamá</option>
+              <option>Paraguay</option><option>Perú</option><option>República Dominicana</option>
+              <option>Trinidady Tobago</option><option>Uruguay</option><option>Venezuela</option>
+              <option>Belice</option><option>Canadá</option><option>Dominica</option>
+              <option>Granada</option><option>Guyana</option><option>Surinam</option>
+              <option>Antigua y Barbuda</option><option>Bahamas</option><option>Barbados</option>
+              <option>Islas Vírgenes Británicas</option><option>Islas Caimán</option><option>Islas Turcas y Caicos</option>
+              <option>Montserrat</option><option>Puerto Rico</option><option>San Cristóbal y Nieves</option>
+              <option>Santa Lucía</option><option>San Vicente y las Granadinas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pago alumno (USD) *</label>
             <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01">
           </div>
           <div class="form-group">
-            <label class="form-label">Monto local (opcional)</label>
-            <input type="text" class="form-input" id="f-monto-local" placeholder="Ej: 189.900 ARS">
+            <label class="form-label">Descuento % (opcional)</label>
+            <input type="number" class="form-input" id="f-descuento" placeholder="0" min="0" max="100" step="0.01">
           </div>
           <div class="form-group">
             <label class="form-label">Forma de pago *</label>
@@ -575,7 +599,7 @@ tbody tr:hover td { background: var(--surface2); }
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">ID Lead Kommo</label>
+            <label class="form-label">ID Lead Kommo *</label>
             <input type="text" class="form-input" id="f-lead" placeholder="Ej: 27537979">
           </div>
           <div class="form-group">
@@ -587,7 +611,7 @@ tbody tr:hover td { background: var(--surface2); }
             <input type="tel" class="form-input" id="f-telefono" placeholder="Ej: +5491112345678">
           </div>
           <div class="form-group">
-            <label class="form-label">Mail</label>
+            <label class="form-label">Mail *</label>
             <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com">
           </div>
           <div class="form-group full">
@@ -612,9 +636,15 @@ tbody tr:hover td { background: var(--surface2); }
 
     <!-- ADMINISTRACIÓN -->
     <section class="section" id="sec-admin">
-      <div class="section-header">
-        <div class="section-title" id="admin-title">Administración</div>
-        <button class="btn btn-ghost" onclick="exportAdminCSV()">↓ CSV</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="section-title" id="admin-title">Administración</div>
+          <div style="font-size:13px;color:var(--text3);margin-top:4px">Total del mes: <strong id="admin-total-mes" style="color:var(--accent)">$0 USD</strong></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-accent" onclick="abrirModalNuevaVenta()">+ Nueva venta</button>
+          <button class="btn btn-ghost" onclick="exportAdminCSV()">↓ CSV</button>
+        </div>
       </div>
       <div class="filters">
         <select id="admin-fil-asesor" onchange="renderAdmin()">
@@ -630,13 +660,38 @@ tbody tr:hover td { background: var(--surface2); }
           <option value="Pendiente">🔵 Pendiente</option>
           <option value="Rechazada">🔴 Rechazada</option>
         </select>
-        <input id="admin-fil-search" placeholder="Buscar nombre, email o lead..." oninput="renderAdmin()">
+        <select id="admin-fil-pais" onchange="renderAdmin()">
+          <option value="all">Todos los países</option>
+          <option>Argentina</option><option>Bolivia</option><option>Brasil</option>
+          <option>Chile</option><option>Colombia</option><option>Costa Rica</option>
+          <option>Cuba</option><option>Ecuador</option><option>El Salvador</option>
+          <option>España</option><option>Estados Unidos</option><option>Guatemala</option>
+          <option>Haití</option><option>Honduras</option><option>Jamaica</option>
+          <option>México</option><option>Nicaragua</option><option>Panamá</option>
+          <option>Paraguay</option><option>Perú</option><option>República Dominicana</option>
+          <option>Trinidad y Tobago</option><option>Uruguay</option><option>Venezuela</option>
+          <option>Belice</option><option>Canadá</option><option>Dominica</option>
+          <option>Granada</option><option>Guyana</option><option>Surinam</option>
+          <option>Antigua y Barbuda</option><option>Bahamas</option><option>Barbados</option>
+          <option>Islas Vírgenes Británicas</option><option>Islas Caimán</option><option>Islas Turcas y Caicos</option>
+          <option>Montserrat</option><option>Puerto Rico</option><option>San Cristóbal y Nieves</option>
+          <option>Santa Lucía</option><option>San Vicente y las Granadinas</option>
+        </select>
+        <select id="admin-fil-metodo" onchange="renderAdmin()">
+          <option value="all">Todos los métodos de pago</option>
+          <option>Hotmart</option><option>Link Mercado Pago Argentina</option>
+          <option>Transferencia Argentina</option><option>Zelle</option>
+          <option>Bolívares</option><option>Pesos Chilenos</option>
+          <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
+          <option>Pesos Peruanos</option><option>PayPal</option>
+        </select>
+        <input id="admin-fil-search" placeholder="Buscar nombre, email o lead..." oninput="renderAdmin()" style="flex:0.5;min-width:120px">
       </div>
       <div class="table-wrap">
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre y Apellido</th><th>Monto USD</th><th>Estado</th><th style="width:40px"></th>
+              <th>Fecha</th><th>Asesor</th><th>Nombre alumno</th><th>País</th><th>ID Lead</th><th>Monto USD</th><th>Descuento</th><th>Monto Neto</th><th>Método pago</th><th>Estado</th><th style="width:40px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -1302,6 +1357,11 @@ function switchTab(t) {
   if (t === 'crm1') initCRM1();
 
   closeSidebar();
+}
+
+function abrirModalNuevaVenta() {
+  switchTab('cargar');
+  document.getElementById('f-nombre-alumno').focus();
 }
 
 // ── MES SYNC ──
@@ -2132,20 +2192,28 @@ function renderAdmin() {
   const asesor = document.getElementById('admin-fil-asesor').value;
   const mes = document.getElementById('admin-fil-mes').value;
   const estado = document.getElementById('admin-fil-estado').value;
+  const pais = document.getElementById('admin-fil-pais').value;
+  const metodo = document.getElementById('admin-fil-metodo').value;
   const search = (document.getElementById('admin-fil-search').value||'').toLowerCase();
   const vf = ventas.filter(function(v) {
     if (asesor!=='all' && v.asesor!==asesor) return false;
     if (mes!=='all' && !(v.fecha||'').startsWith(mes)) return false;
     if (estado!=='all' && (v.estado||'Pendiente')!==estado) return false;
+    if (pais!=='all' && (v.pais||'')!==pais) return false;
+    if (metodo!=='all' && (v.pago||'')!==metodo) return false;
     if (search) {
       const haystack = [(v.nombre||''),(v.email||''),(v.lead||''),(v.curso||'')].join(' ').toLowerCase();
       if (!haystack.includes(search)) return false;
     }
     return true;
   });
+  
+  const totalMes = vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).reduce(function(sum,v){ return sum + (parseFloat(v.monto)||0); },0);
+  document.getElementById('admin-total-mes').textContent = '$' + totalMes.toLocaleString('en-US',{maximumFractionDigits:2}) + ' USD';
+  
   document.getElementById('admin-title').textContent = 'Administración — ' + vf.length + ' venta' + (vf.length!==1?'s':'');
   const tbody = document.getElementById('admin-body');
-  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
+  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
 
   tbody.innerHTML = vf.map(function(v) {
     const est = v.estado || 'Pendiente';
@@ -2153,13 +2221,14 @@ function renderAdmin() {
     const tc = parseFloat(v.adminTC||0);
     const com = parseFloat(v.adminComision||0);
     const montoUSD = parseFloat(v.monto||0);
-    const montoNeto = (tc > 0 && v.adminMontoLocal) ? (parseFloat(v.adminMontoLocal) / tc).toFixed(2) : '';
+    const montoNeto = (tc > 0 && v.adminMontoLocal) ? (parseFloat(v.adminMontoLocal) / tc).toFixed(2) : (v.montoNeto ? v.montoNeto.toFixed(2) : '');
     const montoComision = com > 0 ? (montoUSD * com / 100).toFixed(2) : '';
+    const descuento = parseFloat(v.descuento||0);
 
     let expandedHtml = '';
     if (expanded) {
       expandedHtml = '<tr id="admin-exp-' + v._key + '" style="background:var(--surface2)">' +
-        '<td colspan="6" style="padding:0">' +
+        '<td colspan="11" style="padding:0">' +
           '<div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">' +
 
             // Datos del lead
@@ -2188,8 +2257,10 @@ function renderAdmin() {
               '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.promocion||'') + '" placeholder="Ej: Lanzamiento $125" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto USD</label>' +
               '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + montoUSD.toLocaleString('en-US') + '</div></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto local cobrado</label>' +
-              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.montoLocal||'—') + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Descuento %</label>' +
+              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (descuento > 0 ? descuento + '%' : '—') + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto neto USD</label>' +
+              '<div style="font-size:15px;font-weight:600;color:var(--text);padding:4px 2px">$' + (montoNeto ? parseFloat(montoNeto).toLocaleString('en-US') : montoUSD.toLocaleString('en-US')) + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Forma de pago</label>' +
               '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.pago||'—') + '</div></div>' +
 
@@ -2209,8 +2280,6 @@ function renderAdmin() {
               '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminMontoLocal||'') + '" placeholder="Monto en moneda local" onchange="updateAdminField(\'' + v._key + '\',\'adminMontoLocal\',this.value);renderAdmin()"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">TC referencia</label>' +
               '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminTC||'') + '" placeholder="Tipo de cambio" onchange="updateAdminField(\'' + v._key + '\',\'adminTC\',this.value);renderAdmin()"></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto neto USD</label>' +
-              '<div style="font-size:15px;font-weight:600;color:var(--text);padding:4px 2px">' + (montoNeto ? '$' + parseFloat(montoNeto).toLocaleString('en-US') : '—') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Comisión %</label>' +
               '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminComision||'') + '" placeholder="%" min="0" max="100" onchange="updateAdminField(\'' + v._key + '\',\'adminComision\',this.value);renderAdmin()"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto comisión USD</label>' +
@@ -2241,9 +2310,13 @@ function renderAdmin() {
     return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
-      '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="font-size:13px;font-weight:500">' + (v.nombre ? v.nombre : '<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
+      '<td style="font-size:13px">' + (v.pais||'—') + '</td>' +
+      '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td class="mono" style="font-weight:600;color:var(--accent)">$' + montoUSD.toLocaleString('en-US') + '</td>' +
+      '<td class="mono" style="font-size:12px">' + (descuento > 0 ? descuento + '%' : '—') + '</td>' +
+      '<td class="mono" style="font-weight:600">$' + (montoNeto ? parseFloat(montoNeto).toLocaleString('en-US',{maximumFractionDigits:2}) : montoUSD.toLocaleString('en-US')) + '</td>' +
+      '<td style="font-size:12px;color:var(--text2)">' + (v.pago||'—') + '</td>' +
       '<td><select class="estado-select ' + estadoClass(est) + '" onclick="event.stopPropagation()" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
         '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
         '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
@@ -2266,7 +2339,11 @@ async function cambiarEstado(key, sel) {
 function confirmarVenta() {
   const asesor = document.getElementById('f-asesor').value;
   const fecha = document.getElementById('f-fecha').value;
+  const nombreAlumno = document.getElementById('f-nombre-alumno').value.trim();
+  const pais = document.getElementById('f-pais').value;
   const monto = parseFloat(document.getElementById('f-monto').value);
+  const descuento = parseFloat(document.getElementById('f-descuento').value) || 0;
+  const montoNeto = monto * (1 - descuento / 100);
   const pago = document.getElementById('f-pago').value;
   const curso = document.getElementById('f-curso').value.trim();
   const lead = document.getElementById('f-lead').value.trim();
@@ -2274,16 +2351,16 @@ function confirmarVenta() {
   const nota = document.getElementById('f-nota').value.trim();
   const email = document.getElementById('f-email').value.trim();
   const telefono = document.getElementById('f-telefono').value.trim();
-  const montoLocal = document.getElementById('f-monto-local').value.trim();
   const canalEl = document.querySelector('input[name="canal"]:checked');
   const canal = canalEl ? canalEl.value : '';
-  if (!asesor||!fecha||!monto||!pago||!curso||!canal) { showToast('Completá todos los campos obligatorios (*)'); return; }
+  if (!asesor||!fecha||!nombreAlumno||!pais||!monto||!pago||!curso||!canal||!email||!lead) { showToast('Completá todos los campos obligatorios (*)'); return; }
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  pendiente = { asesor:asesor, fecha:fecha, monto:monto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, montoLocal:montoLocal, nota:nota, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
+  pendiente = { asesor:asesor, fecha:fecha, nombre:nombreAlumno, pais:pais, monto:monto, descuento:descuento, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
-    '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' + (montoLocal ? ' · <span style="color:var(--text3)">' + montoLocal + '</span>' : '') +
+    nombreAlumno + ' · ' + pais + '<br>' +
+    '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' + (descuento > 0 ? ' (desc. ' + descuento + '%)' : '') + ' = ' + montoNeto.toLocaleString('en-US',{maximumFractionDigits:2}) + ' neto<br>' +
     ' vía <strong>' + pago + '</strong> · <strong>' + canal + '</strong><br>' +
     curso +
     (lead ? '<br><span style="color:var(--text3)">Lead: ' + lead + '</span>' : '') +
@@ -2315,8 +2392,8 @@ async function guardarVenta() {
 }
 
 function limpiarForm() {
-  ['f-asesor','f-pago'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['f-monto','f-curso','f-lead','f-codigo','f-email','f-telefono','f-monto-local','f-nota'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['f-asesor','f-pago','f-pais'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['f-monto','f-descuento','f-curso','f-lead','f-codigo','f-email','f-telefono','f-nombre-alumno','f-nota'].forEach(function(id){ document.getElementById(id).value=''; });
   document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked=false; });
   document.getElementById('f-fecha').valueAsDate = new Date();
   clearComprobante();
