@@ -350,7 +350,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.9</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.0</div>
   </div>
 </aside>
 
@@ -2380,14 +2380,21 @@ async function guardarVenta() {
     }
     const saved = await dbPush('/ventas', pendiente);
     if (!saved) throw new Error('Firebase rechazó la escritura');
+    // Agregar al array local de inmediato para que admin lo muestre sin esperar
+    const localVenta = Object.assign({}, pendiente, { _key: saved.name });
+    ventas.unshift(localVenta);
     limpiarForm();
     // reset edit/delete mode
     seleccionados.clear();
     if (modoEdicion) toggleModoEdicion();
     showToast('Venta guardada — visible para todos');
-    await loadVentas();
+    // Forzar re-render de admin independientemente de la sección activa
+    fillMesOptions('admin-fil-mes');
+    renderAdmin();
     renderAll();
     switchTab('inicio');
+    // Sync en background con Firebase
+    loadVentas().then(function(){ fillMesOptions('admin-fil-mes'); renderAdmin(); });
   } catch(e) {
     showToast('Error al guardar: ' + e.message);
   }
@@ -3254,7 +3261,7 @@ function renderMYF() {
   var mesKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
 
   var mesVentas = ventas.filter(function(v) {
-    return (v.asesor||'') === myfAsesor && (v.estado||'Pendiente') === 'Aprobado' && (v.fecha||'').startsWith(mesKey);
+    return (v.asesor||'') === myfAsesor && (v.estado||'Pendiente') !== 'Rechazada' && (v.fecha||'').startsWith(mesKey);
   });
 
   var totalBruto = mesVentas.reduce(function(s,v){ return s+parseFloat(v.montoNeto||v.monto||0); },0);
@@ -3317,19 +3324,26 @@ function renderMYF() {
 
   // Desglose de ventas
   if (mesVentas.length) {
-    html += '<div class="form-card"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">Ventas del mes</div>' +
+    html += '<div class="form-card" style="max-width:100%"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">Ventas del mes</div>' +
       '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">' +
       '<thead><tr style="background:var(--surface2)">' +
         '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Fecha</th>' +
         '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Nombre</th>' +
         '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Curso</th>' +
+        '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Pago</th>' +
+        '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Estado</th>' +
         '<th style="padding:7px 10px;text-align:right;border-bottom:1px solid var(--border)">Monto neto</th>' +
       '</tr></thead><tbody>' +
       mesVentas.sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).map(function(v) {
+        var est = v.estado||'Pendiente';
+        var estColor = est==='Aprobado'?'#155724':est==='Rechazada'?'var(--danger)':'#856404';
+        var estBg = est==='Aprobado'?'#d4edda':est==='Rechazada'?'var(--danger-bg)':'#fff3cd';
         return '<tr style="border-bottom:1px solid var(--surface2)">' +
-          '<td style="padding:6px 10px;color:var(--text3)">' + ((v.fecha||'—').split('-').reverse().join('/')) + '</td>' +
+          '<td style="padding:6px 10px;color:var(--text3);white-space:nowrap">' + ((v.fecha||'—').split('-').reverse().join('/')) + '</td>' +
           '<td style="padding:6px 10px">' + (v.nombre||'—') + '</td>' +
           '<td style="padding:6px 10px;color:var(--text2)">' + (v.curso||'—') + '</td>' +
+          '<td style="padding:6px 10px;color:var(--text2)">' + (v.pago||'—') + '</td>' +
+          '<td style="padding:6px 10px"><span style="font-size:11px;font-weight:700;background:'+estBg+';color:'+estColor+';border-radius:20px;padding:2px 8px">'+est+'</span></td>' +
           '<td style="padding:6px 10px;text-align:right;font-weight:600;color:var(--accent)">$' + parseFloat(v.montoNeto||v.monto||0).toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
         '</tr>';
       }).join('') +
