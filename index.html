@@ -350,7 +350,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.2</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.3</div>
   </div>
 </aside>
 
@@ -664,7 +664,7 @@ tbody tr:hover td { background: var(--surface2); }
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Pago alumno</th><th>Descuento</th><th>Monto neto</th><th>M. Final USD</th><th>M. Final ARS</th><th>Estado</th><th style="width:40px"></th>
+              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Pago</th><th>Desc%</th><th>Neto</th><th>Estado</th><th style="width:36px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -2239,7 +2239,7 @@ function renderAdmin() {
     let expandedHtml = '';
     if (expanded) {
       expandedHtml = '<tr id="admin-exp-' + v._key + '" style="background:var(--surface2)">' +
-        '<td colspan="12" style="padding:0">' +
+        '<td colspan="10" style="padding:0">' +
           '<div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">' +
 
             // Datos del lead
@@ -2317,13 +2317,16 @@ function renderAdmin() {
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="font-size:13px;font-weight:500">' + (v.nombre ? v.nombre : '<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
+      '<td style="font-size:12px;color:var(--text2)">' + (v.pais||'<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td class="mono" style="font-weight:600;color:var(--accent)">$' + pagoAlumno.toLocaleString('en-US') + '</td>' +
-      '<td><select class="estado-select ' + estadoClass(est) + '" onclick="event.stopPropagation()" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
+      '<td onclick="event.stopPropagation()" style="padding:6px 8px"><input type="number" style="width:58px;padding:4px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);text-align:center;font-family:inherit" value="' + (descPct||0) + '" min="0" max="100" placeholder="0" onchange="updateAdminField(\'' + v._key + '\',\'descuento\',parseFloat(this.value)||0);updateAdminField(\'' + v._key + '\',\'montoNeto\',(' + pagoAlumno + '*(1-(parseFloat(this.value)||0)/100)).toFixed(2));renderAdmin()"></td>' +
+      '<td class="mono" style="font-weight:600">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+      '<td onclick="event.stopPropagation()"><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
         '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
         '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
         '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
       '</select></td>' +
-      '<td style="color:var(--text3);font-size:18px;text-align:center">' + (expanded ? '▲' : '▼') + '</td>' +
+      '<td style="text-align:center;color:var(--text3);font-size:16px">' + (expanded ? '▲' : '▼') + '</td>' +
     '</tr>' + expandedHtml;
   }).join('');
 }
