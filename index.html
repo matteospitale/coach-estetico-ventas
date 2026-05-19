@@ -3187,7 +3187,7 @@ function renderClientes() {
             '</div>';
           }).join('') +
         '</div>' : '';
-      return '<div class="form-card" style="cursor:pointer" onclick="clienteExpandido=(clienteExpandido==='' + cl.email + ''?null:'' + cl.email + '');renderClientes()">' +
+      return '<div class="form-card" style="cursor:pointer" onclick="clienteExpandido=(clienteExpandido===\'' + cl.email + '\'?null:\'' + cl.email + '\');renderClientes()">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">' +
           '<div style="flex:1;min-width:0">' +
             '<div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (cl.nombre||'Sin nombre') + '</div>' +
