@@ -340,11 +340,17 @@ tbody tr:hover td { background: var(--surface2); }
     <button class="nav-item" id="nav-crm1" onclick="switchTab('crm1')">
       <span class="nav-icon">📊</span> Análisis CRM
     </button>
+    <button class="nav-item" id="nav-clientes" onclick="switchTab('clientes')">
+      <span class="nav-icon">👤</span> Análisis Clientes
+    </button>
+    <button class="nav-item" id="nav-myf" onclick="switchTab('myf')">
+      <span class="nav-icon">🏆</span> Matteo y Facu
+    </button>
 
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.4</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.5</div>
   </div>
 </aside>
 
@@ -527,7 +533,7 @@ tbody tr:hover td { background: var(--surface2); }
             <label class="form-label">Asesor *</label>
             <select class="form-select" id="f-asesor">
               <option value="">Seleccionar...</option>
-              <option>Matteo</option><option>Facundo</option><option>Dianela</option>
+              <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Stefany</option><option>Ruben</option>
             </select>
           </div>
           <div class="form-group">
@@ -536,35 +542,22 @@ tbody tr:hover td { background: var(--surface2); }
           </div>
           <div class="form-group">
             <label class="form-label">Nombre del alumno *</label>
-            <input type="text" class="form-input" id="f-nombre-alumno" placeholder="Ej: María García" onkeypress="if(event.key === '.') event.preventDefault()">
+            <input type="text" class="form-input" id="f-nombre-alumno" placeholder="Ej: Antonia (o . si no sabés)">
           </div>
           <div class="form-group">
             <label class="form-label">País *</label>
             <select class="form-select" id="f-pais">
               <option value="">Seleccionar...</option>
-              <option>Argentina</option><option>Bolivia</option><option>Brasil</option>
-              <option>Chile</option><option>Colombia</option><option>Costa Rica</option>
-              <option>Cuba</option><option>Ecuador</option><option>El Salvador</option>
-              <option>España</option><option>Estados Unidos</option><option>Guatemala</option>
-              <option>Haití</option><option>Honduras</option><option>Jamaica</option>
-              <option>México</option><option>Nicaragua</option><option>Panamá</option>
-              <option>Paraguay</option><option>Perú</option><option>República Dominicana</option>
-              <option>Trinidady Tobago</option><option>Uruguay</option><option>Venezuela</option>
-              <option>Belice</option><option>Canadá</option><option>Dominica</option>
-              <option>Granada</option><option>Guyana</option><option>Surinam</option>
-              <option>Antigua y Barbuda</option><option>Bahamas</option><option>Barbados</option>
-              <option>Islas Vírgenes Británicas</option><option>Islas Caimán</option><option>Islas Turcas y Caicos</option>
-              <option>Montserrat</option><option>Puerto Rico</option><option>San Cristóbal y Nieves</option>
-              <option>Santa Lucía</option><option>San Vicente y las Granadinas</option>
+              <option>Alemania</option><option>Andorra</option><option>Argentina</option><option>Aruba</option><option>Australia</option><option>Belice</option><option>Bolivia</option><option>Brasil</option><option>Canadá</option><option>Chile</option><option>Colombia</option><option>Costa Rica</option><option>Cuba</option><option>Ecuador</option><option>El Salvador</option><option>España</option><option>Estados Unidos</option><option>Francia</option><option>Guatemala</option><option>Honduras</option><option>Israel</option><option>Italia</option><option>México</option><option>Nicaragua</option><option>Países Bajos</option><option>Panamá</option><option>Paraguay</option><option>Perú</option><option>Portugal</option><option>Puerto Rico</option><option>Reino Unido</option><option>República Checa</option><option>República Dominicana</option><option>Suiza</option><option>Trinidad y Tobago</option><option>Uruguay</option><option>Venezuela</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Pago alumno (USD) *</label>
+            <label class="form-label">Pago alumno *</label>
             <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01">
           </div>
           <div class="form-group">
-            <label class="form-label">Descuento % (opcional)</label>
-            <input type="number" class="form-input" id="f-descuento" placeholder="0" min="0" max="100" step="0.01">
+            <label class="form-label">Descuento %</label>
+            <input type="number" class="form-input" id="f-descuento" placeholder="Ej: 20" min="0" max="100" step="0.01">
           </div>
           <div class="form-group">
             <label class="form-label">Forma de pago *</label>
@@ -603,16 +596,16 @@ tbody tr:hover td { background: var(--surface2); }
             <input type="text" class="form-input" id="f-lead" placeholder="Ej: 27537979">
           </div>
           <div class="form-group">
+            <label class="form-label">Mail *</label>
+            <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com">
+          </div>
+          <div class="form-group">
             <label class="form-label">Código comprobante</label>
             <input type="text" class="form-input" id="f-codigo" placeholder="Ej: HP0198428386">
           </div>
           <div class="form-group">
             <label class="form-label">Teléfono</label>
             <input type="tel" class="form-input" id="f-telefono" placeholder="Ej: +5491112345678">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Mail *</label>
-            <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com">
           </div>
           <div class="form-group full">
             <label class="form-label">Aclaración (opcional)</label>
@@ -636,20 +629,18 @@ tbody tr:hover td { background: var(--surface2); }
 
     <!-- ADMINISTRACIÓN -->
     <section class="section" id="sec-admin">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-        <div>
-          <div class="section-title" id="admin-title">Administración</div>
-          <div style="font-size:13px;color:var(--text3);margin-top:4px">Total del mes: <strong id="admin-total-mes" style="color:var(--accent)">$0 USD</strong></div>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-accent" onclick="abrirModalNuevaVenta()">+ Nueva venta</button>
+      <div class="section-header">
+        <div class="section-title" id="admin-title">Administración</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div id="admin-total-mes" style="font-size:13px;font-weight:700;color:var(--text);background:var(--surface2);padding:6px 12px;border-radius:8px;white-space:nowrap"></div>
           <button class="btn btn-ghost" onclick="exportAdminCSV()">↓ CSV</button>
+          <button class="btn btn-accent" style="padding:7px 14px;font-size:13px" onclick="switchTab('cargar')">+ Nueva venta</button>
         </div>
       </div>
       <div class="filters">
         <select id="admin-fil-asesor" onchange="renderAdmin()">
           <option value="all">Todos los asesores</option>
-          <option>Matteo</option><option>Facundo</option><option>Dianela</option>
+          <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Stefany</option><option>Ruben</option>
         </select>
         <select id="admin-fil-mes" onchange="renderAdmin()">
           <option value="all">Todos los meses</option>
@@ -662,36 +653,19 @@ tbody tr:hover td { background: var(--surface2); }
         </select>
         <select id="admin-fil-pais" onchange="renderAdmin()">
           <option value="all">Todos los países</option>
-          <option>Argentina</option><option>Bolivia</option><option>Brasil</option>
-          <option>Chile</option><option>Colombia</option><option>Costa Rica</option>
-          <option>Cuba</option><option>Ecuador</option><option>El Salvador</option>
-          <option>España</option><option>Estados Unidos</option><option>Guatemala</option>
-          <option>Haití</option><option>Honduras</option><option>Jamaica</option>
-          <option>México</option><option>Nicaragua</option><option>Panamá</option>
-          <option>Paraguay</option><option>Perú</option><option>República Dominicana</option>
-          <option>Trinidad y Tobago</option><option>Uruguay</option><option>Venezuela</option>
-          <option>Belice</option><option>Canadá</option><option>Dominica</option>
-          <option>Granada</option><option>Guyana</option><option>Surinam</option>
-          <option>Antigua y Barbuda</option><option>Bahamas</option><option>Barbados</option>
-          <option>Islas Vírgenes Británicas</option><option>Islas Caimán</option><option>Islas Turcas y Caicos</option>
-          <option>Montserrat</option><option>Puerto Rico</option><option>San Cristóbal y Nieves</option>
-          <option>Santa Lucía</option><option>San Vicente y las Granadinas</option>
+          <option>Alemania</option><option>Andorra</option><option>Argentina</option><option>Aruba</option><option>Australia</option><option>Belice</option><option>Bolivia</option><option>Brasil</option><option>Canadá</option><option>Chile</option><option>Colombia</option><option>Costa Rica</option><option>Cuba</option><option>Ecuador</option><option>El Salvador</option><option>España</option><option>Estados Unidos</option><option>Francia</option><option>Guatemala</option><option>Honduras</option><option>Israel</option><option>Italia</option><option>México</option><option>Nicaragua</option><option>Países Bajos</option><option>Panamá</option><option>Paraguay</option><option>Perú</option><option>Portugal</option><option>Puerto Rico</option><option>Reino Unido</option><option>República Checa</option><option>República Dominicana</option><option>Suiza</option><option>Trinidad y Tobago</option><option>Uruguay</option><option>Venezuela</option>
         </select>
-        <select id="admin-fil-metodo" onchange="renderAdmin()">
-          <option value="all">Todos los métodos de pago</option>
-          <option>Hotmart</option><option>Link Mercado Pago Argentina</option>
-          <option>Transferencia Argentina</option><option>Zelle</option>
-          <option>Bolívares</option><option>Pesos Chilenos</option>
-          <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
-          <option>Pesos Peruanos</option><option>PayPal</option>
+        <select id="admin-fil-pago" onchange="renderAdmin()">
+          <option value="all">Todos los métodos</option>
+          <option>Hotmart</option><option>Link Mercado Pago Argentina</option><option>Transferencia Argentina</option><option>Zelle</option><option>Bolívares</option><option>Pesos Chilenos</option><option>Pesos Dominicanos</option><option>Pesos Colombianos</option><option>Pesos Peruanos</option><option>PayPal</option>
         </select>
-        <input id="admin-fil-search" placeholder="Buscar nombre, email o lead..." oninput="renderAdmin()" style="flex:0.5;min-width:120px">
+        <input id="admin-fil-search" style="max-width:180px" placeholder="Buscar nombre o lead..." oninput="renderAdmin()">
       </div>
       <div class="table-wrap">
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>Nombre alumno</th><th>País</th><th>ID Lead</th><th>Monto USD</th><th>Descuento</th><th>Monto Neto</th><th>Método pago</th><th>Estado</th><th style="width:40px"></th>
+              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Pago alumno</th><th>Descuento</th><th>Monto neto</th><th>M. Final USD</th><th>M. Final ARS</th><th>Estado</th><th style="width:40px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -1226,6 +1200,28 @@ Quería comentarte que tenemos una nueva edición del [curso siguiente] y estamo
 
     </section>
 
+    <!-- ANÁLISIS CLIENTES -->
+    <section class="section" id="sec-clientes">
+      <div class="section-header">
+        <div class="section-title">Análisis Clientes</div>
+        <input id="clientes-search" class="form-input" style="max-width:220px;padding:6px 10px;font-size:13px" placeholder="Buscar nombre o email..." oninput="renderClientes()">
+      </div>
+      <div id="clientes-body"></div>
+    </section>
+
+    <!-- MATTEO Y FACU -->
+    <section class="section" id="sec-myf">
+      <div class="section-header">
+        <div class="section-title">Matteo y Facu</div>
+        <div style="display:flex;gap:8px">
+          <button id="myf-btn-matteo" class="btn btn-accent" style="font-size:13px;padding:7px 16px" onclick="switchMYF('Matteo')">Matteo</button>
+          <button id="myf-btn-facundo" class="btn btn-ghost" style="font-size:13px;padding:7px 16px" onclick="switchMYF('Facundo')">Facundo</button>
+        </div>
+      </div>
+      <div id="myf-body"></div>
+    </section>
+
+
 
   </div>
 </div>
@@ -1337,8 +1333,8 @@ function closeSidebar() {
 }
 
 // ── NAVIGATION ──
-const TABS = ['inicio','ventas','plantillas','stats','ia','admin','crm1','cargar'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', crm1:'Análisis CRM', cargar:'Cargar venta' };
+const TABS = ['inicio','ventas','plantillas','stats','ia','admin','crm1','clientes','myf','cargar'];
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', crm1:'Análisis CRM', clientes:'Análisis Clientes', myf:'Matteo y Facu', cargar:'Cargar venta' };
 
 function switchTab(t) {
   TABS.forEach(s => {
@@ -1355,13 +1351,10 @@ function switchTab(t) {
   if (t === 'ia') initIA();
   if (t === 'admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); }
   if (t === 'crm1') initCRM1();
+  if (t === 'clientes') renderClientes();
+  if (t === 'myf') { renderMYF(); }
 
   closeSidebar();
-}
-
-function abrirModalNuevaVenta() {
-  switchTab('cargar');
-  document.getElementById('f-nombre-alumno').focus();
 }
 
 // ── MES SYNC ──
@@ -2192,43 +2185,45 @@ function renderAdmin() {
   const asesor = document.getElementById('admin-fil-asesor').value;
   const mes = document.getElementById('admin-fil-mes').value;
   const estado = document.getElementById('admin-fil-estado').value;
-  const pais = document.getElementById('admin-fil-pais').value;
-  const metodo = document.getElementById('admin-fil-metodo').value;
+  const pais = (document.getElementById('admin-fil-pais')||{}).value || 'all';
+  const pago = (document.getElementById('admin-fil-pago')||{}).value || 'all';
   const search = (document.getElementById('admin-fil-search').value||'').toLowerCase();
   const vf = ventas.filter(function(v) {
     if (asesor!=='all' && v.asesor!==asesor) return false;
     if (mes!=='all' && !(v.fecha||'').startsWith(mes)) return false;
     if (estado!=='all' && (v.estado||'Pendiente')!==estado) return false;
     if (pais!=='all' && (v.pais||'')!==pais) return false;
-    if (metodo!=='all' && (v.pago||'')!==metodo) return false;
+    if (pago!=='all' && (v.pago||'')!==pago) return false;
     if (search) {
       const haystack = [(v.nombre||''),(v.email||''),(v.lead||''),(v.curso||'')].join(' ').toLowerCase();
       if (!haystack.includes(search)) return false;
     }
     return true;
   });
-  
-  const totalMes = vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).reduce(function(sum,v){ return sum + (parseFloat(v.monto)||0); },0);
-  document.getElementById('admin-total-mes').textContent = '$' + totalMes.toLocaleString('en-US',{maximumFractionDigits:2}) + ' USD';
-  
-  document.getElementById('admin-title').textContent = 'Administración — ' + vf.length + ' venta' + (vf.length!==1?'s':'');
+  // Total del mes visible
+  const totalMes = vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).reduce(function(s,v){ return s + parseFloat(v.montoNeto||v.monto||0); }, 0);
+  const totalEl = document.getElementById('admin-total-mes');
+  if (totalEl) totalEl.textContent = vf.length + ' ventas · $' + totalMes.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD aprobado';
+  document.getElementById('admin-title').textContent = 'Administración';
   const tbody = document.getElementById('admin-body');
-  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
+  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
 
   tbody.innerHTML = vf.map(function(v) {
     const est = v.estado || 'Pendiente';
     const expanded = adminExpandidos.has(v._key);
-    const tc = parseFloat(v.adminTC||0);
     const com = parseFloat(v.adminComision||0);
-    const montoUSD = parseFloat(v.monto||0);
-    const montoNeto = (tc > 0 && v.adminMontoLocal) ? (parseFloat(v.adminMontoLocal) / tc).toFixed(2) : (v.montoNeto ? v.montoNeto.toFixed(2) : '');
-    const montoComision = com > 0 ? (montoUSD * com / 100).toFixed(2) : '';
-    const descuento = parseFloat(v.descuento||0);
+    const pagoAlumno = parseFloat(v.monto||0);
+    const descPct = parseFloat(v.descuento||0);
+    const montoNeto = v.montoNeto ? parseFloat(v.montoNeto) : (descPct > 0 ? pagoAlumno * (1 - descPct/100) : pagoAlumno);
+    // Final USD/ARS: stored or computed from formula fields
+    const mFinalUSD = v.montoFinalUSD || '';
+    const mFinalARS = v.montoFinalARS || '';
+    const montoComision = com > 0 ? (montoNeto * com / 100).toFixed(2) : '';
 
     let expandedHtml = '';
     if (expanded) {
       expandedHtml = '<tr id="admin-exp-' + v._key + '" style="background:var(--surface2)">' +
-        '<td colspan="11" style="padding:0">' +
+        '<td colspan="12" style="padding:0">' +
           '<div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">' +
 
             // Datos del lead
@@ -2255,35 +2250,29 @@ function renderAdmin() {
               '<div style="font-size:13px;padding:6px 2px;color:var(--text)">' + (v.curso||'—') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Promoción</label>' +
               '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.promocion||'') + '" placeholder="Ej: Lanzamiento $125" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto USD</label>' +
-              '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + montoUSD.toLocaleString('en-US') + '</div></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Descuento %</label>' +
-              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (descuento > 0 ? descuento + '%' : '—') + '</div></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto neto USD</label>' +
-              '<div style="font-size:15px;font-weight:600;color:var(--text);padding:4px 2px">$' + (montoNeto ? parseFloat(montoNeto).toLocaleString('en-US') : montoUSD.toLocaleString('en-US')) + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Pago alumno</label>' +
+              '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto local cobrado</label>' +
+              '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.montoLocal||'—') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Forma de pago</label>' +
               '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.pago||'—') + '</div></div>' +
 
-            // Conversiones
+            // Conversiones y comisiones
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Conversiones y comisiones</div>' +
-            '<div class="admin-field" style="grid-column:1/-1">' +
-              '<label class="form-label" style="font-size:11px">Tipo de cambio Wise</label>' +
-              '<div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">' +
-                '<span style="font-size:12px;color:var(--text3)">Moneda detectada: <strong id="wise-moneda-' + v._key + '">' + (v.pais ? (PAIS_MONEDA[v.pais]||'—') : '—') + '</strong> · Fecha venta: <strong>' + (v.fecha||'—') + '</strong></span>' +
-                '<button onclick="obtenerTCWise(\'' + v._key + '\')" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif">⇄ Obtener TC Wise</button>' +
-                '<span id="wise-status-' + v._key + '" style="font-size:12px;color:var(--text3)"></span>' +
-              '</div>' +
-            '</div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Moneda local</label>' +
-              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.adminMoneda||'') + '" placeholder="ARS / CLP / VES..." onchange="updateAdminField(\'' + v._key + '\',\'adminMoneda\',this.value)"></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto local (admin)</label>' +
-              '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminMontoLocal||'') + '" placeholder="Monto en moneda local" onchange="updateAdminField(\'' + v._key + '\',\'adminMontoLocal\',this.value);renderAdmin()"></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">TC referencia</label>' +
-              '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminTC||'') + '" placeholder="Tipo de cambio" onchange="updateAdminField(\'' + v._key + '\',\'adminTC\',this.value);renderAdmin()"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Pago alumno</label>' +
+              '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Descuento %</label>' +
+              '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.descuento||'0') + '" placeholder="%" min="0" max="100" onchange="updateAdminField(\'' + v._key + '\',\'descuento\',parseFloat(this.value)||0);updateAdminField(\'' + v._key + '\',\'montoNeto\',(pagoAlumno*(1-(parseFloat(this.value)||0)/100)).toFixed(2));renderAdmin()"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto neto</label>' +
+              '<div style="font-size:15px;font-weight:700;color:var(--text);padding:4px 2px">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final USD<br><small style="font-weight:400;color:var(--text3)">*1420 ó valor directo</small></label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420 o valor" onchange="updateAdminField(\'' + v._key + '\',\'montoFinalUSD\',this.value);renderAdmin()"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final ARS<br><small style="font-weight:400;color:var(--text3)">valor ó /1420</small></label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.montoFinalARS||'') + '" placeholder="valor o /1420" onchange="updateAdminField(\'' + v._key + '\',\'montoFinalARS\',this.value);renderAdmin()"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Comisión %</label>' +
               '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminComision||'') + '" placeholder="%" min="0" max="100" onchange="updateAdminField(\'' + v._key + '\',\'adminComision\',this.value);renderAdmin()"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto comisión USD</label>' +
-              '<div style="font-size:15px;font-weight:600;color:var(--text);padding:4px 2px">' + (montoComision ? '$' + parseFloat(montoComision).toLocaleString('en-US') : '—') + '</div></div>' +
+              '<div style="font-size:15px;font-weight:600;color:var(--text);padding:4px 2px">' + (montoComision ? '$' + parseFloat(montoComision).toLocaleString('en-US',{minimumFractionDigits:2}) : '—') + '</div></div>' +
 
             // Estado y comprobante
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Estado y verificación</div>' +
@@ -2310,13 +2299,9 @@ function renderAdmin() {
     return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
-      '<td style="font-size:13px;font-weight:500">' + (v.nombre ? v.nombre : '<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
-      '<td style="font-size:13px">' + (v.pais||'—') + '</td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
+      '<td style="font-size:13px;font-weight:500">' + (v.nombre ? v.nombre : '<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
       '<td class="mono" style="font-weight:600;color:var(--accent)">$' + montoUSD.toLocaleString('en-US') + '</td>' +
-      '<td class="mono" style="font-size:12px">' + (descuento > 0 ? descuento + '%' : '—') + '</td>' +
-      '<td class="mono" style="font-weight:600">$' + (montoNeto ? parseFloat(montoNeto).toLocaleString('en-US',{maximumFractionDigits:2}) : montoUSD.toLocaleString('en-US')) + '</td>' +
-      '<td style="font-size:12px;color:var(--text2)">' + (v.pago||'—') + '</td>' +
       '<td><select class="estado-select ' + estadoClass(est) + '" onclick="event.stopPropagation()" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
         '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
         '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
@@ -2339,11 +2324,7 @@ async function cambiarEstado(key, sel) {
 function confirmarVenta() {
   const asesor = document.getElementById('f-asesor').value;
   const fecha = document.getElementById('f-fecha').value;
-  const nombreAlumno = document.getElementById('f-nombre-alumno').value.trim();
-  const pais = document.getElementById('f-pais').value;
   const monto = parseFloat(document.getElementById('f-monto').value);
-  const descuento = parseFloat(document.getElementById('f-descuento').value) || 0;
-  const montoNeto = monto * (1 - descuento / 100);
   const pago = document.getElementById('f-pago').value;
   const curso = document.getElementById('f-curso').value.trim();
   const lead = document.getElementById('f-lead').value.trim();
@@ -2351,16 +2332,20 @@ function confirmarVenta() {
   const nota = document.getElementById('f-nota').value.trim();
   const email = document.getElementById('f-email').value.trim();
   const telefono = document.getElementById('f-telefono').value.trim();
+  const montoLocal = document.getElementById('f-monto-local').value.trim();
   const canalEl = document.querySelector('input[name="canal"]:checked');
   const canal = canalEl ? canalEl.value : '';
-  if (!asesor||!fecha||!nombreAlumno||!pais||!monto||!pago||!curso||!canal||!email||!lead) { showToast('Completá todos los campos obligatorios (*)'); return; }
+  const nombreAlumno = document.getElementById('f-nombre-alumno').value.trim();
+  const paisVenta = document.getElementById('f-pais').value;
+  const descuento = parseFloat(document.getElementById('f-descuento').value||0);
+  if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombreAlumno||!paisVenta||!email||!lead) { showToast('Completá todos los campos obligatorios: nombre, país, mail, ID Lead'); return; }
+  const montoNeto = descuento > 0 ? parseFloat((monto * (1 - descuento/100)).toFixed(2)) : monto;
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  pendiente = { asesor:asesor, fecha:fecha, nombre:nombreAlumno, pais:pais, monto:monto, descuento:descuento, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
+  pendiente = { asesor:asesor, fecha:fecha, monto:monto, descuento:descuento, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, montoLocal:montoLocal, nota:nota, nombre:nombreAlumno, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
-    nombreAlumno + ' · ' + pais + '<br>' +
-    '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' + (descuento > 0 ? ' (desc. ' + descuento + '%)' : '') + ' = ' + montoNeto.toLocaleString('en-US',{maximumFractionDigits:2}) + ' neto<br>' +
+    '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' + (montoLocal ? ' · <span style="color:var(--text3)">' + montoLocal + '</span>' : '') +
     ' vía <strong>' + pago + '</strong> · <strong>' + canal + '</strong><br>' +
     curso +
     (lead ? '<br><span style="color:var(--text3)">Lead: ' + lead + '</span>' : '') +
@@ -2393,7 +2378,7 @@ async function guardarVenta() {
 
 function limpiarForm() {
   ['f-asesor','f-pago','f-pais'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['f-monto','f-descuento','f-curso','f-lead','f-codigo','f-email','f-telefono','f-nombre-alumno','f-nota'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['f-monto','f-descuento','f-curso','f-lead','f-codigo','f-email','f-telefono','f-monto-local','f-nota','f-nombre-alumno'].forEach(function(id){ document.getElementById(id).value=''; });
   document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked=false; });
   document.getElementById('f-fecha').valueAsDate = new Date();
   clearComprobante();
@@ -3159,6 +3144,178 @@ function analizarCRM(rows, status) {
   document.getElementById('crm1-frios-stat').textContent = '(' + frios.length.toLocaleString() + ')';
   document.getElementById('crm1-tabs').style.display = 'block';
   switchCRM1Tab('dup');
+}
+
+// ── ANÁLISIS CLIENTES ──
+var clienteExpandido = null;
+
+function renderClientes() {
+  var search = (document.getElementById('clientes-search').value||'').toLowerCase();
+  // Group ventas by email
+  var map = {};
+  ventas.forEach(function(v) {
+    var key = (v.email||'').toLowerCase().trim() || ('noemail_' + (v.lead||v._key));
+    if (!map[key]) map[key] = { email: v.email||'', nombre: v.nombre||'', pais: v.pais||'', lead: v.lead||'', ventas: [] };
+    map[key].ventas.push(v);
+    if (!map[key].nombre && v.nombre) map[key].nombre = v.nombre;
+    if (!map[key].pais && v.pais) map[key].pais = v.pais;
+    if (!map[key].lead && v.lead) map[key].lead = v.lead;
+  });
+
+  var clientes = Object.values(map).filter(function(cl) {
+    if (!search) return true;
+    return (cl.email+cl.nombre+cl.lead).toLowerCase().includes(search);
+  }).sort(function(a,b) { return b.ventas.length - a.ventas.length; });
+
+  var body = document.getElementById('clientes-body');
+  if (!clientes.length) { body.innerHTML = '<div class="empty-state">Sin clientes registrados</div>'; return; }
+
+  body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">' +
+    clientes.map(function(cl) {
+      var totalGastado = cl.ventas.reduce(function(s,v){ return s+parseFloat(v.montoNeto||v.monto||0); },0);
+      var ultimaCompra = cl.ventas.map(function(v){return v.fecha||'';}).sort().reverse()[0]||'—';
+      var cursos = cl.ventas.map(function(v){return v.curso||'';}).filter(Boolean);
+      var isExp = clienteExpandido === cl.email;
+      var exp = isExp ? 
+        '<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">' +
+          '<div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Historial de compras</div>' +
+          cl.ventas.sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).map(function(v) {
+            return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--surface2)">' +
+              '<div><div style="font-size:12px;font-weight:600;color:var(--text)">' + (v.curso||'—') + '</div>' +
+              '<div style="font-size:11px;color:var(--text3)">' + ((v.fecha||'—').split('-').reverse().join('/')) + ' · ' + (v.asesor||'') + ' · ' + (v.pago||'') + '</div></div>' +
+              '<div style="font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap">$' + parseFloat(v.montoNeto||v.monto||0).toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>' : '';
+      return '<div class="form-card" style="cursor:pointer" onclick="clienteExpandido=(clienteExpandido==='' + cl.email + ''?null:'' + cl.email + '');renderClientes()">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (cl.nombre||'Sin nombre') + '</div>' +
+            '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + (cl.email||'Sin email') + '</div>' +
+            (cl.lead ? '<div style="font-size:11px;margin-top:2px"><a href="https://coachestetico.kommo.com/leads/detail/'+cl.lead+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent)">Lead '+cl.lead+' ↗</a></div>' : '') +
+          '</div>' +
+          '<div style="text-align:right;flex-shrink:0">' +
+            '<div style="font-size:18px;font-weight:800;color:var(--accent)">$' + totalGastado.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' +
+            '<div style="font-size:10px;color:var(--text3)">' + cl.ventas.length + ' compra' + (cl.ventas.length!==1?'s':'') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' +
+          cursos.map(function(cu){ return '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:20px;padding:2px 8px">'+cu+'</span>'; }).join('') +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text3);margin-top:6px">Última compra: ' + (ultimaCompra?ultimaCompra.split('-').reverse().join('/'):'—') + (cl.pais?' · '+cl.pais:'') + '</div>' +
+        exp +
+      '</div>';
+    }).join('') +
+  '</div>';
+}
+
+// ── MATTEO Y FACU ──
+var myfAsesor = 'Matteo';
+var NIVELES = [
+  { usd: 7500, pct: 10, label: 'Nivel 1' },
+  { usd: 9000, pct: 12, label: 'Nivel 2' },
+  { usd: 11120, pct: 14, label: 'Nivel 3' },
+];
+var TC_ARS = 1420;
+
+function switchMYF(asesor) {
+  myfAsesor = asesor;
+  document.getElementById('myf-btn-matteo').className = asesor==='Matteo' ? 'btn btn-accent' : 'btn btn-ghost';
+  document.getElementById('myf-btn-facundo').className = asesor==='Facundo' ? 'btn btn-accent' : 'btn btn-ghost';
+  renderMYF();
+}
+
+function renderMYF() {
+  var hoy = new Date();
+  var diasMes = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0).getDate();
+  var diaActual = hoy.getDate();
+  var diasRestantes = diasMes - diaActual + 1;
+  var mesKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
+
+  var mesVentas = ventas.filter(function(v) {
+    return (v.asesor||'') === myfAsesor && (v.estado||'Pendiente') === 'Aprobado' && (v.fecha||'').startsWith(mesKey);
+  });
+
+  var totalBruto = mesVentas.reduce(function(s,v){ return s+parseFloat(v.montoNeto||v.monto||0); },0);
+  var totalNeto = totalBruto * 0.85; // menos 15%
+
+  var body = document.getElementById('myf-body');
+  if (!body) return;
+
+  var nivelActual = NIVELES.filter(function(n){ return totalNeto >= n.usd; }).pop() || null;
+  var nivelActualLabel = nivelActual ? nivelActual.label + ' (' + nivelActual.pct + '%)' : 'Sin nivel aún';
+  var comisionActual = nivelActual ? (totalNeto * nivelActual.pct / 100) : 0;
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px">' +
+    '<div class="form-card" style="text-align:center;padding:20px 12px">' +
+      '<div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Total vendido</div>' +
+      '<div style="font-size:30px;font-weight:800;color:var(--accent)">$' + totalBruto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + mesVentas.length + ' venta' + (mesVentas.length!==1?'s':'') + ' · mes actual</div>' +
+    '</div>' +
+    '<div class="form-card" style="text-align:center;padding:20px 12px">' +
+      '<div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">FINAL (-15%)</div>' +
+      '<div style="font-size:30px;font-weight:800;color:var(--text)">$' + totalNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:2px">Base para niveles</div>' +
+    '</div>' +
+    '<div class="form-card" style="text-align:center;padding:20px 12px">' +
+      '<div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Nivel actual</div>' +
+      '<div style="font-size:18px;font-weight:800;color:' + (nivelActual?'#155724':'var(--text3)') + '">' + nivelActualLabel + '</div>' +
+      (nivelActual ? '<div style="font-size:13px;font-weight:700;color:#155724;margin-top:4px">$' + comisionActual.toLocaleString('en-US',{minimumFractionDigits:2}) + ' USD · $' + (comisionActual*TC_ARS).toLocaleString('es-AR',{maximumFractionDigits:0}) + ' ARS</div>' : '') +
+    '</div>' +
+    '<div class="form-card" style="text-align:center;padding:20px 12px">' +
+      '<div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Por día necesario</div>' +
+      '<div style="font-size:22px;font-weight:800;color:var(--text)">$' + (diasRestantes > 0 ? (totalBruto/diaActual).toLocaleString('en-US',{minimumFractionDigits:2}) : '—') + '</div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:2px">promedio día ' + diaActual + '</div>' +
+    '</div>' +
+  '</div>';
+
+  // Niveles cards
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:20px">';
+  NIVELES.forEach(function(n) {
+    var falta = Math.max(0, n.usd - totalNeto);
+    var porDia = diasRestantes > 0 ? falta / diasRestantes / 0.85 : 0; // bruto por día necesario
+    var comision = totalNeto >= n.usd ? totalNeto * n.pct / 100 : 0;
+    var alcanzado = totalNeto >= n.usd;
+    var borderColor = alcanzado ? '#155724' : 'var(--border)';
+    var bg = alcanzado ? '#d4edda' : 'var(--surface)';
+    html += '<div class="form-card" style="border-top:3px solid ' + borderColor + ';background:' + bg + '">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<span style="font-size:13px;font-weight:700;color:var(--text)">' + n.label + '</span>' +
+        '<span style="font-size:12px;font-weight:700;background:' + (alcanzado?'#155724':'var(--surface2)') + ';color:' + (alcanzado?'#fff':'var(--text3)') + ';border-radius:20px;padding:2px 10px">' + (alcanzado?'✓ Alcanzado':'$'+n.usd.toLocaleString('en-US')) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;font-size:12px">' +
+        '<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Comisión</span><span style="font-weight:700;color:var(--text)">' + n.pct + '%</span></div>' +
+        '<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Cuánto falta</span><span style="font-weight:700;color:' + (alcanzado?'#155724':'var(--danger)') + '">' + (alcanzado?'Listo':'$'+falta.toLocaleString('en-US',{minimumFractionDigits:2})) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Por día (bruto)</span><span style="font-weight:700;color:var(--text)">' + (alcanzado?'—':'$'+porDia.toLocaleString('en-US',{minimumFractionDigits:2})) + '</span></div>' +
+        (alcanzado ? '<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Comisión USD</span><span style="font-weight:700;color:#155724">$' + comision.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span></div>' : '') +
+        (alcanzado ? '<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Comisión ARS</span><span style="font-weight:700;color:#155724">$' + (comision*TC_ARS).toLocaleString('es-AR',{maximumFractionDigits:0}) + '</span></div>' : '') +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  // Desglose de ventas
+  if (mesVentas.length) {
+    html += '<div class="form-card"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">Ventas del mes</div>' +
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">' +
+      '<thead><tr style="background:var(--surface2)">' +
+        '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Fecha</th>' +
+        '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Nombre</th>' +
+        '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Curso</th>' +
+        '<th style="padding:7px 10px;text-align:right;border-bottom:1px solid var(--border)">Monto neto</th>' +
+      '</tr></thead><tbody>' +
+      mesVentas.sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).map(function(v) {
+        return '<tr style="border-bottom:1px solid var(--surface2)">' +
+          '<td style="padding:6px 10px;color:var(--text3)">' + ((v.fecha||'—').split('-').reverse().join('/')) + '</td>' +
+          '<td style="padding:6px 10px">' + (v.nombre||'—') + '</td>' +
+          '<td style="padding:6px 10px;color:var(--text2)">' + (v.curso||'—') + '</td>' +
+          '<td style="padding:6px 10px;text-align:right;font-weight:600;color:var(--accent)">$' + parseFloat(v.montoNeto||v.monto||0).toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table></div></div>';
+  }
+
+  body.innerHTML = html;
 }
 
 // ── ANÁLISIS CRM ──
