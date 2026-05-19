@@ -350,7 +350,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.5</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.6</div>
   </div>
 </aside>
 
@@ -374,9 +374,12 @@ tbody tr:hover td { background: var(--surface2); }
 <div class="app-body">
   <div class="content-header">
     <h2 id="content-title">Inicio</h2>
-    <select class="mes-select" id="header-mes-sel" onchange="syncMes('desktop')">
-      <option value="all">Todos los meses</option>
-    </select>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="btn btn-accent" style="font-size:13px;padding:7px 16px;white-space:nowrap" onclick="switchTab('cargar')">+ Nueva venta</button>
+      <select class="mes-select" id="header-mes-sel" onchange="syncMes('desktop')">
+        <option value="all">Todos los meses</option>
+      </select>
+    </div>
   </div>
 
   <div class="main">
@@ -554,10 +557,6 @@ tbody tr:hover td { background: var(--surface2); }
           <div class="form-group">
             <label class="form-label">Pago alumno *</label>
             <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Descuento %</label>
-            <input type="number" class="form-input" id="f-descuento" placeholder="Ej: 20" min="0" max="100" step="0.01">
           </div>
           <div class="form-group">
             <label class="form-label">Forma de pago *</label>
@@ -1702,6 +1701,8 @@ function editarVenta(key) {
   document.getElementById('f-telefono').value = v.telefono||'';
   document.getElementById('f-email').value = v.email||'';
   document.getElementById('f-nota').value = v.nota||'';
+  document.getElementById('f-nombre-alumno').value = v.nombre||'';
+  document.getElementById('f-pais').value = v.pais||'';
   document.querySelectorAll('input[name="canal"]').forEach(r => { r.checked = r.value===v.canal; });
   window._editKey = key;
   switchTab('cargar');
@@ -2332,17 +2333,15 @@ function confirmarVenta() {
   const nota = document.getElementById('f-nota').value.trim();
   const email = document.getElementById('f-email').value.trim();
   const telefono = document.getElementById('f-telefono').value.trim();
-  const montoLocal = document.getElementById('f-monto-local').value.trim();
   const canalEl = document.querySelector('input[name="canal"]:checked');
   const canal = canalEl ? canalEl.value : '';
   const nombreAlumno = document.getElementById('f-nombre-alumno').value.trim();
   const paisVenta = document.getElementById('f-pais').value;
-  const descuento = parseFloat(document.getElementById('f-descuento').value||0);
   if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombreAlumno||!paisVenta||!email||!lead) { showToast('Completá todos los campos obligatorios: nombre, país, mail, ID Lead'); return; }
-  const montoNeto = descuento > 0 ? parseFloat((monto * (1 - descuento/100)).toFixed(2)) : monto;
+  const montoNeto = parseFloat(monto.toFixed(2));
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  pendiente = { asesor:asesor, fecha:fecha, monto:monto, descuento:descuento, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, montoLocal:montoLocal, nota:nota, nombre:nombreAlumno, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
+  pendiente = { asesor:asesor, fecha:fecha, monto:monto, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombreAlumno, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
     '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' + (montoLocal ? ' · <span style="color:var(--text3)">' + montoLocal + '</span>' : '') +
@@ -2378,7 +2377,7 @@ async function guardarVenta() {
 
 function limpiarForm() {
   ['f-asesor','f-pago','f-pais'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['f-monto','f-descuento','f-curso','f-lead','f-codigo','f-email','f-telefono','f-monto-local','f-nota','f-nombre-alumno'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['f-monto','f-curso','f-lead','f-codigo','f-email','f-telefono','f-nota','f-nombre-alumno'].forEach(function(id){ document.getElementById(id).value=''; });
   document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked=false; });
   document.getElementById('f-fecha').valueAsDate = new Date();
   clearComprobante();
