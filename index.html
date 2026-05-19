@@ -350,7 +350,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.0</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.1</div>
   </div>
 </aside>
 
@@ -2380,21 +2380,15 @@ async function guardarVenta() {
     }
     const saved = await dbPush('/ventas', pendiente);
     if (!saved) throw new Error('Firebase rechazó la escritura');
-    // Agregar al array local de inmediato para que admin lo muestre sin esperar
-    const localVenta = Object.assign({}, pendiente, { _key: saved.name });
-    ventas.unshift(localVenta);
     limpiarForm();
-    // reset edit/delete mode
     seleccionados.clear();
     if (modoEdicion) toggleModoEdicion();
     showToast('Venta guardada — visible para todos');
-    // Forzar re-render de admin independientemente de la sección activa
+    await loadVentas();
     fillMesOptions('admin-fil-mes');
     renderAdmin();
     renderAll();
     switchTab('inicio');
-    // Sync en background con Firebase
-    loadVentas().then(function(){ fillMesOptions('admin-fil-mes'); renderAdmin(); });
   } catch(e) {
     showToast('Error al guardar: ' + e.message);
   }
