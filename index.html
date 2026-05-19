@@ -350,7 +350,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.1</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.2</div>
   </div>
 </aside>
 
@@ -2317,7 +2317,7 @@ function renderAdmin() {
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="font-size:13px;font-weight:500">' + (v.nombre ? v.nombre : '<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
-      '<td class="mono" style="font-weight:600;color:var(--accent)">$' + montoUSD.toLocaleString('en-US') + '</td>' +
+      '<td class="mono" style="font-weight:600;color:var(--accent)">$' + pagoAlumno.toLocaleString('en-US') + '</td>' +
       '<td><select class="estado-select ' + estadoClass(est) + '" onclick="event.stopPropagation()" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
         '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
         '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
