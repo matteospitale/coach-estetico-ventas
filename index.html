@@ -350,7 +350,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.6</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.7</div>
   </div>
 </aside>
 
@@ -549,10 +549,10 @@ tbody tr:hover td { background: var(--surface2); }
           </div>
           <div class="form-group">
             <label class="form-label">País *</label>
-            <select class="form-select" id="f-pais">
-              <option value="">Seleccionar...</option>
-              <option>Alemania</option><option>Andorra</option><option>Argentina</option><option>Aruba</option><option>Australia</option><option>Belice</option><option>Bolivia</option><option>Brasil</option><option>Canadá</option><option>Chile</option><option>Colombia</option><option>Costa Rica</option><option>Cuba</option><option>Ecuador</option><option>El Salvador</option><option>España</option><option>Estados Unidos</option><option>Francia</option><option>Guatemala</option><option>Honduras</option><option>Israel</option><option>Italia</option><option>México</option><option>Nicaragua</option><option>Países Bajos</option><option>Panamá</option><option>Paraguay</option><option>Perú</option><option>Portugal</option><option>Puerto Rico</option><option>Reino Unido</option><option>República Checa</option><option>República Dominicana</option><option>Suiza</option><option>Trinidad y Tobago</option><option>Uruguay</option><option>Venezuela</option>
-            </select>
+            <div style="position:relative" id="pais-wrap">
+              <input type="text" class="form-input" id="f-pais" placeholder="Escribí para buscar... ej: arg, esp, ven" autocomplete="off" oninput="buscarPais(this.value)" onblur="setTimeout(function(){closePaisList();},180)">
+              <div id="pais-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Pago alumno *</label>
@@ -1693,7 +1693,6 @@ function editarVenta(key) {
   document.getElementById('f-asesor').value = v.asesor||'';
   document.getElementById('f-fecha').value = v.fecha||'';
   document.getElementById('f-monto').value = v.monto||'';
-  document.getElementById('f-monto-local').value = v.montoLocal||'';
   document.getElementById('f-pago').value = v.pago||'';
   document.getElementById('f-curso').value = v.curso||'';
   document.getElementById('f-lead').value = v.lead||'';
@@ -2076,7 +2075,23 @@ async function adjuntarPlantillaURL(key, url) {
 }
 
 // ── VENTAS FORM ──
-const CURSOS = ['Club Coach','Lifetime','Migración','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara Wood','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','Inmersión en Secuelas Post Acné','Manejo de la Pigmentación con Peeling Químico','Rosácea y Acné','Principios Activos con Dermapen','Protocolos en Fototipos Altos','Química Cosmética','Rebrote Acneico','Reestructuración en Pieles','Diagnóstico 0 - Pre Peeling','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
+const CURSOS = ['Club Coach','Lifetime','Migración','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
+
+const PAISES = ['Alemania','Andorra','Argentina','Aruba','Australia','Belice','Bolivia','Brasil','Canadá','Chile','Colombia','Costa Rica','Cuba','Ecuador','El Salvador','España','Estados Unidos','Francia','Guatemala','Honduras','Israel','Italia','México','Nicaragua','Países Bajos','Panamá','Paraguay','Perú','Portugal','Puerto Rico','Reino Unido','República Checa','República Dominicana','Suiza','Trinidad y Tobago','Uruguay','Venezuela'];
+
+function buscarPais(q) {
+  var list = document.getElementById('pais-list');
+  if (!q.trim()) { list.style.display='none'; return; }
+  var norm = function(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
+  var matches = PAISES.filter(function(p){ return norm(p).includes(norm(q)); });
+  if (!matches.length) { list.style.display='none'; return; }
+  list.innerHTML = matches.map(function(p) {
+    return '<div style="padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--surface2)" onmousedown="selectPais(\'' + p + '\')">' + p + '</div>';
+  }).join('');
+  list.style.display = 'block';
+}
+function selectPais(p) { document.getElementById('f-pais').value = p; closePaisList(); }
+function closePaisList() { document.getElementById('pais-list').style.display='none'; }
 
 function buscarCurso(q) {
   const list = document.getElementById('curso-list');
@@ -2344,7 +2359,7 @@ function confirmarVenta() {
   pendiente = { asesor:asesor, fecha:fecha, monto:monto, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombreAlumno, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
-    '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' + (montoLocal ? ' · <span style="color:var(--text3)">' + montoLocal + '</span>' : '') +
+    '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' +
     ' vía <strong>' + pago + '</strong> · <strong>' + canal + '</strong><br>' +
     curso +
     (lead ? '<br><span style="color:var(--text3)">Lead: ' + lead + '</span>' : '') +
