@@ -344,13 +344,13 @@ tbody tr:hover td { background: var(--surface2); }
       <span class="nav-icon">👤</span> Análisis Clientes
     </button>
     <button class="nav-item" id="nav-myf" onclick="switchTab('myf')">
-      <span class="nav-icon">🏆</span> Matteo y Facu
+      <span class="nav-icon">🏆</span> Coach Sales
     </button>
 
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.8</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v1.9</div>
   </div>
 </aside>
 
@@ -1211,7 +1211,7 @@ Quería comentarte que tenemos una nueva edición del [curso siguiente] y estamo
     <!-- MATTEO Y FACU -->
     <section class="section" id="sec-myf">
       <div class="section-header">
-        <div class="section-title">Matteo y Facu</div>
+        <div class="section-title">Coach Sales</div>
         <div style="display:flex;gap:8px">
           <button id="myf-btn-matteo" class="btn btn-accent" style="font-size:13px;padding:7px 16px" onclick="switchMYF('Matteo')">Matteo</button>
           <button id="myf-btn-facundo" class="btn btn-ghost" style="font-size:13px;padding:7px 16px" onclick="switchMYF('Facundo')">Facundo</button>
@@ -1333,7 +1333,7 @@ function closeSidebar() {
 
 // ── NAVIGATION ──
 const TABS = ['inicio','ventas','plantillas','stats','ia','admin','crm1','clientes','myf','cargar'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', crm1:'Análisis CRM', clientes:'Análisis Clientes', myf:'Matteo y Facu', cargar:'Cargar venta' };
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', crm1:'Análisis CRM', clientes:'Análisis Clientes', myf:'Coach Sales', cargar:'Cargar venta' };
 
 function switchTab(t) {
   TABS.forEach(s => {
@@ -2378,7 +2378,8 @@ async function guardarVenta() {
       window._editKey = null;
       document.getElementById('btn-confirmar').textContent = 'Revisar y confirmar';
     }
-    await dbPush('/ventas', pendiente);
+    const saved = await dbPush('/ventas', pendiente);
+    if (!saved) throw new Error('Firebase rechazó la escritura');
     limpiarForm();
     // reset edit/delete mode
     seleccionados.clear();
@@ -2388,7 +2389,7 @@ async function guardarVenta() {
     renderAll();
     switchTab('inicio');
   } catch(e) {
-    showToast('Error al guardar. Verificá la conexión.');
+    showToast('Error al guardar: ' + e.message);
   }
   pendiente = null;
 }
