@@ -32,6 +32,7 @@
   --nav-h: 62px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }
 body {
   font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   background: linear-gradient(150deg, var(--bg-from) 0%, var(--bg-to) 100%);
@@ -113,8 +114,19 @@ body {
 .mob-drawer-mes select { width: 100%; padding: 9px 14px; border-radius: var(--radius); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.85); font-family: inherit; font-size: 13px; }
 .mob-drawer-mes select option { background: #1a1210; }
 
-@media(max-width: 900px) { .topnav-pills { display: none; } .mob-hamburger { display: flex; } }
-@media(max-width: 600px) { .topnav-logo-text small { display: none; } .topnav { padding: 0 14px; } }
+@media(max-width: 900px) {
+  .topnav-pills { display: none; }
+  .mob-hamburger { display: flex; }
+  .topnav-right .mes-select { display: none; }
+  .topnav-right { min-width: 0; gap: 8px; }
+}
+@media(max-width: 600px) {
+  .topnav-logo-text small { display: none; }
+  .topnav { padding: 0 14px; }
+  .topnav-logo { min-width: 0; }
+  .btn-nueva-venta { font-size: 12px; padding: 7px 12px; }
+  .metrics-grid { grid-template-columns: 1fr; }
+}
 
 /* ── MAIN LAYOUT ── */
 .app-body { padding-top: var(--nav-h); min-height: 100vh; }
@@ -2596,15 +2608,33 @@ function exportCSV() {
   const search = document.getElementById('fil-search').value;
   const vf = filteredVentas(asesor, mes, pago, search);
   if (!vf.length) { showToast('No hay ventas para exportar'); return; }
-  const rows = [['Fecha','Hora','Asesor','Canal','Monto USD','Monto Local','Forma de pago','Curso','ID Lead','Teléfono','Email','Código','Aclaración']];
+  const headers = ['Fecha','Hora','Asesor','Canal','Monto USD','Monto Local','Forma de pago','Curso','ID Lead','Teléfono','Email','Código','Aclaración'];
+  function esc(v) { return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function cell(val, isNum) {
+    if (isNum && val !== '' && !isNaN(parseFloat(val))) return '<Cell ss:StyleID="normal"><Data ss:Type="Number">' + parseFloat(val) + '</Data></Cell>';
+    return '<Cell ss:StyleID="normal"><Data ss:Type="String">' + esc(val) + '</Data></Cell>';
+  }
+  var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n';
+  xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+  xml += '<Styles>\n<Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#B61F3A" ss:Pattern="Solid"/></Style>\n<Style ss:ID="normal"><Alignment ss:WrapText="0"/></Style>\n</Styles>\n';
+  xml += '<Worksheet ss:Name="Ventas">\n<Table>\n';
+  [80,60,80,80,80,110,130,190,80,120,190,80,170].forEach(function(w){ xml += '<Column ss:Width="' + w + '"/>'; });
+  xml += '<Row ss:Height="20">';
+  headers.forEach(function(h){ xml += '<Cell ss:StyleID="header"><Data ss:Type="String">' + esc(h) + '</Data></Cell>'; });
+  xml += '</Row>\n';
   vf.forEach(function(v) {
-    const hora = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '';
-    rows.push([v.fecha,hora,v.asesor,v.canal||'',v.monto,v.montoLocal||'',v.pago,v.curso,v.lead||'',v.telefono||'',v.email||'',v.codigo||'',v.nota||'']);
+    var hora = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '';
+    xml += '<Row>' +
+      cell(v.fecha||'') + cell(hora) + cell(v.asesor||'') + cell(v.canal||'') +
+      cell(v.monto||'', true) + cell(v.montoLocal||'') + cell(v.pago||'') +
+      cell(v.curso||'') + cell(v.lead||'') + cell(v.telefono||'') +
+      cell(v.email||'') + cell(v.codigo||'') + cell(v.nota||'') +
+    '</Row>\n';
   });
-  const csv = rows.map(function(r){ return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'ventas_coach_estetico_' + new Date().toISOString().substring(0,10) + '.csv'; a.click();
+  xml += '</Table>\n</Worksheet>\n</Workbook>';
+  var blob = new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ventas_coach_estetico_' + new Date().toISOString().substring(0,10) + '.xls'; a.click();
 }
 
 
