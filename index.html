@@ -269,15 +269,6 @@ tbody tr:hover td { background: var(--surface2); }
 .admin-badge-pendiente { background: #CCE5FF; color: #004085; }
 .admin-badge-rechazada { background: #F8D7DA; color: #721C24; }
 .admin-field { display: flex; flex-direction: column; gap: 2px; }
-.ia-modo-btn { width:100%;padding:10px 14px;text-align:left;font-size:13px;font-weight:500;font-family:"DM Sans",sans-serif;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s; }
-.ia-modo-btn:hover { background:var(--surface2);color:var(--text); }
-.ia-modo-btn.active { background:var(--accent-light);color:var(--accent);border-color:var(--accent);font-weight:600; }
-.ia-burbuja-user { background:var(--accent);color:#fff;border-radius:12px 12px 2px 12px;padding:12px 16px;font-size:14px;line-height:1.6;align-self:flex-end;max-width:85%;white-space:pre-wrap; }
-.ia-burbuja-ai { background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 12px 2px;padding:14px 16px;font-size:14px;line-height:1.7;align-self:flex-start;max-width:92%;white-space:pre-wrap;box-shadow:var(--shadow); }
-.ia-loading { display:flex;gap:6px;align-items:center;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 12px 2px;align-self:flex-start; }
-.ia-dot { width:8px;height:8px;background:var(--text3);border-radius:50%;animation:ia-bounce 1s infinite; }
-.ia-dot:nth-child(2){animation-delay:0.15s} .ia-dot:nth-child(3){animation-delay:0.3s}
-@keyframes ia-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
 .venta-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
 .venta-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .venta-card-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 0.5px solid var(--border); gap: 8px; align-items: flex-start; }
@@ -332,9 +323,6 @@ tbody tr:hover td { background: var(--surface2); }
     <button class="nav-item" id="nav-stats" onclick="switchTab('stats')">
       <span class="nav-icon">↗</span> Estadísticas
     </button>
-    <button class="nav-item" id="nav-ia" onclick="switchTab('ia')">
-      <span class="nav-icon">✦</span> Asistente IA
-    </button>
     <button class="nav-item" id="nav-admin" onclick="switchTab('admin')">
       <span class="nav-icon">🔐</span> Administración
     </button>
@@ -351,7 +339,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.9</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v3.0</div>
   </div>
 </aside>
 
@@ -485,43 +473,6 @@ tbody tr:hover td { background: var(--surface2); }
       <div id="plant-lista"></div>
     </section>
 
-    <!-- ASISTENTE IA -->
-    <section class="section" id="sec-ia">
-      <div class="section-header">
-        <div class="section-title">Asistente de ventas IA</div>
-        <button class="btn btn-ghost" onclick="limpiarChat()" style="font-size:13px">✕ Nueva conversación</button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:start">
-        <!-- Panel izquierdo: modos -->
-        <div>
-          <p style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">¿Qué necesitás?</p>
-          <div style="display:flex;flex-direction:column;gap:8px" id="ia-modos">
-            <button class="ia-modo-btn active" data-modo="conversacion" onclick="setModo(this)">💬 Analizar conversación</button>
-            <button class="ia-modo-btn" data-modo="reactivar" onclick="setModo(this)">🔄 Reactivar lead frío</button>
-            <button class="ia-modo-btn" data-modo="cerrar" onclick="setModo(this)">🎯 Cerrar venta</button>
-            <button class="ia-modo-btn" data-modo="objecion" onclick="setModo(this)">⚡ Manejar objeción</button>
-            <button class="ia-modo-btn" data-modo="plantilla" onclick="setModo(this)">📝 Crear mensaje</button>
-            <button class="ia-modo-btn" data-modo="libre" onclick="setModo(this)">🧠 Consulta libre</button>
-          </div>
-          <div style="margin-top:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);font-size:12px;color:var(--text3);line-height:1.6">
-            <strong style="color:var(--text2);display:block;margin-bottom:6px">Cómo usarlo</strong>
-            Seleccioná el modo, pegá la conversación o describí la situación, y la IA te dice exactamente qué hacer.
-          </div>
-        </div>
-        <!-- Panel derecho: chat -->
-        <div>
-          <div id="ia-hint" style="background:var(--accent-light);border:1px solid var(--accent);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:16px;font-size:13px;color:var(--accent-dark);line-height:1.6"></div>
-          <div id="ia-chat" style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;max-height:500px;overflow-y:auto"></div>
-          <div style="display:flex;gap:10px;align-items:flex-end">
-            <textarea id="ia-input" placeholder="Pegá la conversación o describí la situación..." style="flex:1;min-height:100px;max-height:300px;resize:vertical;padding:12px 14px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;outline:none;line-height:1.6" onkeydown="if(event.key==='Enter'&&event.ctrlKey)enviarIA()"></textarea>
-            <button class="btn btn-accent" onclick="enviarIA()" id="ia-send-btn" style="padding:12px 20px;align-self:flex-end">
-              Enviar
-            </button>
-          </div>
-          <p style="font-size:11px;color:var(--text3);margin-top:8px">Ctrl+Enter para enviar</p>
-        </div>
-      </div>
-    </section>
 
     <!-- ESTADÍSTICAS -->
     <section class="section" id="sec-stats">
@@ -1338,8 +1289,8 @@ function closeSidebar() {
 }
 
 // ── NAVIGATION ──
-const TABS = ['inicio','ventas','plantillas','stats','ia','admin','crm1','clientes','myf','cargar'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', ia:'Asistente IA', admin:'Administración', crm1:'Análisis CRM', clientes:'Análisis Clientes', myf:'Coach Sales', cargar:'Cargar venta' };
+const TABS = ['inicio','ventas','plantillas','stats','admin','crm1','clientes','myf','cargar'];
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', admin:'Administración', crm1:'Análisis CRM', clientes:'Análisis Clientes', myf:'Coach Sales', cargar:'Cargar venta' };
 
 function switchTab(t) {
   TABS.forEach(s => {
@@ -1353,7 +1304,6 @@ function switchTab(t) {
   if (t === 'inicio') renderResumen();
   if (t === 'stats') renderStats();
   if (t === 'plantillas') renderPlantillas();
-  if (t === 'ia') initIA();
   if (t === 'admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); }
   if (t === 'crm1') initCRM1();
   if (t === 'clientes') renderClientes();
@@ -2666,200 +2616,6 @@ function renderAll() {
   if (active==='admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); }
   if (active==='myf') renderMYF();
   if (active==='clientes') renderClientes();
-}
-
-// ── ASISTENTE IA ──
-const SYSTEM_PROMPT = `Sos el asistente de ventas interno de Coach Estético. Ayudás a Matteo y Facundo a cerrar ventas, manejar objeciones y escribir mensajes exactos para WhatsApp e Instagram.
-
-COACH ESTÉTICO
-Academia online líder en estética para América Latina. Fundada 2014 por Dianela Draganov. +5000 alumnas. Flujo 100% orgánico. Campus: classonlive.com. Hotmart solo para pagos.
-Diferenciales: contenido clínico real, soporte miércoles con Dianela, alta recompra, acceso ilimitado a ritmo propio, certificado digital (no habilitante). Renovación anual $20 USD (nov-dic). Sin devoluciones una vez accedido.
-
-MÉTODOS DE PAGO POR PAÍS
-Argentina: CBU / Mercado Pago | Chile: CLP / MP Chile | Colombia: Bancolombia / Hotmart | Venezuela: Pago Móvil / Binance / Zelle | EEUU: Zelle / PayPal / Hotmart | España: Hotmart / PayPal | Perú: Soles / Hotmart | Rep. Dominicana: DOP / Hotmart / PayPal | Uruguay: PREX / Hotmart | Otros: Hotmart / PayPal
-
-CATÁLOGO Y PRECIOS (USD)
-
-MEMBRESÍAS
-- Club Coach: $20/mes — +40 cursos, masterclasses, descuentos
-- Lifetime: lista $1890 | contado $1490 | alumna skincare $1120 | 5 cuotas $378 — acceso ilimitado de por vida
-- Migración: $20
-
-DIPLOMADOS
-- Diplomado Peeling Químico: $390 | promos: $99/$135/$179/$247/$290. 8 módulos en vivo, sábados, docentes internacionales. Objeción "ya hago peelings": aprendés diagnóstico clínico real, no solo técnica.
-- Diplomado Microneedling: $390 | lanzamiento $125 | fase1 $148 | fase2 $197. 8 módulos en vivo, miércoles. Co-organiza IESBI México.
-
-PREMIUM (asíncronos, con bonos)
-- Acné Expert Training: $180 | inicial $162 | existente $145. Bonos: Abc Peeling Químico + Estrategias Planificación Acné + Mapeo Facial. Para: "hago limpiezas pero el acné se complica" / "me reincide el acné".
-- Anatomía del HIFU: $245 | inicial $220 | existente $197. Bonos: Técnicas Rejuvenecimiento + Potenciales Nasogenianos. Para: "tengo HIFU pero no sé configurarlo" / "no entiendo las profundidades".
-- Envejecimiento Expert Training: $180 | inicial $162 | existente $145. Bono: Técnicas Aparatologías. Para: "mis tratamientos antiage no muestran resultados" / "uso aparatología pero no sé combinarla".
-- Cosmiatría Profesional e Internacional: $435 | inicial $390 | existente $349. Bonos: Quimioexfoliación PRO + Ultrasonido 3Mhz + Lectura Hormonales. Para: "quiero una base sólida" / "quiero trabajar afecciones con criterio".
-- Formación Profesional en Peeling Químico: $370 | inicial $330 | existente $297. Bonos: Estrategia Acné + Estrategia Manchas. Para: "ya hago peelings básicos y quiero avanzar" / "me da miedo causar complicaciones".
-- Master Training Diagnóstico Estético Facial: $220 | inicial $198 | existente $175. Bonos: Hidrafacial + Fototerapia LED. Para: "no sé si diagnostico bien" / "tengo lámpara de Wood pero no la sé leer".
-- Melanosis Expert Training: $180 | inicial $162 | existente $145. Bono: Técnicas Peeling Químico. Para: "las manchas no se van o vuelven" / "tengo melasma rebelde".
-- Microneedling PRO: $245 | inicial $220 | existente $197. Bonos: Microneedling Cuero Cabelludo + Cicatrices Post Acné. Para: "uso dermapen sin resultados uniformes" / "no sé qué profundidad usar".
-- Consultor(a) Skin Care: $247 | promos desde $97. Bono: Inmersión Biotipo Graso. 8 clases en vivo.
-- Método NutriSkin (Dra. Israelina): $197 | existente $75 | lanzamiento $125. Piel + nutrición + metabolismo. Para: "los tratamientos funcionan temporalmente pero no se sostienen".
-- Formación Cosmetología Básica: $180 | inicial $162 | existente $145. Para: "quiero empezar desde cero" / "trabajo empíricamente y quiero formalizarme".
-
-ESENCIAL (asíncronos, precio medio)
-- Acné Activo con Dermapen: $92 | ini $82 | ex $75
-- Actualización Despigmentación: $92 | ini $82 | ex $75
-- Actualización Peeling y Ácidos: $160 | ini $145 | ex $130
-- Electroestética Facial: $99 | ini $89 | ex $79
-- Hidrafacial: $92 | ini $82 | ex $75
-- Lámpara Wood: $72 | ini $63 | ex $59
-- Limpiezas Faciales: $120 | ini $108 | ex $97
-- Perfeccionamiento en Dermapen: $120 | ini $108 | ex $97
-- Plasma Pen: $150 | ini $135 | ex $120
-- Quimioexfoliación PRO: $99 | ini $89 | ex $79
-- Radiofrecuencias: $110 | ini $99 | ex $89
-- Tecnologías Corporales: $72 | ini $63 | ex $59
-- Tratamientos Domiciliares: $160 | ini $145 | ex $130
-- Abordaje Inteligente Estrías: $145 | ini $130 | ex $117
-
-MASTERCLASS ($49 lista | $25 lanzamiento — sesiones intensivas 3-4hs)
-Inmersión Secuelas Post Acné | Manejo Pigmentación con PQ | Rosácea y Acné ($39) | Principios Activos con Dermapen | Protocolos Fototipos Altos | Química Cosmética ($29) | Rebrote Acneico | Reestructuración en Pieles | Diagnóstico 0 Pre Peeling ($29)
-
-EXPRESS ($19 c/u — clases de 1-3hs)
-Altafrecuencia | Fototerapia LED | IPL Luz Pulsada | Microneedling Cuero Cabelludo | Ultrasonido 3Mhz | Microdermoabrasión | Peeling Ultrasónico | Hidrafacial en Acné Inflamatorio
-
-PRESENCIAL
-Bootcamp Agenda Llena (Rep. Dominicana): $450 (promo $390). 2 días. Negocio estético, WhatsApp de conversión, cierre de ventas.
-
-PERFIL DEL ASESOR (Matteo)
-Cercano, humano, cero robótico. Primero entender → después vender. Detecta nivel del lead antes de ofrecer. Estructura: apertura → diagnóstico → adaptación → presentación → objeciones → cierre. Lema: "No vendés cursos, diagnosticás personas."
-
-CLIENTE IDEAL
-Mujeres esteticistas/cosmiatras. Buscan: empezar, generar ingresos, mejorar resultados. Estados: inseguridad técnica, frustración con cursos previos, miedo a la práctica, duda económica. Compran confianza + seguridad + transformación, no solo el curso.
-
-OBJECIONES
-"Es caro": No confrontar. "Esto no es un gasto, es una herramienta para generar ingresos. Con 2-3 pacientes recuperás la inversión." Ofrecer cuotas si aplica.
-"No tengo tiempo": "Es asincrónico, a tu ritmo, acceso ilimitado. Muchas lo hacen de a módulos en sus ratos libres."
-"No me siento segura": Validar primero. "Ese es exactamente el punto de partida. El curso está diseñado para llevarte de la inseguridad a la aplicación con criterio."
-"Ya hice un curso pero no alcanzó": "No es lo mismo aprender técnicas que aprender a pensar clínicamente. Acá aprendés el criterio, no solo el paso a paso."
-"Lo pienso": "¿Qué te genera dudas? A veces es bueno resolverlo ahora para no perder el precio actual."
-"Ya sé usar el equipo": "Usar no es aplicar con criterio. Este curso te enseña cuándo, cómo y por qué — eso cambia los resultados."
-
-TÉCNICAS DE VENTA
-- Una recomendación específica, no lista de cursos
-- Hablar desde el punto de dolor: "Si lo que te frena es X, este curso resuelve exactamente eso"
-- Vender resultado, no producto: "Vas a poder aplicar desde la primera sesión"
-- Siempre cerrar con CTA o próximo paso definido
-ERRORES A EVITAR: mandar lista de cursos sin diagnóstico | "te dejo la info" sin seguimiento | responder solo precio sin valor | "cualquier cosa avisame"
-
-TU ROL
-Cuando analizás una conversación: 1) Perfil del lead 2) Qué responder EXACTAMENTE (listo para pegar) 3) Qué curso ofrecer y por qué 4) Próximo paso.
-Tono: humano, directo, máximo 3-4 líneas por mensaje, sin emojis en exceso.`;
-
-const MODOS = {
-  conversacion: { hint: '💬 Pegá la conversación completa (copiar y pegar desde WhatsApp o Instagram). La IA va a analizar el nivel del lead, detectar objeciones y darte la respuesta exacta lista para enviar.', placeholder: 'Pegá aquí la conversación...' },
-  reactivar: { hint: '🔄 Describí el lead: cuándo fue el último contacto, qué curso le interesaba, por qué se enfrió. La IA te da el mensaje perfecto para reactivarlo.', placeholder: 'Ej: Lead de hace 3 semanas, le interesaba Microneedling PRO, dijo que lo pensaba y no respondió más...' },
-  cerrar: { hint: '🎯 Describí en qué momento está la conversación. La IA te da el mensaje de cierre exacto con CTA claro.', placeholder: 'Ej: Ya le expliqué el curso de Peeling Químico, le gustó pero no tomó decisión. Precio: $370...' },
-  objecion: { hint: '⚡ Escribí la objeción exacta que puso el lead. La IA te da la respuesta ideal para ese caso.', placeholder: 'Ej: "Me parece caro para lo que es" / "No tengo tiempo ahora" / "Ya hice un curso parecido"...' },
-  plantilla: { hint: '📝 Decile qué tipo de mensaje necesitás: apertura fría, seguimiento, urgencia, despedida estratégica, etc. Indicá el curso y el perfil del lead si podés.', placeholder: 'Ej: Mensaje de apertura para lead que preguntó por Dermapen en Instagram, parece principiante...' },
-  libre: { hint: '🧠 Preguntá lo que necesites sobre estrategia de ventas, Coach Estético, cursos, precios o cualquier situación comercial.', placeholder: 'Ej: ¿Cuál es la diferencia entre Esencial y Premium para explicarle a un lead? / ¿Cómo presento el Lifetime?' }
-};
-
-let modoActual = 'conversacion';
-let historialIA = [];
-
-function setModo(el) {
-  modoActual = el.dataset.modo;
-  document.querySelectorAll('.ia-modo-btn').forEach(function(b) { b.classList.remove('active'); });
-  el.classList.add('active');
-  const m = MODOS[modoActual];
-  document.getElementById('ia-hint').textContent = m.hint;
-  document.getElementById('ia-input').placeholder = m.placeholder;
-}
-
-function limpiarChat() {
-  historialIA = [];
-  document.getElementById('ia-chat').innerHTML = '';
-}
-
-async function enviarIA() {
-  const input = document.getElementById('ia-input');
-  const texto = input.value.trim();
-  if (!texto) return;
-  const chat = document.getElementById('ia-chat');
-  const btn = document.getElementById('ia-send-btn');
-
-  // Mostrar mensaje del usuario
-  const userDiv = document.createElement('div');
-  userDiv.className = 'ia-burbuja-user';
-  userDiv.textContent = texto;
-  chat.appendChild(userDiv);
-  input.value = '';
-  btn.disabled = true;
-  btn.textContent = '...';
-
-  // Mostrar loading
-  const loadDiv = document.createElement('div');
-  loadDiv.className = 'ia-loading';
-  loadDiv.innerHTML = '<div class="ia-dot"></div><div class="ia-dot"></div><div class="ia-dot"></div>';
-  chat.appendChild(loadDiv);
-  chat.scrollTop = chat.scrollHeight;
-
-  // Construir mensaje con contexto del modo
-  const prefijos = {
-    conversacion: 'ANALIZAR CONVERSACIÓN — Dame análisis + respuesta exacta lista para pegar:\n\n',
-    reactivar: 'REACTIVAR LEAD FRÍO — Dame el mensaje exacto para reactivarlo:\n\n',
-    cerrar: 'CERRAR VENTA — Dame el mensaje de cierre con CTA claro:\n\n',
-    objecion: 'MANEJAR OBJECIÓN — Objeción recibida:\n\n',
-    plantilla: 'CREAR MENSAJE — Necesito:\n\n',
-    libre: ''
-  };
-
-  const mensajeConContexto = prefijos[modoActual] + texto;
-  historialIA.push({ role: 'user', content: mensajeConContexto });
-
-  try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: SYSTEM_PROMPT,
-        messages: historialIA
-      })
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error('API error ' + response.status + ': ' + (data.error?.message || JSON.stringify(data)));
-    }
-    
-    const respuesta = data.content && data.content[0] ? data.content[0].text : 'Error al obtener respuesta.';
-
-    historialIA.push({ role: 'assistant', content: respuesta });
-
-    loadDiv.remove();
-    const aiDiv = document.createElement('div');
-    aiDiv.className = 'ia-burbuja-ai';
-    aiDiv.textContent = respuesta;
-    chat.appendChild(aiDiv);
-  } catch(e) {
-    loadDiv.remove();
-    const errDiv = document.createElement('div');
-    errDiv.className = 'ia-burbuja-ai';
-    errDiv.textContent = 'Error: ' + e.message;
-    errDiv.style.color = 'var(--danger)';
-    chat.appendChild(errDiv);
-  }
-
-  btn.disabled = false;
-  btn.textContent = 'Enviar';
-  chat.scrollTop = chat.scrollHeight;
-}
-
-// Init IA hint
-function initIA() {
-  const m = MODOS[modoActual];
-  document.getElementById('ia-hint').textContent = m.hint;
-  document.getElementById('ia-input').placeholder = m.placeholder;
 }
 
 // ── CRM1: ANALIZADOR DE EXCEL ──
