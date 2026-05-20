@@ -292,7 +292,8 @@ tbody tr:hover td { background: var(--surface2); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── BARRA FLOTANTE ── */
-#barra-acciones { display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); align-items: center; gap: 16px; z-index: 200; white-space: nowrap; }
+#barra-acciones { display: none; position: fixed; top: 56px; left: 220px; right: 0; background: var(--accent); color: #fff; padding: 10px 24px; box-shadow: 0 2px 8px rgba(182,31,58,0.18); align-items: center; gap: 16px; z-index: 200; white-space: nowrap; }
+@media(max-width:768px){#barra-acciones{left:0;top:104px;}}
 
 /* ── AUTOCOMPLETE ── */
 #curso-list div:last-child { border-bottom: none !important; }
@@ -558,6 +559,10 @@ tbody tr:hover td { background: var(--surface2); }
           <div class="form-group">
             <label class="form-label">Pago alumno *</label>
             <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Monto local (opcional)</label>
+            <input type="number" class="form-input" id="f-monto-local" placeholder="Ej: 1200000" min="0" step="0.01">
           </div>
           <div class="form-group">
             <label class="form-label">Forma de pago *</label>
@@ -1694,6 +1699,7 @@ function editarVenta(key) {
   document.getElementById('f-asesor').value = v.asesor||'';
   document.getElementById('f-fecha').value = v.fecha||'';
   document.getElementById('f-monto').value = v.monto||'';
+  document.getElementById('f-monto-local').value = v.montoLocal||'';
   document.getElementById('f-pago').value = v.pago||'';
   document.getElementById('f-curso').value = v.curso||'';
   document.getElementById('f-lead').value = v.lead||'';
@@ -2237,6 +2243,11 @@ function renderAdmin() {
     const mFinalARS = v.montoFinalARS || '';
     const montoComision = com > 0 ? (montoNeto * com / 100).toFixed(2) : '';
 
+    var esHotmart = v.pago === 'Hotmart';
+    var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
+    var valFinalUSD = esHotmart ? montoNeto : calcFinal(v.montoFinalUSD, montoNeto);
+    var valFinalARS = esARS ? montoNeto : calcFinal(v.montoFinalARS, montoNeto);
+
     let expandedHtml = '';
     if (expanded) {
       expandedHtml = '<tr id="admin-exp-' + v._key + '" style="background:var(--surface2)">' +
@@ -2311,16 +2322,12 @@ function renderAdmin() {
       '</tr>';
     }
 
-    var esHotmart = v.pago === 'Hotmart';
-    var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
-    var valFinalUSD = esHotmart ? montoNeto : calcFinal(v.montoFinalUSD, montoNeto);
-    var valFinalARS = esARS ? montoNeto : calcFinal(v.montoFinalARS, montoNeto);
     var cellFinalUSD = esHotmart
-      ? '<span class="mono" style="font-size:12px;color:var(--text3)">Auto $' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
-      : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:inherit" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' + (valFinalUSD !== null ? '<br><span style="font-size:10px;color:var(--text3)">= $' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '');
+      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
+      : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' + (valFinalUSD !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '');
     var cellFinalARS = esARS
-      ? '<span class="mono" style="font-size:12px;color:var(--text3)">Auto $' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
-      : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:inherit" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valFinalARS !== null ? '<br><span style="font-size:10px;color:var(--text3)">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '');
+      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
+      : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valFinalARS !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '');
     return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
@@ -2328,7 +2335,7 @@ function renderAdmin() {
       '<td style="font-size:13px;font-weight:500">' + (v.nombre||'<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
       '<td style="font-size:12px;color:var(--text2)">' + (v.pais||'—') + '</td>' +
       '<td class="mono" style="font-weight:600;color:var(--accent)">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
-      '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center"><input type="number" style="width:54px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);text-align:center;font-family:inherit" value="' + (descPct||0) + '" min="0" max="100" placeholder="0" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)"><span style="font-size:10px;color:var(--text3)">%</span></td>' +
+      '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center"><input type="number" style="width:54px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);text-align:center;font-family:\'DM Mono\',monospace" value="' + (descPct||0) + '" min="0" max="100" placeholder="0" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)"><span style="font-size:11px;color:var(--text3);margin-left:1px">%</span></td>' +
       '<td class="mono" style="font-weight:600">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellFinalUSD + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellFinalARS + '</td>' +
@@ -2366,11 +2373,12 @@ function confirmarVenta() {
   const canal = canalEl ? canalEl.value : '';
   const nombreAlumno = document.getElementById('f-nombre-alumno').value.trim();
   const paisVenta = document.getElementById('f-pais').value;
+  const montoLocal = parseFloat(document.getElementById('f-monto-local').value) || 0;
   if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombreAlumno||!paisVenta||!email||!lead) { showToast('Completá todos los campos obligatorios: nombre, país, mail, ID Lead'); return; }
   const montoNeto = parseFloat(monto.toFixed(2));
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  pendiente = { asesor:asesor, fecha:fecha, monto:monto, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombreAlumno, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
+  pendiente = { asesor:asesor, fecha:fecha, monto:monto, montoLocal:montoLocal||undefined, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombreAlumno, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
     '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' +
@@ -2411,7 +2419,7 @@ async function guardarVenta() {
 
 function limpiarForm() {
   ['f-asesor','f-pago','f-pais'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['f-monto','f-curso','f-lead','f-codigo','f-email','f-telefono','f-nota','f-nombre-alumno'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['f-monto','f-monto-local','f-curso','f-lead','f-codigo','f-email','f-telefono','f-nota','f-nombre-alumno'].forEach(function(id){ document.getElementById(id).value=''; });
   document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked=false; });
   document.getElementById('f-fecha').valueAsDate = new Date();
   clearComprobante();
