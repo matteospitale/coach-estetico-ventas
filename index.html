@@ -141,12 +141,12 @@ body { font-family: "DM Sans", sans-serif; background: var(--bg); color: var(--t
 /* ── TABLE ── */
 .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
 .table-scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead th { background: var(--surface2); padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap; }
-tbody td { padding: 11px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead th { background: var(--surface2); padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap; }
-tbody td { padding: 11px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th { background: var(--surface2); padding: 6px 8px; text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody td { padding: 6px 8px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th { background: var(--surface2); padding: 6px 8px; text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody td { padding: 6px 8px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover td { background: var(--surface2); }
 .mono { font-family: "DM Mono", monospace; font-size: 12px; }
@@ -429,7 +429,7 @@ tbody tr:hover td { background: var(--surface2); }
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Hora carga</th><th>Asesor</th><th>Canal</th>
+              <th>Fecha</th><th>Asesor</th><th>Canal</th>
               <th>Monto USD</th><th>Monto local</th><th>Forma de pago</th>
               <th>Curso / Producto</th><th>ID Lead</th><th>Teléfono</th>
               <th>Email</th><th>Código</th><th>Aclaración</th><th>Comprobante</th><th>Estado</th>
@@ -988,16 +988,16 @@ function renderTabla() {
   const isMobile = window.innerWidth <= 700;
 
   if (!vf.length) {
-    tbody.innerHTML = '<tr><td colspan="16"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>';
     cardsEl.innerHTML = '<div class="empty-state">Sin ventas con esos filtros</div>';
     return;
   }
 
   // Mobile cards
   cardsEl.innerHTML = vf.map(function(v) {
-    const h = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '—';
     const chk = modoEdicion ? '<input type="checkbox" class="row-check" data-key="' + v._key + '" ' + (seleccionados.has(v._key)?'checked':'') + ' onchange="toggleCheck(this)" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer">' : '';
     const est = v.estado || 'Pendiente';
+    const fechaCorta = v.fecha ? v.fecha.split('-').slice(-2).reverse().join('/') : '—';
     return '<div class="venta-card" style="' + (seleccionados.has(v._key)?'border-color:var(--accent);background:var(--accent-light)':'') + '">' +
       '<div class="venta-card-header">' +
         '<div style="display:flex;align-items:center;gap:8px">' +
@@ -1009,7 +1009,7 @@ function renderTabla() {
           chk +
         '</div>' +
       '</div>' +
-      '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + ' · ' + h + '</span></div>' +
+      '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + fechaCorta + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (v.curso||'—') + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Pago</span><span class="venta-card-val">' + (v.pago||'—') + (v.montoLocal?' · '+v.montoLocal:'') + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Estado</span><span class="venta-card-val"><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
@@ -1026,25 +1026,24 @@ function renderTabla() {
 
   // Desktop table
   tbody.innerHTML = vf.map(function(v) {
-    const h = v.cargado ? new Date(v.cargado).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '—';
     const cc = canalColor(v.canal);
     const est = v.estado || 'Pendiente';
-    const chkTd = modoEdicion ? '<td style="text-align:center;padding:8px 10px"><input type="checkbox" class="row-check" data-key="' + v._key + '" ' + (seleccionados.has(v._key)?'checked':'') + ' onchange="toggleCheck(this)" style="accent-color:var(--accent);width:15px;height:15px;cursor:pointer"></td>' : '';
+    const chkTd = modoEdicion ? '<td style="text-align:center;padding:6px 8px"><input type="checkbox" class="row-check" data-key="' + v._key + '" ' + (seleccionados.has(v._key)?'checked':'') + ' onchange="toggleCheck(this)" style="accent-color:var(--accent);width:15px;height:15px;cursor:pointer"></td>' : '';
+    const fechaCorta = v.fecha ? v.fecha.split('-').slice(-2).reverse().join('/') : '—';
     return '<tr style="' + (seleccionados.has(v._key)?'background:var(--accent-light)':'') + '">' +
-      '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
-      '<td class="mono" style="color:var(--text3)">' + h + '</td>' +
+      '<td class="mono" style="white-space:nowrap">' + fechaCorta + '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
-      '<td style="font-size:12px;font-weight:600;color:' + cc + ';white-space:nowrap">' + (v.canal||'—') + '</td>' +
-      '<td class="mono" style="font-weight:600;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
-      '<td style="font-size:12px;color:var(--text2)">' + (v.montoLocal||'—') + '</td>' +
-      '<td style="font-size:12px">' + (v.pago||'—') + '</td>' +
-      '<td style="font-size:12px">' + (v.curso||'—') + '</td>' +
+      '<td style="font-size:11px;font-weight:600;color:' + cc + ';max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.canal||'') + '">' + (v.canal||'—') + '</td>' +
+      '<td class="mono" style="font-weight:600;color:var(--accent);white-space:nowrap">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
+      '<td style="font-size:11px;color:var(--text2);white-space:nowrap">' + (v.montoLocal||'—') + '</td>' +
+      '<td style="font-size:11px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.pago||'') + '">' + (v.pago||'—') + '</td>' +
+      '<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.curso||'') + '">' + (v.curso||'—') + '</td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">' + v.lead + '</a>' : '—') + '</td>' +
-      '<td style="font-size:12px">' + (v.telefono||'—') + '</td>' +
-      '<td style="font-size:12px">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
+      '<td style="font-size:11px;white-space:nowrap">' + (v.telefono||'—') + '</td>' +
+      '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.email||'') + '">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
       '<td class="mono" style="color:var(--text3)">' + (v.codigo||'—') + '</td>' +
-      '<td style="font-size:12px;color:var(--text2);max-width:180px" title="' + (v.nota||'') + '">' + (v.nota||'—') + '</td>' +
-      '<td onclick="v_compr_click(event)" style="cursor:pointer">' + (v.comprobante ? '<img src="' + v.comprobante + '" data-full="' + v._key + '" style="height:36px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="ventaComprobanteClick(event,ventas.find(function(x){return x._key===\'' + v._key + '\'}))">' : '—') + '</td>' +
+      '<td style="font-size:11px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.nota||'') + '">' + (v.nota||'—') + '</td>' +
+      '<td onclick="v_compr_click(event)" style="cursor:pointer">' + (v.comprobante ? '<img src="' + v.comprobante + '" data-full="' + v._key + '" style="height:28px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="ventaComprobanteClick(event,ventas.find(function(x){return x._key===\'' + v._key + '\'}))">' : '—') + '</td>' +
       '<td><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
         '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
         '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
