@@ -129,7 +129,7 @@ body {
 }
 
 /* ── MAIN LAYOUT ── */
-.app-body { padding-top: var(--nav-h); min-height: 100vh; }
+.app-body { padding-top: var(--nav-h); min-height: 100vh; overflow-x: hidden; }
 .main { padding: 28px 32px; max-width: 100%; }
 @media(max-width: 900px) { .main { padding: 20px 16px; } }
 @media(max-width: 600px) { .main { padding: 14px 12px; } }
@@ -395,9 +395,10 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
   .metric-value { font-size: 20px; }
 }
 @media(max-width: 700px) {
-  .table-wrap { border: none; background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .table-scroll > table { display: none; }
+  #sec-ventas .table-wrap, #sec-inicio .table-wrap { border: none; background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  #sec-ventas .table-scroll > table, #sec-inicio .table-scroll > table { display: none; }
   #tabla-body-cards { display: flex !important; flex-direction: column; }
+  #sec-admin .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* ── CARGAR VENTA WIDE ── */
@@ -469,7 +470,8 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
   display: flex; align-items: center;
 }
 @media(max-width:900px) { .plant-card { flex: 0 0 calc(33.33% - 10px); } }
-@media(max-width:600px) { .plant-card { flex: 0 0 calc(50% - 7px); } }
+@media(max-width:600px) { .plant-card { flex: 0 0 calc(50% - 7px); min-width: 0; } }
+@media(max-width:400px) { .plant-card { flex: 0 0 100%; } }
 .plant-card:hover { transform: translateY(-2px); animation: card-glow 1.4s ease-in-out infinite; }
 .plant-card-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
 .plant-card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -581,7 +583,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
       <div class="section-header">
         <div class="section-title" id="ventas-title">Todas las ventas</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost" onclick="exportCSV()">↓ CSV</button>
+          <button class="btn btn-ghost" onclick="exportCSV()">↓ Excel</button>
           <button class="btn btn-ghost" id="btn-modo-edicion" onclick="toggleModoEdicion()">✎ Editar / Eliminar</button>
         </div>
       </div>
@@ -872,7 +874,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.0</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.2</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
