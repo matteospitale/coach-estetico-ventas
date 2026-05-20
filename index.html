@@ -351,7 +351,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.8</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.9</div>
   </div>
 </aside>
 
@@ -2350,9 +2350,9 @@ function renderAdmin() {
           ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><br><span style="font-size:10px;color:var(--text3)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ' + currLabel + ' ÷ ' + adminTC + '</span>'
           : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' + (valFinalUSD !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : ''));
     var cellMontoNetoLocal = montoNetoLocal !== null
-      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--text)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><br><span style="font-size:10px;color:var(--text3)">' + currLabel + '</span>'
+      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--text)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>'
       : (valFinalARS !== null
-          ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--text)">' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><br><span style="font-size:10px;color:var(--text3)">ARS</span>'
+          ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--text)">' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">ARS</span>'
           : '<span style="color:var(--text3);font-size:11px">—</span>');
     var cellFinalARS = esARS
       ? (pagoLocalARS !== null ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '<span style="color:var(--text3);font-size:11px">—</span>')
@@ -2360,7 +2360,7 @@ function renderAdmin() {
     // Pago Local: moneda local para ARS/Bs; para USD usa pagoAlumno (no montoNeto) como base de la fórmula
     var valPagoLocalUSD = !currLabel ? calcFinal(v.montoFinalARS, pagoAlumno) : null;
     var cellPagoLocal = currLabel && montoLocalNum > 0
-      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">' + montoLocalNum.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><br><span style="font-size:10px;color:var(--text3)">' + currLabel + '</span>'
+      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">' + montoLocalNum.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>'
       : (currLabel
           ? '<span style="color:var(--text3);font-size:11px">—</span>'
           : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valPagoLocalUSD !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valPagoLocalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : ''));
@@ -2394,6 +2394,7 @@ async function cambiarEstado(key, sel) {
   const v = ventas.find(x=>x._key===key);
   if (v) v.estado = nuevoEstado;
   showToast('Estado actualizado: ' + nuevoEstado);
+  renderAdmin();
 }
 
 function confirmarVenta() {
@@ -3356,7 +3357,7 @@ function renderMYF() {
     return (v.asesor||'') === myfAsesor && (v.estado||'Pendiente') !== 'Rechazada' && (v.fecha||'').startsWith(mesKey);
   });
 
-  var totalBruto = mesVentas.reduce(function(s,v){ return s+parseFloat(v.montoNeto||v.monto||0); },0);
+  var totalBruto = mesVentas.reduce(function(s,v){ return s+parseFloat(v.monto||0); },0);
   var totalNeto = totalBruto * 0.85; // menos 15%
 
   var body = document.getElementById('myf-body');
@@ -3424,7 +3425,7 @@ function renderMYF() {
         '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Curso</th>' +
         '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Pago</th>' +
         '<th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Estado</th>' +
-        '<th style="padding:7px 10px;text-align:right;border-bottom:1px solid var(--border)">Monto neto</th>' +
+        '<th style="padding:7px 10px;text-align:right;border-bottom:1px solid var(--border)">Pago alumno</th>' +
       '</tr></thead><tbody>' +
       mesVentas.sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).map(function(v) {
         var est = v.estado||'Pendiente';
@@ -3436,7 +3437,7 @@ function renderMYF() {
           '<td style="padding:6px 10px;color:var(--text2)">' + (v.curso||'—') + '</td>' +
           '<td style="padding:6px 10px;color:var(--text2)">' + (v.pago||'—') + '</td>' +
           '<td style="padding:6px 10px"><span style="font-size:11px;font-weight:700;background:'+estBg+';color:'+estColor+';border-radius:20px;padding:2px 8px">'+est+'</span></td>' +
-          '<td style="padding:6px 10px;text-align:right;font-weight:600;color:var(--accent)">$' + parseFloat(v.montoNeto||v.monto||0).toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+          '<td style="padding:6px 10px;text-align:right;font-weight:600;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
         '</tr>';
       }).join('') +
       '</tbody></table></div></div>';
