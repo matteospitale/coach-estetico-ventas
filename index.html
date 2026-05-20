@@ -670,7 +670,7 @@ tbody tr:hover td { background: var(--surface2); }
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Pago alumno</th><th>Descuento</th><th>Monto neto</th><th>M. Final USD</th><th>M. Final ARS</th><th>Estado</th><th style="width:36px"></th>
+              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Pago alumno</th><th>Pago Local</th><th>Descuento</th><th>Monto neto</th><th>M. Final USD</th><th>M. Final ARS</th><th>Estado</th><th style="width:36px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -2245,13 +2245,15 @@ function renderAdmin() {
 
     var esHotmart = v.pago === 'Hotmart';
     var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
+    // Para pagos ARS, pagoAlumno ya está en ARS → monto local = pagoAlumno * (1 - descuento/100)
+    var pagoLocalARS = esARS ? (pagoAlumno * (1 - descPct / 100)) : null;
     var valFinalUSD = esHotmart ? montoNeto : calcFinal(v.montoFinalUSD, montoNeto);
-    var valFinalARS = esARS ? montoNeto : calcFinal(v.montoFinalARS, montoNeto);
+    var valFinalARS = esARS ? pagoLocalARS : calcFinal(v.montoFinalARS, montoNeto);
 
     let expandedHtml = '';
     if (expanded) {
       expandedHtml = '<tr id="admin-exp-' + v._key + '" style="background:var(--surface2)">' +
-        '<td colspan="12" style="padding:0">' +
+        '<td colspan="13" style="padding:0">' +
           '<div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">' +
 
             // Datos del lead
@@ -2292,9 +2294,12 @@ function renderAdmin() {
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final USD<br><small style="font-weight:400;color:var(--text3)">*1420, /1420 o valor directo</small></label>' +
               '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' +
               (valFinalUSD !== null ? '<div style="font-size:11px;color:var(--text3);margin-top:3px">= $' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' : '') + '</div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final ARS<br><small style="font-weight:400;color:var(--text3)">*1420, /1420 o valor directo</small></label>' +
-              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.montoFinalARS||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' +
-              (valFinalARS !== null ? '<div style="font-size:11px;color:var(--text3);margin-top:3px">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' : '') + '</div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final ARS' + (esARS ? '' : '<br><small style="font-weight:400;color:var(--text3)">*1420, /1420 o valor directo</small>') + '</label>' +
+              (esARS
+                ? '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ARS<div style="font-size:11px;font-weight:400;color:var(--text3);margin-top:2px">Auto: pago ARS × (1 − descuento%)</div></div>'
+                : '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.montoFinalARS||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' +
+                  (valFinalARS !== null ? '<div style="font-size:11px;color:var(--text3);margin-top:3px">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' : ''))
+              + '</div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Comisión %</label>' +
               '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminComision||'') + '" placeholder="%" min="0" max="100" onchange="adminUpdateFinal(\'' + v._key + '\',\'adminComision\',this.value)"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto comisión USD</label>' +
@@ -2326,7 +2331,11 @@ function renderAdmin() {
       ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
       : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' + (valFinalUSD !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '');
     var cellFinalARS = esARS
-      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
+      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
+      : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valFinalARS !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '');
+    // Pago Local: para ARS es auto-calculado (pagoAlumno ARS - descuento); para otros métodos es el campo M.Final ARS
+    var cellPagoLocal = esARS
+      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
       : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valFinalARS !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '');
     return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
@@ -2335,6 +2344,7 @@ function renderAdmin() {
       '<td style="font-size:13px;font-weight:500">' + (v.nombre||'<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
       '<td style="font-size:12px;color:var(--text2)">' + (v.pais||'—') + '</td>' +
       '<td class="mono" style="font-weight:600;color:var(--accent)">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+      '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellPagoLocal + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center"><input type="number" style="width:54px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);text-align:center;font-family:\'DM Mono\',monospace" value="' + (descPct||0) + '" min="0" max="100" placeholder="0" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)"><span style="font-size:11px;color:var(--text3);margin-left:1px">%</span></td>' +
       '<td class="mono" style="font-weight:600">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellFinalUSD + '</td>' +
