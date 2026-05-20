@@ -369,6 +369,60 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
   .table-scroll > table { display: none; }
   #tabla-body-cards { display: flex !important; flex-direction: column; }
 }
+
+/* ── CARGAR VENTA WIDE ── */
+#sec-cargar .form-card { max-width: 100%; }
+#sec-cargar .form-grid { grid-template-columns: repeat(4, 1fr); }
+@media(max-width: 1100px) { #sec-cargar .form-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width: 768px)  { #sec-cargar .form-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width: 500px)  { #sec-cargar .form-grid { grid-template-columns: 1fr; } }
+
+/* ── PLANTILLAS GRID ── */
+.plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.plant-card {
+  background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+  padding: 18px 18px 16px; box-shadow: var(--glass-shadow);
+  cursor: pointer; transition: all 0.16s; display: flex; flex-direction: column; gap: 10px;
+}
+.plant-card:hover { transform: translateY(-2px); box-shadow: var(--glass-shadow-hover); }
+.plant-card-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; flex: 1; }
+.plant-card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.plant-card-chips { display: flex; gap: 4px; }
+.plant-chip { font-size: 10px; padding: 2px 7px; border-radius: 999px; background: rgba(0,0,0,0.06); color: var(--text3); }
+.plant-chip-ok { background: rgba(74,140,92,0.14); color: #3a7c4e; }
+
+/* ── PLANTILLA DETALLE ── */
+.plant-detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.plant-detail-back { display: flex; align-items: center; gap: 6px; background: var(--glass); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.15s; }
+.plant-detail-back:hover { background: rgba(255,255,255,0.88); color: var(--text); }
+.plant-detail-title { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; flex: 1; }
+.plant-detail-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; }
+@media(max-width: 900px) { .plant-detail-grid { grid-template-columns: 1fr; } }
+.plant-section-card {
+  background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+  padding: 20px 22px; box-shadow: var(--glass-shadow); margin-bottom: 16px;
+}
+.plant-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; }
+.plant-precio-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); gap: 10px; }
+.plant-precio-row:last-child { border-bottom: none; }
+.plant-precio-label { font-size: 13px; color: var(--text2); }
+.plant-precio-val { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.plant-precio-edit { font-size: 13px; padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(255,255,255,0.6); font-family: inherit; width: 110px; text-align: right; outline: none; }
+.plant-precio-edit:focus { border-color: var(--accent); }
+.resource-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.resource-row:last-child { border-bottom: none; }
+.resource-icon { font-size: 18px; flex-shrink: 0; }
+.resource-info { flex: 1; min-width: 0; }
+.resource-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.resource-link { font-size: 11px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── ADMIN TABLE INLINE INPUT ── */
+.admin-inline-input { padding: 3px 7px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.65); font-family: inherit; color: var(--text); }
+.admin-inline-input:focus { outline: none; border-color: var(--accent); }
+.admin-formula-cell { display: flex; align-items: center; gap: 5px; }
+.admin-formula-result { font-size: 11px; font-weight: 700; color: var(--facundo); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -491,31 +545,36 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
         </div>
       </div>
       <div id="barra-acciones">
-        <span id="barra-count" style="font-size:13px;font-weight:500;color:var(--bg)"></span>
-        <button onclick="accionEditar()" style="background:var(--bg);color:var(--text);border:none;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✎ Editar</button>
-        <button onclick="accionEliminar()" style="background:#C0392B;color:#fff;border:none;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Eliminar</button>
+        <span id="barra-count" style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.9)"></span>
+        <button onclick="accionEditar()" style="background:rgba(255,255,255,0.55);color:var(--text);border:none;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">✎ Editar</button>
+        <button onclick="accionEliminar()" style="background:#C0392B;color:#fff;border:none;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">✕ Eliminar</button>
       </div>
     </section>
 
     <!-- PLANTILLAS -->
     <section class="section" id="sec-plantillas">
-      <div class="section-header">
-        <div class="section-title">Plantillas de cursos</div>
-        <button class="btn btn-accent" onclick="abrirNuevaPlantilla()">+ Nueva plantilla</button>
+      <!-- GRID VIEW -->
+      <div id="plant-grid-view">
+        <div class="section-header">
+          <div class="section-title">Plantillas de cursos</div>
+          <button class="btn btn-accent" onclick="abrirNuevaPlantilla()">+ Nueva plantilla</button>
+        </div>
+        <div class="plantillas-header">
+          <input class="plantillas-search" id="plant-search" placeholder="Buscar curso..." oninput="renderPlantillas()">
+        </div>
+        <div class="cat-tabs" id="cat-tabs">
+          <button class="cat-tab active" data-cat="todos" onclick="setPlantillaCat(this)">Todos</button>
+          <button class="cat-tab" data-cat="diplomado" onclick="setPlantillaCat(this)">Diplomado</button>
+          <button class="cat-tab" data-cat="premium" onclick="setPlantillaCat(this)">Premium</button>
+          <button class="cat-tab" data-cat="esencial" onclick="setPlantillaCat(this)">Esencial</button>
+          <button class="cat-tab" data-cat="masterclass" onclick="setPlantillaCat(this)">Masterclass</button>
+          <button class="cat-tab" data-cat="express" onclick="setPlantillaCat(this)">Express</button>
+        </div>
+        <div class="plant-count" id="plant-count"></div>
+        <div class="plant-grid" id="plant-lista"></div>
       </div>
-      <div class="plantillas-header">
-        <input class="plantillas-search" id="plant-search" placeholder="Buscar plantilla..." oninput="renderPlantillas()">
-      </div>
-      <div class="cat-tabs" id="cat-tabs">
-        <button class="cat-tab active" data-cat="todos" onclick="setPlantillaCat(this)">Todos</button>
-        <button class="cat-tab" data-cat="diplomado" onclick="setPlantillaCat(this)">Diplomado</button>
-        <button class="cat-tab" data-cat="premium" onclick="setPlantillaCat(this)">Premium</button>
-        <button class="cat-tab" data-cat="esencial" onclick="setPlantillaCat(this)">Esencial</button>
-        <button class="cat-tab" data-cat="masterclass" onclick="setPlantillaCat(this)">Masterclass</button>
-        <button class="cat-tab" data-cat="express" onclick="setPlantillaCat(this)">Express</button>
-      </div>
-      <div class="plant-count" id="plant-count"></div>
-      <div id="plant-lista"></div>
+      <!-- DETALLE VIEW -->
+      <div id="plant-detalle-view" style="display:none"></div>
     </section>
 
 
@@ -549,7 +608,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
             <label class="form-label">País *</label>
             <div style="position:relative" id="pais-wrap">
               <input type="text" class="form-input" id="f-pais" placeholder="Escribí para buscar... ej: arg, esp, ven" autocomplete="off" oninput="buscarPais(this.value)" onblur="setTimeout(function(){closePaisList();},180)">
-              <div id="pais-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
+              <div id="pais-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
             </div>
           </div>
           <div class="form-group">
@@ -589,7 +648,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
             <label class="form-label">Curso / Producto *</label>
             <div style="position:relative" id="curso-wrap">
               <input type="text" class="form-input" id="f-curso" placeholder="Escribí para buscar... ej: diplo, nutri, peeling" autocomplete="off" oninput="buscarCurso(this.value)" onblur="setTimeout(()=>closeCursoList(),180)">
-              <div id="curso-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
+              <div id="curso-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
             </div>
           </div>
           <div class="form-group">
@@ -614,7 +673,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
           </div>
           <div class="form-group full">
             <label class="form-label">Comprobante (imagen)</label>
-            <div id="comprobante-drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--bg)" onclick="document.getElementById('f-comprobante-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleComprobanteDrop(event)">
+            <div id="comprobante-drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:rgba(255,255,255,0.55)" onclick="document.getElementById('f-comprobante-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleComprobanteDrop(event)">
               <div style="font-size:13px;color:var(--text3)">📎 Hacé clic, arrastrá una imagen, o pegá con <strong>Ctrl+V</strong></div>
             </div>
             <input type="file" id="f-comprobante-file" accept="image/*" style="display:none" onchange="previewComprobante(this)">
@@ -1018,7 +1077,7 @@ function filterDrill(asesor) {
             '<span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + v.asesor + '</span>' +
             '<span style="font-size:12px;font-weight:600;color:' + canalColor(v.canal) + '">' + (v.canal||'—') + '</span>' +
           '</div>' +
-          '<span style="font-family:DM Mono,monospace;font-weight:700;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
+          '<span style="font-family:inherit;font-weight:700;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
         '</div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + ' · ' + h + '</span></div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (v.curso||'—') + '</span></div>' +
@@ -1140,7 +1199,7 @@ function renderTabla() {
           '<span style="font-size:12px;font-weight:600;color:' + canalColor(v.canal) + '">' + (v.canal||'—') + '</span>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:10px">' +
-          '<span style="font-family:DM Mono,monospace;font-weight:700;color:var(--accent);font-size:16px">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
+          '<span style="font-family:inherit;font-weight:700;color:var(--accent);font-size:16px">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
           chk +
         '</div>' +
       '</div>' +
@@ -1291,7 +1350,7 @@ function filterStats(campo, valor) {
       return '<div class="venta-card">' +
         '<div class="venta-card-header">' +
           '<span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span>' +
-          '<span style="font-family:DM Mono,monospace;font-weight:700;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
+          '<span style="font-family:inherit;font-weight:700;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
         '</div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + ((v.fecha||'').split('-').reverse().join('/')||'—') + '</span></div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Canal</span><span class="venta-card-val" style="color:' + canalColor(v.canal) + ';font-weight:600">' + (v.canal||'—') + '</span></div>' +
@@ -1455,79 +1514,201 @@ function renderPlantillas() {
     return matchCat && matchQ;
   });
   const countEl = document.getElementById('plant-count');
-  if (countEl) countEl.textContent = filtered.length + ' plantilla' + (filtered.length!==1?'s':'');
+  if (countEl) countEl.textContent = filtered.length + ' curso' + (filtered.length!==1?'s':'');
   if (!filtered.length) {
     lista.innerHTML = '<div class="empty-state">No hay plantillas en esta categoría</div>';
     return;
   }
   lista.innerHTML = filtered.map(function(p) {
-    const safeKey = p._key;
-    // Build attachments display
-    const adjuntos = p.adjuntos || {};
-    let adjHtml = '';
-    if (adjuntos.pdf) adjHtml += '<a href="' + adjuntos.pdf + '" target="_blank" class="file-chip">📄 PDF Temario</a> ';
-    if (adjuntos.imagen) adjHtml += '<a href="' + adjuntos.imagen + '" target="_blank" class="file-chip">🖼 Portada</a> ';
-    if (adjuntos.landing) adjHtml += '<a href="' + adjuntos.landing + '" target="_blank" class="file-chip">🔗 Landing</a> ';
-
-    return '<div class="plantilla-card-wrap" id="pw-' + safeKey + '">' +
-      '<div class="plantilla-card-header" data-toggle-key="' + safeKey + '">' +
-        '<div class="plantilla-card-title">' + (p.titulo||'') + '</div>' +
-        '<div style="display:flex;align-items:center;gap:8px">' +
-          '<span class="plantilla-cat-badge">' + (p.categoria||'') + '</span>' +
-          '<span class="plantilla-arrow" id="parr-' + safeKey + '">▼</span>' +
-        '</div>' +
+    const adj = p.adjuntos || {};
+    const tienePortada = !!adj.imagen;
+    const tieneTemario = !!adj.pdf;
+    const tieneLanding = !!adj.landing;
+    const tienePrecios = !!(p.precios && (p.precios.lista || p.precios.nuevo || p.precios.existente));
+    return '<div class="plant-card" onclick="showPlantillaDetalle(\'' + p._key + '\')">' +
+      '<div>' +
+        '<span class="plantilla-cat-badge" style="margin-bottom:8px;display:inline-block">' + (p.categoria||'') + '</span>' +
+        '<div class="plant-card-title">' + (p.titulo||'') + '</div>' +
       '</div>' +
-      '<div class="plantilla-body" id="pbody-' + safeKey + '">' +
-        '<div class="plantilla-text" id="ptxt-' + safeKey + '" style="white-space:pre-wrap">' + (p.texto||'') + '</div>' +
-        '<textarea class="plantilla-edit-area" id="pedit-' + safeKey + '" style="display:none">' + (p.texto||'') + '</textarea>' +
-        // Attachments section
-        '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">' +
-          '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Recursos</div>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">' + (adjHtml || '<span style="font-size:12px;color:var(--text3)">Sin archivos adjuntos</span>') + '</div>' +
-          '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-            '<label class="file-attach-btn" style="font-size:11px;padding:5px 10px" for="pfile-pdf-' + safeKey + '">📄 PDF</label>' +
-            '<input type="file" id="pfile-pdf-' + safeKey + '" accept=".pdf" style="display:none" data-pkey="' + safeKey + '" data-ptype="pdf" onchange="adjuntarPlantillaArchivo(this)">' +
-            '<label class="file-attach-btn" style="font-size:11px;padding:5px 10px" for="pfile-img-' + safeKey + '">🖼 Portada</label>' +
-            '<input type="file" id="pfile-img-' + safeKey + '" accept="image/*" style="display:none" data-pkey="' + safeKey + '" data-ptype="imagen" onchange="adjuntarPlantillaArchivo(this)">' +
-            '<button class="file-attach-btn" style="font-size:11px;padding:5px 10px" data-landing-key="' + safeKey + '">🔗 Landing</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="plantilla-actions">' +
-          '<button class="p-btn p-btn-copy" data-copy-key="' + safeKey + '">Copiar</button>' +
-          '<button class="p-btn p-btn-edit" id="pbtn-edit-' + safeKey + '" data-edit-key="' + safeKey + '">✎ Editar</button>' +
-          '<button class="p-btn p-btn-save" id="pbtn-save-' + safeKey + '" data-save-key="' + safeKey + '" style="display:none;background:#27AE60;color:#fff">✓ Guardar</button>' +
-          '<button class="p-btn p-btn-cancel" id="pbtn-cancel-' + safeKey + '" data-cancel-key="' + safeKey + '" style="display:none;background:none;color:var(--text2);border:1px solid var(--border)">Cancelar</button>' +
-          '<button class="p-btn p-btn-delete" data-delete-key="' + safeKey + '">✕ Eliminar</button>' +
-        '</div>' +
+      '<div class="plant-card-chips">' +
+        (tienePortada ? '<span class="plant-chip plant-chip-ok" title="Tiene portada">🖼</span>' : '<span class="plant-chip" title="Sin portada">🖼</span>') +
+        (tieneTemario ? '<span class="plant-chip plant-chip-ok" title="Tiene temario">📋</span>' : '<span class="plant-chip" title="Sin temario">📋</span>') +
+        (tienePrecios ? '<span class="plant-chip plant-chip-ok" title="Tiene precios">💰</span>' : '<span class="plant-chip" title="Sin precios">💰</span>') +
+        (tieneLanding ? '<span class="plant-chip plant-chip-ok" title="Tiene landing">🔗</span>' : '<span class="plant-chip" title="Sin landing">🔗</span>') +
       '</div>' +
     '</div>';
   }).join('');
+}
 
-  // Attach event handlers
-  lista.querySelectorAll('[data-toggle-key]').forEach(function(el) {
-    el.addEventListener('click', function() { togglePlantilla(this.dataset.toggleKey); });
-  });
-  lista.querySelectorAll('[data-copy-key]').forEach(function(el) {
-    el.addEventListener('click', function() { copiarPlantilla(this.dataset.copyKey); });
-  });
-  lista.querySelectorAll('[data-edit-key]').forEach(function(el) {
-    el.addEventListener('click', function() { editarPlantilla(this.dataset.editKey); });
-  });
-  lista.querySelectorAll('[data-save-key]').forEach(function(el) {
-    el.addEventListener('click', function() { guardarPlantilla(this.dataset.saveKey); });
-  });
-  lista.querySelectorAll('[data-cancel-key]').forEach(function(el) {
-    el.addEventListener('click', function() { cancelarEdicion(this.dataset.cancelKey); });
-  });
-  lista.querySelectorAll('[data-delete-key]').forEach(function(el) {
-    el.addEventListener('click', function() { eliminarPlantilla(this.dataset.deleteKey); });
-  });
-  lista.querySelectorAll('[data-landing-key]').forEach(function(el) {
-    el.addEventListener('click', function() {
-      const url = prompt('URL de la landing page:');
-      if (url && url.trim()) adjuntarPlantillaURL(this.dataset.landingKey, url.trim());
-    });
-  });
+function showPlantillaDetalle(key) {
+  const p = plantillas.find(function(x){ return x._key===key; });
+  if (!p) return;
+  document.getElementById('plant-grid-view').style.display = 'none';
+  const dv = document.getElementById('plant-detalle-view');
+  dv.style.display = 'block';
+  const adj = p.adjuntos || {};
+  const precios = p.precios || {};
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  function precioInput(campo, label, placeholder) {
+    const val = precios[campo] || '';
+    return '<div class="plant-precio-row">' +
+      '<span class="plant-precio-label">' + label + '</span>' +
+      '<input class="plant-precio-edit" value="' + val + '" placeholder="' + placeholder + '" ' +
+        'onchange="savePlantillaField(\'' + key + '\',\'precios.' + campo + '\',this.value)" ' +
+        'onclick="event.stopPropagation()">' +
+    '</div>';
+  }
+
+  function resourceRow(icon, label, url, inputId, accept, tipo) {
+    return '<div class="resource-row">' +
+      '<span class="resource-icon">' + icon + '</span>' +
+      '<div class="resource-info">' +
+        '<div class="resource-name">' + label + '</div>' +
+        (url ? '<div class="resource-link">' + url.substring(0,60) + (url.length>60?'…':'') + '</div>' : '<div class="resource-link" style="color:var(--text3);font-style:italic">Sin cargar</div>') +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex-shrink:0">' +
+        (url ? '<a href="' + url + '" target="_blank" class="btn btn-ghost" style="padding:5px 12px;font-size:12px">↗ Abrir</a>' : '') +
+        '<label class="btn btn-ghost" style="padding:5px 12px;font-size:12px;cursor:pointer" for="' + inputId + '">+ Subir</label>' +
+        '<input type="file" id="' + inputId + '" accept="' + accept + '" style="display:none" data-pkey="' + key + '" data-ptype="' + tipo + '" onchange="adjuntarPlantillaArchivo(this)">' +
+      '</div>' +
+    '</div>';
+  }
+
+  function landingRow() {
+    const url = adj.landing || '';
+    return '<div class="resource-row">' +
+      '<span class="resource-icon">🔗</span>' +
+      '<div class="resource-info">' +
+        '<div class="resource-name">Landing page</div>' +
+        (url ? '<div class="resource-link">' + url + '</div>' : '<div class="resource-link" style="color:var(--text3);font-style:italic">Sin cargar</div>') +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex-shrink:0">' +
+        (url ? '<a href="' + url + '" target="_blank" class="btn btn-accent" style="padding:5px 12px;font-size:12px">Ir a la landing ↗</a>' : '') +
+        '<button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="promptLandingURL(\'' + key + '\')">✎ Editar URL</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // Plantilla text section
+  const textoHtml =
+    '<div class="plant-section-card">' +
+      '<div class="plant-section-label">Plantilla de venta</div>' +
+      '<div id="pdet-txt-' + key + '" style="font-size:13px;line-height:1.8;white-space:pre-wrap;background:rgba(0,0,0,0.03);border-radius:var(--radius);padding:14px;color:var(--text);margin-bottom:12px">' + (p.texto||'') + '</div>' +
+      '<textarea id="pdet-edit-' + key + '" style="display:none;width:100%;font-size:13px;line-height:1.8;font-family:inherit;background:rgba(255,255,255,0.7);border:1.5px solid var(--accent);border-radius:var(--radius);padding:14px;color:var(--text);min-height:200px;resize:vertical;outline:none;margin-bottom:12px">' + (p.texto||'') + '</textarea>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="p-btn p-btn-copy" id="pdet-copy-' + key + '" onclick="copiarPlantilla(\'' + key + '\')">Copiar texto</button>' +
+        '<button class="p-btn p-btn-edit" id="pdet-edit-btn-' + key + '" onclick="editarPlantillaDetalle(\'' + key + '\')">✎ Editar</button>' +
+        '<button class="p-btn p-btn-save" id="pdet-save-' + key + '" style="display:none" onclick="guardarPlantillaDetalle(\'' + key + '\')">✓ Guardar</button>' +
+        '<button class="p-btn p-btn-cancel" id="pdet-cancel-' + key + '" style="display:none" onclick="cancelarEdicionDetalle(\'' + key + '\')">Cancelar</button>' +
+        '<button class="p-btn p-btn-delete" onclick="eliminarPlantillaDetalle(\'' + key + '\')">✕ Eliminar</button>' +
+      '</div>' +
+    '</div>';
+
+  // Resources section
+  const recursosHtml =
+    '<div class="plant-section-card">' +
+      '<div class="plant-section-label">Recursos del curso</div>' +
+      resourceRow('🖼', 'Portada', adj.imagen||'', 'pdet-img-' + key, 'image/*', 'imagen') +
+      resourceRow('📋', 'Temario', adj.pdf||'', 'pdet-pdf-' + key, '.pdf,image/*', 'pdf') +
+      landingRow() +
+    '</div>';
+
+  // Precios section
+  const preciosHtml =
+    '<div class="plant-section-card">' +
+      '<div class="plant-section-label">Precios</div>' +
+      precioInput('lista', 'Precio de lista', 'Ej: $199') +
+      precioInput('nuevo', 'Alumno nuevo', 'Ej: $149') +
+      precioInput('existente', 'Alumno existente', 'Ej: $99') +
+    '</div>';
+
+  // Bonos section
+  const bonosHtml =
+    '<div class="plant-section-card">' +
+      '<div class="plant-section-label">Bonos incluidos</div>' +
+      '<textarea style="width:100%;font-size:13px;line-height:1.7;font-family:inherit;background:rgba(255,255,255,0.6);border:1px solid var(--border);border-radius:var(--radius);padding:12px;color:var(--text);min-height:100px;resize:vertical;outline:none" ' +
+        'placeholder="Ej: Acceso al grupo privado, PDF descargable..." ' +
+        'onchange="savePlantillaField(\'' + key + '\',\'bonos\',this.value)">' + (p.bonos||'') + '</textarea>' +
+    '</div>';
+
+  // Portada preview
+  const portadaHtml = adj.imagen ?
+    '<div class="plant-section-card" style="padding:0;overflow:hidden">' +
+      '<img src="' + adj.imagen + '" style="width:100%;height:200px;object-fit:cover;display:block">' +
+    '</div>' : '';
+
+  dv.innerHTML =
+    '<div class="plant-detail-header">' +
+      '<button class="plant-detail-back" onclick="closePlantillaDetalle()">← Volver</button>' +
+      '<div>' +
+        '<div style="margin-bottom:4px"><span class="plantilla-cat-badge">' + (p.categoria||'') + '</span></div>' +
+        '<div class="plant-detail-title">' + (p.titulo||'') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="plant-detail-grid">' +
+      '<div>' + textoHtml + '</div>' +
+      '<div>' + portadaHtml + recursosHtml + preciosHtml + bonosHtml + '</div>' +
+    '</div>';
+}
+
+function closePlantillaDetalle() {
+  document.getElementById('plant-grid-view').style.display = '';
+  document.getElementById('plant-detalle-view').style.display = 'none';
+}
+
+function editarPlantillaDetalle(key) {
+  const p = plantillas.find(function(x){ return x._key===key; });
+  if (!p) return;
+  document.getElementById('pdet-txt-'+key).style.display = 'none';
+  const ea = document.getElementById('pdet-edit-'+key);
+  ea.value = p.texto||'';
+  ea.style.display = 'block';
+  document.getElementById('pdet-edit-btn-'+key).style.display = 'none';
+  document.getElementById('pdet-save-'+key).style.display = 'inline-flex';
+  document.getElementById('pdet-cancel-'+key).style.display = 'inline-flex';
+}
+function cancelarEdicionDetalle(key) {
+  document.getElementById('pdet-txt-'+key).style.display = 'block';
+  document.getElementById('pdet-edit-'+key).style.display = 'none';
+  document.getElementById('pdet-edit-btn-'+key).style.display = 'inline-flex';
+  document.getElementById('pdet-save-'+key).style.display = 'none';
+  document.getElementById('pdet-cancel-'+key).style.display = 'none';
+}
+async function guardarPlantillaDetalle(key) {
+  const nuevoTexto = document.getElementById('pdet-edit-'+key).value;
+  await dbSet('/plantillas/' + key + '/texto', nuevoTexto);
+  const p = plantillas.find(function(x){ return x._key===key; });
+  if (p) p.texto = nuevoTexto;
+  showToast('Plantilla guardada');
+  cancelarEdicionDetalle(key);
+  document.getElementById('pdet-txt-'+key).textContent = nuevoTexto;
+}
+async function eliminarPlantillaDetalle(key) {
+  if (!confirm('¿Eliminar esta plantilla?')) return;
+  await dbDelete('/plantillas/' + key);
+  await loadPlantillas();
+  closePlantillaDetalle();
+  renderPlantillas();
+  showToast('Plantilla eliminada');
+}
+async function savePlantillaField(key, field, value) {
+  const parts = field.split('.');
+  let path = '/plantillas/' + key;
+  parts.forEach(function(p){ path += '/' + p; });
+  await dbSet(path, value);
+  const p = plantillas.find(function(x){ return x._key===key; });
+  if (p) {
+    if (parts.length === 1) { p[parts[0]] = value; }
+    else if (parts.length === 2) { if (!p[parts[0]]) p[parts[0]]= {}; p[parts[0]][parts[1]] = value; }
+  }
+}
+async function promptLandingURL(key) {
+  const url = prompt('URL de la landing page:');
+  if (url && url.trim()) {
+    await adjuntarPlantillaURL(key, url.trim());
+    showPlantillaDetalle(key);
+  }
 }
 
 function togglePlantilla(key) {
@@ -1898,35 +2079,34 @@ function renderAdmin() {
     }
 
     var cellFinalUSD = esHotmart
-      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
+      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
       : (esLocalConTC && adminTC > 0 && montoNetoLocal !== null
-          ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><br><span style="font-size:10px;color:var(--text3)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ' + currLabel + ' ÷ ' + adminTC + '</span>'
-          : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' + (valFinalUSD !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : ''));
+          ? '<div><span style="font-size:13px;font-weight:700;color:var(--text)">$' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><div style="font-size:10px;color:var(--text3)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ' + currLabel + ' ÷ ' + adminTC + '</div></div>'
+          : '<div class="admin-formula-cell"><input class="admin-inline-input" style="width:62px" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' + (valFinalUSD !== null ? '<span class="admin-formula-result">$' + valFinalUSD.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' : '') + '</div>');
     var cellMontoNetoLocal = montoNetoLocal !== null
-      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--text)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>'
+      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>'
       : (valFinalARS !== null
-          ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--text)">' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">ARS</span>'
+          ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">ARS</span>'
           : '<span style="color:var(--text3);font-size:11px">—</span>');
     var cellFinalARS = esARS
-      ? (pagoLocalARS !== null ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '<span style="color:var(--text3);font-size:11px">—</span>')
-      : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valFinalARS !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '');
-    // Pago Local: moneda local para ARS/Bs; para USD usa pagoAlumno (no montoNeto) como base de la fórmula
+      ? (pagoLocalARS !== null ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '<span style="color:var(--text3);font-size:11px">—</span>')
+      : '<div class="admin-formula-cell"><input class="admin-inline-input" style="width:62px" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valFinalARS !== null ? '<span class="admin-formula-result">$' + valFinalARS.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' : '') + '</div>';
     var valPagoLocalUSD = !currLabel ? calcFinal(v.montoFinalARS, pagoAlumno) : null;
     var cellPagoLocal = currLabel && montoLocalNum > 0
-      ? '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent)">' + montoLocalNum.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>'
+      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + montoLocalNum.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>'
       : (currLabel
           ? '<span style="color:var(--text3);font-size:11px">—</span>'
-          : '<input type="text" style="width:76px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:\'DM Mono\',monospace" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valPagoLocalUSD !== null ? '<br><span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'DM Mono\',monospace">= $' + valPagoLocalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : ''));
+          : '<div class="admin-formula-cell"><input class="admin-inline-input" style="width:62px" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valPagoLocalUSD !== null ? '<span class="admin-formula-result">$' + valPagoLocalUSD.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' : '') + '</div>');
     return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="font-size:13px;font-weight:500">' + (v.nombre||'<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
       '<td style="font-size:12px;color:var(--text2)">' + (v.pais||'—') + '</td>' +
-      '<td class="mono" style="font-weight:600;color:var(--accent)">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+      '<td style="font-size:13px;font-weight:700;color:var(--text)">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellPagoLocal + '</td>' +
-      '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center"><input type="number" style="width:54px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);text-align:center;font-family:\'DM Mono\',monospace" value="' + (descPct||0) + '" min="0" max="100" placeholder="0" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)"><span style="font-size:11px;color:var(--text3);margin-left:1px">%</span></td>' +
-      '<td class="mono" style="font-weight:600">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+      '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:3px"><input type="number" class="admin-inline-input" style="width:46px;text-align:center" value="' + (descPct||0) + '" min="0" max="100" placeholder="0" onclick="event.stopPropagation()" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)"><span style="font-size:11px;color:var(--text3)">%</span></div></td>' +
+      '<td style="font-size:13px;font-weight:700;color:var(--text)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
       '<td style="padding:6px 8px;text-align:right">' + cellMontoNetoLocal + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellFinalUSD + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellFinalARS + '</td>' +
@@ -2332,7 +2512,7 @@ function renderClientes() {
       // Asesores únicos (ordenados por frecuencia)
       var asCount = {}; cl.ventas.forEach(function(v){ if(v.asesor) asCount[v.asesor]=(asCount[v.asesor]||0)+1; });
       var asesores = Object.keys(asCount).sort(function(a,b){ return asCount[b]-asCount[a]; });
-      return '<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;box-shadow:var(--shadow)"' +
+      return '<div style="background:rgba(255,255,255,0.92);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;box-shadow:var(--shadow)"' +
         ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.boxShadow=\'0 0 0 3px var(--accent-light)\'"' +
         ' onmouseleave="this.style.borderColor=\'var(--border)\';this.style.boxShadow=\'var(--shadow)\'"' +
         ' onclick="verCliente(' + idx + ')">' +
@@ -2385,7 +2565,7 @@ function _renderClienteDetalle(cl, body) {
     '</div>' +
 
     // ── Perfil + métricas ──
-    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;margin-bottom:16px;box-shadow:var(--shadow)">' +
+    '<div style="background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;margin-bottom:16px;box-shadow:var(--shadow)">' +
       '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
         '<div style="width:54px;height:54px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;color:var(--accent);flex-shrink:0">' + ini + '</div>' +
         '<div style="flex:1;min-width:180px">' +
@@ -2397,20 +2577,20 @@ function _renderClienteDetalle(cl, body) {
           '</div>' +
         '</div>' +
         '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
-          '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:90px">' +
+          '<div style="background:rgba(255,255,255,0.55);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:90px">' +
             '<div style="font-size:22px;font-weight:800;color:var(--accent)">$' + total.toLocaleString('en-US',{minimumFractionDigits:0}) + '</div>' +
             '<div style="font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em">Total USD</div>' +
           '</div>' +
-          '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:70px">' +
+          '<div style="background:rgba(255,255,255,0.55);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:70px">' +
             '<div style="font-size:22px;font-weight:800;color:var(--text)">' + cl.ventas.length + '</div>' +
             '<div style="font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em">Compra' + (cl.ventas.length!==1?'s':'') + '</div>' +
           '</div>' +
-          '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:85px">' +
+          '<div style="background:rgba(255,255,255,0.55);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:85px">' +
             '<div style="font-size:18px;font-weight:800;color:var(--text)">' + (ultimaCompra ? ultimaCompra.split('-').slice(-2).reverse().join('/') : '—') + '</div>' +
             '<div style="font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em">Última</div>' +
           '</div>' +
           (primeraCompra && primeraCompra !== ultimaCompra ?
-          '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:85px">' +
+          '<div style="background:rgba(255,255,255,0.55);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:85px">' +
             '<div style="font-size:18px;font-weight:800;color:var(--text)">' + primeraCompra.split('-').slice(-2).reverse().join('/') + '</div>' +
             '<div style="font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em">Primera</div>' +
           '</div>' : '') +
@@ -2422,7 +2602,7 @@ function _renderClienteDetalle(cl, body) {
     '<div style="display:grid;grid-template-columns:' + (isMobile ? '1fr' : '1fr 270px') + ';gap:16px;align-items:start">' +
 
       // ── Historial de compras ──
-      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow)">' +
+      '<div style="background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow)">' +
         '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px">Historial de compras</div>' +
         ventasOrd.map(function(v, i) {
           var fechaCorta = v.fecha ? v.fecha.split('-').slice(-2).reverse().join('/') : '—';
@@ -2433,7 +2613,7 @@ function _renderClienteDetalle(cl, body) {
             '<div style="flex:1;min-width:0">' +
               '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px">' + (v.curso||'—') + '</div>' +
               '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
-                '<span style="font-size:11px;color:var(--text3);font-family:DM Mono,monospace">' + fechaCorta + (hora ? ' · ' + hora : '') + '</span>' +
+                '<span style="font-size:11px;color:var(--text3);font-family:inherit">' + fechaCorta + (hora ? ' · ' + hora : '') + '</span>' +
                 '<span style="font-size:11px;color:var(--border)">·</span>' +
                 '<span style="font-size:11px;color:var(--text3)">' + (v.pago||'—') + '</span>' +
                 '<span style="font-size:11px;color:var(--border)">·</span>' +
@@ -2454,7 +2634,7 @@ function _renderClienteDetalle(cl, body) {
       '<div style="display:flex;flex-direction:column;gap:14px">' +
 
         // Formas de pago
-        '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)">' +
+        '<div style="background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)">' +
           '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">Forma de pago</div>' +
           Object.entries(pagoCount).sort(function(a,b){return b[1]-a[1];}).map(function(kv){
             return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">' +
@@ -2465,7 +2645,7 @@ function _renderClienteDetalle(cl, body) {
         '</div>' +
 
         // Sugerencias
-        '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)">' +
+        '<div style="background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)">' +
           '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px">¿Qué podemos ofrecerle?</div>' +
           '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Cursos del catálogo que aún no tiene</div>' +
           (sugeridos.length ?
