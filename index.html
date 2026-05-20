@@ -351,7 +351,7 @@ tbody tr:hover td { background: var(--surface2); }
   </nav>
   <div class="sidebar-footer">
     <button class="btn-nueva-venta" onclick="switchTab('cargar')">+ Nueva venta</button>
-    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.6</div>
+    <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);letter-spacing:0.05em">v2.7</div>
   </div>
 </aside>
 
@@ -2259,7 +2259,7 @@ function renderAdmin() {
     // M.Final USD para ARS/Bs: montoNetoLocal / TC; para el resto: fórmula o manual
     var valFinalUSD = esHotmart
       ? montoNeto
-      : (esLocalConTC && adminTC > 0 ? montoNetoLocal / adminTC : calcFinal(v.montoFinalUSD, montoNeto));
+      : (esLocalConTC && adminTC > 0 ? montoNetoLocal / adminTC : calcFinal(v.montoFinalUSD, esLocalConTC && montoNetoLocal !== null ? montoNetoLocal : montoNeto));
     var valFinalARS = esARS ? pagoLocalARS : calcFinal(v.montoFinalARS, montoNeto);
 
     let expandedHtml = '';
