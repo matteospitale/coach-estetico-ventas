@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --bg-from: #fdf9f6; --bg-to: #c87d6a;
+  --bg-from: #f5e8e2; --bg-to: #b06858;
   --card-glow-sm: 0 0 0 1.5px rgba(182,31,58,0.38), 0 0 10px rgba(182,31,58,0.14);
   --card-glow-lg: 0 0 0 2px rgba(182,31,58,0.78), 0 0 22px rgba(182,31,58,0.32), 0 0 44px rgba(182,31,58,0.12);
   --glass: rgba(255,255,255,0.68);
@@ -861,6 +861,8 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 
 <div class="toast" id="toast"></div>
 
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.0</div>
+
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
 
@@ -1640,7 +1642,7 @@ function renderPlantillas() {
 
   if (countEl) countEl.textContent = filtered.length + ' curso' + (filtered.length!==1?'s':'');
   if (!filtered.length) {
-    lista.innerHTML = '<div class="empty-state" style="color:rgba(255,255,255,0.4)">No hay plantillas en esta categoría</div>';
+    lista.innerHTML = '<div class="empty-state" style="color:var(--text3);font-size:14px;padding:24px 0;">No hay plantillas en esta categoría</div>';
     return;
   }
   lista.innerHTML = filtered.map(function(p) {
