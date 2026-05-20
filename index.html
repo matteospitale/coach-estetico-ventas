@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --bg-from: #f5e8e2; --bg-to: #b06858;
+  --bg-from: #fdf6f2; --bg-to: #c97870;
   --card-glow-sm: 0 0 0 1.5px rgba(182,31,58,0.38), 0 0 10px rgba(182,31,58,0.14);
   --card-glow-lg: 0 0 0 2px rgba(182,31,58,0.78), 0 0 22px rgba(182,31,58,0.32), 0 0 44px rgba(182,31,58,0.12);
   --glass: rgba(255,255,255,0.68);
@@ -45,7 +45,7 @@ body {
 .topnav {
   position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h); z-index: 200;
   display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
-  background: rgba(12,9,7,0.88);
+  background: rgba(55,18,16,0.90);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
   border-bottom: 1px solid rgba(255,255,255,0.07);
@@ -100,7 +100,7 @@ body {
 /* ── MOBILE DRAWER ── */
 .mob-drawer {
   position: fixed; top: var(--nav-h); left: 0; right: 0;
-  background: rgba(12,9,7,0.96);
+  background: rgba(45,14,12,0.96);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   padding: 12px; display: flex; flex-direction: column; gap: 4px;
@@ -1192,6 +1192,7 @@ function renderResumen() {
   vf.forEach(v=>{ if(byA[v.asesor]!==undefined) byA[v.asesor]+=parseFloat(v.monto||0); });
 
   const asesores = ['Matteo','Facundo','Dianela'];
+  const asesorColor = {Matteo:'var(--matteo)',Facundo:'var(--facundo)',Dianela:'var(--dianela)'};
   let metricsHTML = '<div class="metric-card accent" id="mc-all" data-drill="all" style="cursor:pointer">' +
     '<div class="metric-label">Total vendido</div>' +
     '<div class="metric-value">$' + total.toLocaleString('en-US') + '</div>' +
@@ -1200,7 +1201,7 @@ function renderResumen() {
   asesores.forEach(a => {
     metricsHTML += '<div class="metric-card" id="mc-' + a + '" data-drill="' + a + '" style="cursor:pointer">' +
       '<div class="metric-label">' + a + '</div>' +
-      '<div class="metric-value">$' + byA[a].toLocaleString('en-US') + '</div>' +
+      '<div class="metric-value" style="color:' + asesorColor[a] + '">$' + byA[a].toLocaleString('en-US') + '</div>' +
       '<div class="metric-sub">' + vf.filter(v=>v.asesor===a).length + ' ventas</div>' +
       '</div>';
   });
