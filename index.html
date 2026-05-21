@@ -3662,21 +3662,21 @@ function renderMYF() {
   var totalBruto = mesVentas.reduce(function(s,v){ return s+parseFloat(v.monto||0); },0);
   var totalNeto = totalBruto * 0.85; // menos 15%
 
-  // TC real: weighted average of adminTC across ARS sales this month
-  var arsVentas = mesVentas.filter(function(v) {
-    var tc = parseFloat(v.adminTC || 0);
-    return (v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina') && tc > 0;
+  // TC real: weighted average of adminTC across ALL sales where adminTC was set (any payment method)
+  var tcVentas = mesVentas.filter(function(v) {
+    return parseFloat(v.adminTC || 0) > 0;
   });
   var tcReal = null;
-  if (arsVentas.length > 0) {
-    var sumLocal = 0, sumUSD = 0;
-    arsVentas.forEach(function(v) {
-      var ml = parseFloat(v.montoLocal || 0);
+  if (tcVentas.length > 0) {
+    // Weighted average by USD sale amount
+    var sumWeighted = 0, sumWeight = 0;
+    tcVentas.forEach(function(v) {
       var tc = parseFloat(v.adminTC || 0);
-      if (ml > 0 && tc > 0) { sumLocal += ml; sumUSD += ml / tc; }
+      var usd = parseFloat(v.monto || 0);
+      if (tc > 0 && usd > 0) { sumWeighted += tc * usd; sumWeight += usd; }
     });
-    if (sumUSD > 0) tcReal = Math.round(sumLocal / sumUSD);
-    else tcReal = Math.round(arsVentas.reduce(function(s,v){ return s + parseFloat(v.adminTC||0); }, 0) / arsVentas.length);
+    if (sumWeight > 0) tcReal = Math.round(sumWeighted / sumWeight);
+    else tcReal = Math.round(tcVentas.reduce(function(s,v){ return s + parseFloat(v.adminTC||0); }, 0) / tcVentas.length);
   }
 
   var body = document.getElementById('myf-body');
@@ -3995,6 +3995,11 @@ function renderCalendario() {
     return;
   }
   var src = _calendarioConfig.embedUrl.trim();
+  // If stored value is a full <iframe> tag, extract the src
+  if (src.indexOf('<iframe') !== -1 || (src.indexOf('src=') !== -1 && src.indexOf('<') !== -1)) {
+    var _m = src.match(/src=["']([^"']+)["']/);
+    if (_m) { src = _m[1]; _calendarioConfig.embedUrl = src; dbSet('/config/calendario', _calendarioConfig).catch(function(){}); }
+  }
   // Validate: must be a Google Calendar embed URL
   if (src.indexOf('calendar.google.com') === -1) {
     el.innerHTML =
@@ -4045,8 +4050,8 @@ function abrirConfigCalendario() {
       '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:18px">⚙ Configurar calendario</div>' +
       '<div style="margin-bottom:14px">' +
         '<label class="form-label" style="font-size:12px">Enlace de incorporación de Google Calendar</label>' +
-        '<input id="cal-config-url" class="form-input" style="font-size:13px;margin-top:6px" placeholder="https://calendar.google.com/calendar/embed?src=..." value="' + (cur.embedUrl || '') + '">' +
-        '<div style="font-size:11px;color:var(--text3);margin-top:6px">En Google Calendar → Configuración del calendario → Integrar calendario → Copiar "Enlace de incorporación"</div>' +
+        '<input id="cal-config-url" class="form-input" style="font-size:13px;margin-top:6px" placeholder="https://calendar.google.com/calendar/embed?src=... (también podés pegar el código <iframe> completo)" value="' + (cur.embedUrl || '') + '">' +
+        '<div style="font-size:11px;color:var(--text3);margin-top:6px">Google Calendar → Configuración del calendario → Integrar calendario → Copiar <strong>Enlace de incorporación</strong> o el código <code>&lt;iframe&gt;</code></div>' +
       '</div>' +
       '<div style="margin-bottom:20px">' +
         '<label class="form-label" style="font-size:12px">Zona horaria</label>' +
@@ -4064,9 +4069,17 @@ function abrirConfigCalendario() {
 }
 
 async function guardarConfigCalendario() {
-  var url = (document.getElementById('cal-config-url')||{}).value || '';
-  var tz = (document.getElementById('cal-config-tz')||{}).value || 'America/Argentina/Buenos_Aires';
-  if (!url) { showToast('Ingresá el enlace del calendario'); return; }
+  var raw = ((document.getElementById('cal-config-url')||{}).value || '').trim();
+  var tz = ((document.getElementById('cal-config-tz')||{}).value || 'America/Argentina/Buenos_Aires').trim();
+  if (!raw) { showToast('Ingresá el enlace del calendario'); return; }
+  // Accept full <iframe> tag — extract src automatically
+  var url = raw;
+  if (raw.indexOf('<iframe') !== -1 || raw.indexOf('src=') !== -1) {
+    var m = raw.match(/src=["']([^"']+)["']/);
+    if (m) url = m[1]; else url = raw;
+  }
+  url = url.trim();
+  if (!url) { showToast('No se pudo extraer la URL'); return; }
   _calendarioConfig = { embedUrl: url, timezone: tz };
   await dbSet('/config/calendario', _calendarioConfig);
   var modal = document.getElementById('cal-config-modal');
