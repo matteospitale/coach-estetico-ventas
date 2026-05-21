@@ -267,6 +267,11 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group.full { grid-column: 1 / -1; }
 .form-label { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); }
+@keyframes label-shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.28; }
+}
+.form-label.label-pendiente { color: #c97a35; animation: label-shimmer 2.6s ease-in-out infinite; }
 .form-input, .form-select, .form-textarea {
   width: 100%; padding: 10px 14px; font-size: 14px; border: 1px solid var(--border);
   border-radius: var(--radius); background: rgba(255,255,255,0.55); color: var(--text);
@@ -685,37 +690,37 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Asesor *</label>
-            <select class="form-select" id="f-asesor">
+            <select class="form-select" id="f-asesor" onchange="actualizarCompletitud()">
               <option value="">Seleccionar...</option>
               <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Stefany</option><option>Ruben</option>
             </select>
           </div>
           <div class="form-group">
             <label class="form-label">Fecha *</label>
-            <input type="date" class="form-input" id="f-fecha">
+            <input type="date" class="form-input" id="f-fecha" onchange="actualizarCompletitud()">
           </div>
           <div class="form-group">
             <label class="form-label">Nombre del alumno *</label>
-            <input type="text" class="form-input" id="f-nombre-alumno" placeholder="Ej: Antonia (o . si no sabés)">
+            <input type="text" class="form-input" id="f-nombre-alumno" placeholder="Ej: Antonia (o . si no sabés)" oninput="actualizarCompletitud()">
           </div>
           <div class="form-group">
             <label class="form-label">País *</label>
             <div style="position:relative" id="pais-wrap">
-              <input type="text" class="form-input" id="f-pais" placeholder="Escribí para buscar... ej: arg, esp, ven" autocomplete="off" oninput="buscarPais(this.value)" onblur="setTimeout(function(){closePaisList();},180)">
+              <input type="text" class="form-input" id="f-pais" placeholder="Escribí para buscar... ej: arg, esp, ven" autocomplete="off" oninput="buscarPais(this.value);actualizarCompletitud()" onblur="setTimeout(function(){closePaisList();},180)">
               <div id="pais-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,0.97);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">Pago alumno *</label>
-            <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01">
+            <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01" oninput="actualizarCompletitud()">
           </div>
           <div class="form-group">
             <label class="form-label">Monto local (opcional)</label>
-            <input type="number" class="form-input" id="f-monto-local" placeholder="Ej: 1200000" min="0" step="0.01">
+            <input type="number" class="form-input" id="f-monto-local" placeholder="Ej: 1200000" min="0" step="0.01" oninput="actualizarCompletitud()">
           </div>
           <div class="form-group">
             <label class="form-label">Forma de pago *</label>
-            <select class="form-select" id="f-pago">
+            <select class="form-select" id="f-pago" onchange="actualizarCompletitud()">
               <option value="">Seleccionar...</option>
               <option>Hotmart</option><option>Link Mercado Pago Argentina</option>
               <option>Transferencia Argentina</option><option>Zelle</option>
@@ -728,38 +733,38 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
             <label class="form-label">Canal *</label>
             <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap">
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
-                <input type="radio" name="canal" value="Instagram" style="accent-color:#C13584;width:16px;height:16px"> Instagram
+                <input type="radio" name="canal" value="Instagram" style="accent-color:#C13584;width:16px;height:16px" onchange="actualizarCompletitud()"> Instagram
               </label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
-                <input type="radio" name="canal" value="WhatsApp" style="accent-color:#25D366;width:16px;height:16px"> WhatsApp
+                <input type="radio" name="canal" value="WhatsApp" style="accent-color:#25D366;width:16px;height:16px" onchange="actualizarCompletitud()"> WhatsApp
               </label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
-                <input type="radio" name="canal" value="IA/Web" style="accent-color:var(--accent);width:16px;height:16px"> IA / Web
+                <input type="radio" name="canal" value="IA/Web" style="accent-color:var(--accent);width:16px;height:16px" onchange="actualizarCompletitud()"> IA / Web
               </label>
             </div>
           </div>
           <div class="form-group full">
             <label class="form-label">Curso / Producto *</label>
             <div style="position:relative" id="curso-wrap">
-              <input type="text" class="form-input" id="f-curso" placeholder="Escribí para buscar... ej: diplo, nutri, peeling" autocomplete="off" oninput="buscarCurso(this.value)" onblur="setTimeout(()=>closeCursoList(),180)">
+              <input type="text" class="form-input" id="f-curso" placeholder="Escribí para buscar... ej: diplo, nutri, peeling" autocomplete="off" oninput="buscarCurso(this.value);actualizarCompletitud()" onblur="setTimeout(()=>closeCursoList(),180)">
               <div id="curso-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,0.97);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">ID Lead Kommo *</label>
-            <input type="text" class="form-input" id="f-lead" placeholder="Ej: 27537979">
+            <input type="text" class="form-input" id="f-lead" placeholder="Ej: 27537979" oninput="actualizarCompletitud()">
           </div>
           <div class="form-group">
             <label class="form-label">Mail *</label>
-            <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com">
+            <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com" oninput="actualizarCompletitud()">
           </div>
           <div class="form-group">
             <label class="form-label">Código comprobante</label>
             <input type="text" class="form-input" id="f-codigo" placeholder="Ej: HP0198428386">
           </div>
           <div class="form-group">
-            <label class="form-label">Teléfono</label>
-            <input type="tel" class="form-input" id="f-telefono" placeholder="Ej: +5491112345678">
+            <label class="form-label">Teléfono *</label>
+            <input type="tel" class="form-input" id="f-telefono" placeholder="Ej: +5491112345678" oninput="actualizarCompletitud()">
           </div>
           <div class="form-group full">
             <label class="form-label">Aclaración (opcional)</label>
@@ -1000,6 +1005,7 @@ function switchTab(t) {
   if (t === 'admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); }
   if (t === 'clientes') { clienteDetalle = null; fillClientesFilters(); var cf=document.getElementById('clientes-filters'); if(cf) cf.style.display=''; renderClientes(); }
   if (t === 'myf') { renderMYF(); }
+  if (t === 'cargar') { actualizarCompletitud(); }
 
   closeMobDrawer();
 }
@@ -1424,6 +1430,7 @@ function editarVenta(key) {
   document.querySelectorAll('input[name="canal"]').forEach(r => { r.checked = r.value===v.canal; });
   window._editKey = key;
   switchTab('cargar');
+  actualizarCompletitud();
   document.getElementById('btn-confirmar').textContent = 'Guardar cambios';
   showToast('Editando venta — modificá y confirmá');
 }
@@ -2092,7 +2099,7 @@ function buscarPais(q) {
   }).join('');
   list.style.display = 'block';
 }
-function selectPais(p) { document.getElementById('f-pais').value = p; closePaisList(); }
+function selectPais(p) { document.getElementById('f-pais').value = p; closePaisList(); actualizarCompletitud(); }
 function closePaisList() { document.getElementById('pais-list').style.display='none'; }
 
 function buscarCurso(q) {
@@ -2110,6 +2117,7 @@ function buscarCurso(q) {
       e.preventDefault();
       document.getElementById('f-curso').value = this.dataset.nombre;
       list.style.display = 'none';
+      actualizarCompletitud();
     });
   });
   list.style.display = 'block';
@@ -2406,8 +2414,10 @@ function confirmarVenta() {
   const canal = canalEl ? canalEl.value : '';
   const nombreAlumno = document.getElementById('f-nombre-alumno').value.trim();
   const paisVenta = document.getElementById('f-pais').value;
-  const montoLocal = parseFloat(document.getElementById('f-monto-local').value) || 0;
-  if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombreAlumno||!paisVenta||!email||!lead) { showToast('Completá todos los campos obligatorios: nombre, país, mail, ID Lead'); return; }
+  const montoLocalRaw = parseFloat(document.getElementById('f-monto-local').value);
+  const montoLocal = montoLocalRaw || 0;
+  const requiereML = ['Venezuela','Argentina'].includes(paisVenta);
+  if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombreAlumno||!paisVenta||!email||!lead||!telefono||(requiereML&&!montoLocalRaw)) { showToast('Completá todos los campos obligatorios'); return; }
   const montoNeto = parseFloat(monto.toFixed(2));
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
@@ -2456,7 +2466,58 @@ function limpiarForm() {
   document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked=false; });
   document.getElementById('f-fecha').valueAsDate = new Date();
   clearComprobante();
+  actualizarCompletitud();
 }
+
+function setLabelPendiente(fieldId, pending) {
+  var field = document.getElementById(fieldId);
+  if (!field) return;
+  var grp = field.closest('.form-group');
+  if (!grp) return;
+  var label = grp.querySelector('.form-label');
+  if (label) label.classList.toggle('label-pendiente', !!pending);
+}
+
+function actualizarCompletitud() {
+  var sec = document.getElementById('sec-cargar');
+  if (!sec || !sec.classList.contains('active')) return;
+
+  var pais = document.getElementById('f-pais').value.trim();
+  var requiereML = pais === 'Venezuela' || pais === 'Argentina';
+
+  setLabelPendiente('f-asesor',        !document.getElementById('f-asesor').value);
+  setLabelPendiente('f-fecha',         !document.getElementById('f-fecha').value);
+  setLabelPendiente('f-nombre-alumno', !document.getElementById('f-nombre-alumno').value.trim());
+  setLabelPendiente('f-pais',          !pais);
+  setLabelPendiente('f-monto',         !parseFloat(document.getElementById('f-monto').value));
+  setLabelPendiente('f-pago',          !document.getElementById('f-pago').value);
+  setLabelPendiente('f-curso',         !document.getElementById('f-curso').value.trim());
+  setLabelPendiente('f-lead',          !document.getElementById('f-lead').value.trim());
+  setLabelPendiente('f-email',         !document.getElementById('f-email').value.trim());
+  setLabelPendiente('f-telefono',      !document.getElementById('f-telefono').value.trim());
+
+  // Monto local: sólo requerido para Venezuela y Argentina
+  var mlField = document.getElementById('f-monto-local');
+  var mlGrp = mlField ? mlField.closest('.form-group') : null;
+  var mlLabel = mlGrp ? mlGrp.querySelector('.form-label') : null;
+  if (mlLabel) {
+    if (requiereML) {
+      mlLabel.textContent = 'Monto local *';
+      mlLabel.classList.toggle('label-pendiente', !parseFloat(mlField.value));
+    } else {
+      mlLabel.textContent = 'Monto local (opcional)';
+      mlLabel.classList.remove('label-pendiente');
+    }
+  }
+
+  // Canal (radio buttons)
+  var canalChecked = document.querySelector('input[name="canal"]:checked');
+  var canalFirst = document.querySelector('input[name="canal"]');
+  var canalGrp = canalFirst ? canalFirst.closest('.form-group') : null;
+  var canalLabel = canalGrp ? canalGrp.querySelector('.form-label') : null;
+  if (canalLabel) canalLabel.classList.toggle('label-pendiente', !canalChecked);
+}
+
 function closeModal() { document.getElementById('modal-confirm').classList.remove('show'); }
 
 // ── ADMINISTRACIÓN ──
