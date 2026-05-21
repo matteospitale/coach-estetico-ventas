@@ -782,6 +782,7 @@ body.admin-ro .admin-edit { display:none!important; }
       <div class="section-header"><div class="section-title">Registrar venta</div></div>
       <div class="form-card">
         <div class="form-grid">
+          <!-- Fila 1: Asesor · Fecha · Mail · Forma de pago -->
           <div class="form-group">
             <label class="form-label">Asesor *</label>
             <select class="form-select" id="f-asesor" onchange="actualizarCompletitud()">
@@ -794,23 +795,8 @@ body.admin-ro .admin-edit { display:none!important; }
             <input type="date" class="form-input" id="f-fecha" onchange="actualizarCompletitud()">
           </div>
           <div class="form-group">
-            <label class="form-label">Nombre del alumno *</label>
-            <input type="text" class="form-input" id="f-nombre-alumno" placeholder="Ej: Antonia (o . si no sabés)" oninput="actualizarCompletitud()">
-          </div>
-          <div class="form-group">
-            <label class="form-label">País *</label>
-            <div style="position:relative" id="pais-wrap">
-              <input type="text" class="form-input" id="f-pais" placeholder="Escribí para buscar... ej: arg, esp, ven" autocomplete="off" oninput="buscarPais(this.value);actualizarCompletitud()" onblur="setTimeout(function(){closePaisList();},180)">
-              <div id="pais-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,0.97);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Pago alumno *</label>
-            <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01" oninput="actualizarCompletitud()">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Monto local (opcional)</label>
-            <input type="number" class="form-input" id="f-monto-local" placeholder="Ej: 1200000" min="0" step="0.01" oninput="actualizarCompletitud()">
+            <label class="form-label">Mail *</label>
+            <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com" oninput="actualizarCompletitud()" onblur="autocompletarDesdeEmail()">
           </div>
           <div class="form-group">
             <label class="form-label">Forma de pago *</label>
@@ -823,20 +809,24 @@ body.admin-ro .admin-edit { display:none!important; }
               <option>Pesos Peruanos</option><option>PayPal</option>
             </select>
           </div>
+          <!-- Fila 2: Valor oficial · Pago alumno local · Nombre · Apellido -->
           <div class="form-group">
-            <label class="form-label">Canal *</label>
-            <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
-                <input type="radio" name="canal" value="Instagram" style="accent-color:#C13584;width:16px;height:16px" onchange="actualizarCompletitud()"> Instagram
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
-                <input type="radio" name="canal" value="WhatsApp" style="accent-color:#25D366;width:16px;height:16px" onchange="actualizarCompletitud()"> WhatsApp
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--text2)">
-                <input type="radio" name="canal" value="IA/Web" style="accent-color:var(--accent);width:16px;height:16px" onchange="actualizarCompletitud()"> IA / Web
-              </label>
-            </div>
+            <label class="form-label">Valor oficial *</label>
+            <input type="number" class="form-input" id="f-monto" placeholder="125" min="0" step="0.01" oninput="actualizarCompletitud()">
           </div>
+          <div class="form-group">
+            <label class="form-label">Pago alumno (local)</label>
+            <input type="number" class="form-input" id="f-monto-local" placeholder="Ej: 1200000" min="0" step="0.01" oninput="actualizarCompletitud()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nombre *</label>
+            <input type="text" class="form-input" id="f-nombre" placeholder="Ej: Antonia" oninput="actualizarCompletitud()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Apellido *</label>
+            <input type="text" class="form-input" id="f-apellido" placeholder="Ej: García" oninput="actualizarCompletitud()">
+          </div>
+          <!-- Fila 3: Curso (full) -->
           <div class="form-group full">
             <label class="form-label">Curso / Producto *</label>
             <div style="position:relative" id="curso-wrap">
@@ -844,25 +834,44 @@ body.admin-ro .admin-edit { display:none!important; }
               <div id="curso-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,0.97);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
             </div>
           </div>
+          <!-- Fila 4: Canal · País · ID Lead · Teléfono -->
+          <div class="form-group">
+            <label class="form-label">Canal *</label>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)">
+                <input type="radio" name="canal" value="Instagram" style="accent-color:#C13584;width:15px;height:15px" onchange="actualizarCompletitud()"> Instagram
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)">
+                <input type="radio" name="canal" value="WhatsApp" style="accent-color:#25D366;width:15px;height:15px" onchange="actualizarCompletitud()"> WhatsApp
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)">
+                <input type="radio" name="canal" value="IA/Web" style="accent-color:var(--accent);width:15px;height:15px" onchange="actualizarCompletitud()"> IA / Web
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">País *</label>
+            <div style="position:relative" id="pais-wrap">
+              <input type="text" class="form-input" id="f-pais" placeholder="Escribí para buscar..." autocomplete="off" oninput="buscarPais(this.value);actualizarCompletitud()" onblur="setTimeout(function(){closePaisList();},180)">
+              <div id="pais-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,0.97);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;max-height:220px;overflow-y:auto;margin-top:2px"></div>
+            </div>
+          </div>
           <div class="form-group">
             <label class="form-label">ID Lead Kommo *</label>
             <input type="text" class="form-input" id="f-lead" placeholder="Ej: 27537979" oninput="actualizarCompletitud()">
           </div>
           <div class="form-group">
-            <label class="form-label">Mail *</label>
-            <input type="email" class="form-input" id="f-email" placeholder="Ej: alumna@gmail.com" oninput="actualizarCompletitud()">
+            <label class="form-label">Teléfono *</label>
+            <input type="tel" class="form-input" id="f-telefono" placeholder="Ej: +5491112345678" oninput="actualizarCompletitud()">
+          </div>
+          <!-- Fila 5: Aclaración (3 cols) · Código comprobante (1 col) -->
+          <div class="form-group" style="grid-column:span 3">
+            <label class="form-label">Aclaración (opcional)</label>
+            <textarea class="form-textarea" id="f-nota" placeholder="Ej: Venta Mariel, alumna de Dermatocosmiatría..." style="min-height:70px"></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Código comprobante</label>
             <input type="text" class="form-input" id="f-codigo" placeholder="Ej: HP0198428386">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Teléfono *</label>
-            <input type="tel" class="form-input" id="f-telefono" placeholder="Ej: +5491112345678" oninput="actualizarCompletitud()">
-          </div>
-          <div class="form-group full">
-            <label class="form-label">Aclaración (opcional)</label>
-            <textarea class="form-textarea" id="f-nota" placeholder="Ej: Venta Mariel, alumna de Dermatocosmiatría..."></textarea>
           </div>
           <div class="form-group full">
             <label class="form-label">Comprobante (imagen)</label>
@@ -1545,7 +1554,10 @@ function editarVenta(key) {
   document.getElementById('f-telefono').value = v.telefono||'';
   document.getElementById('f-email').value = v.email||'';
   document.getElementById('f-nota').value = v.nota||'';
-  document.getElementById('f-nombre-alumno').value = v.nombre||'';
+  // Nombre y apellido — compatibilidad con ventas viejas que tienen todo en v.nombre
+  var _nbParts = (v.nombre||'').trim().split(/\s+/);
+  document.getElementById('f-nombre').value = v.nombre && v.apellido ? v.nombre : (_nbParts[0]||'');
+  document.getElementById('f-apellido').value = v.apellido || (_nbParts.length>1 ? _nbParts.slice(1).join(' ') : '');
   document.getElementById('f-pais').value = v.pais||'';
   document.querySelectorAll('input[name="canal"]').forEach(r => { r.checked = r.value===v.canal; });
   window._editKey = key;
@@ -2532,18 +2544,20 @@ function confirmarVenta() {
   const telefono = document.getElementById('f-telefono').value.trim();
   const canalEl = document.querySelector('input[name="canal"]:checked');
   const canal = canalEl ? canalEl.value : '';
-  const nombreAlumno = document.getElementById('f-nombre-alumno').value.trim();
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const apellido = document.getElementById('f-apellido').value.trim();
   const paisVenta = document.getElementById('f-pais').value;
   const montoLocalRaw = parseFloat(document.getElementById('f-monto-local').value);
   const montoLocal = montoLocalRaw || 0;
   const requiereML = ['Venezuela','Argentina'].includes(paisVenta);
-  if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombreAlumno||!paisVenta||!email||!lead||!telefono||(requiereML&&!montoLocalRaw)) { showToast('Completá todos los campos obligatorios'); return; }
+  if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombre||!apellido||!paisVenta||!email||!lead||!telefono||(requiereML&&!montoLocalRaw)) { showToast('Completá todos los campos obligatorios'); return; }
   const montoNeto = parseFloat(monto.toFixed(2));
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  pendiente = { asesor:asesor, fecha:fecha, monto:monto, montoLocal:montoLocal||undefined, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombreAlumno, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
+  pendiente = { asesor:asesor, fecha:fecha, monto:monto, montoLocal:montoLocal||undefined, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombre, apellido:apellido, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
+    '<strong>' + nombre + ' ' + apellido + '</strong> · ' +
     '<span class="amount">$' + monto.toLocaleString('en-US') + ' USD</span>' +
     ' vía <strong>' + pago + '</strong> · <strong>' + canal + '</strong><br>' +
     curso +
@@ -2582,11 +2596,53 @@ async function guardarVenta() {
 
 function limpiarForm() {
   ['f-asesor','f-pago','f-pais'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['f-monto','f-monto-local','f-curso','f-lead','f-codigo','f-email','f-telefono','f-nota','f-nombre-alumno'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['f-monto','f-monto-local','f-curso','f-lead','f-codigo','f-email','f-telefono','f-nota','f-nombre','f-apellido'].forEach(function(id){ document.getElementById(id).value=''; });
   document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked=false; });
   document.getElementById('f-fecha').valueAsDate = new Date();
   clearComprobante();
   actualizarCompletitud();
+}
+
+// Helper: nombre completo para display en tablas
+function nombreCompleto(v) {
+  if (!v) return '';
+  return v.apellido ? (v.nombre||'') + ' ' + v.apellido : (v.nombre||'');
+}
+
+// Autocomplete de alumno al ingresar el mail
+function autocompletarDesdeEmail() {
+  var email = (document.getElementById('f-email').value||'').trim().toLowerCase();
+  if (!email || !ventas) return;
+  // Buscar la venta más reciente con ese mail
+  var coincidencias = ventas.filter(function(v){ return (v.email||'').toLowerCase() === email; });
+  if (!coincidencias.length) return;
+  // Ordenar por fecha de carga más reciente
+  coincidencias.sort(function(a,b){ return (b.cargado||'').localeCompare(a.cargado||''); });
+  var v = coincidencias[0];
+  var camposLlenados = [];
+  // Nombre y apellido
+  var nbParts = (v.nombre||'').trim().split(/\s+/);
+  var nbVal = v.apellido ? v.nombre : (nbParts[0]||'');
+  var apVal = v.apellido || (nbParts.length>1 ? nbParts.slice(1).join(' ') : '');
+  if (nbVal && !document.getElementById('f-nombre').value.trim()) {
+    document.getElementById('f-nombre').value = nbVal; camposLlenados.push('Nombre');
+  }
+  if (apVal && !document.getElementById('f-apellido').value.trim()) {
+    document.getElementById('f-apellido').value = apVal; camposLlenados.push('Apellido');
+  }
+  if (v.pais && !document.getElementById('f-pais').value.trim()) {
+    document.getElementById('f-pais').value = v.pais; camposLlenados.push('País');
+  }
+  if (v.lead && !document.getElementById('f-lead').value.trim()) {
+    document.getElementById('f-lead').value = v.lead; camposLlenados.push('ID Lead');
+  }
+  if (v.telefono && !document.getElementById('f-telefono').value.trim()) {
+    document.getElementById('f-telefono').value = v.telefono; camposLlenados.push('Teléfono');
+  }
+  if (camposLlenados.length) {
+    actualizarCompletitud();
+    showToast('✓ ' + nombreCompleto(v) + ' — completé ' + camposLlenados.join(', '));
+  }
 }
 
 function setLabelPendiente(fieldId, pending) {
@@ -2607,7 +2663,8 @@ function actualizarCompletitud() {
 
   setLabelPendiente('f-asesor',        !document.getElementById('f-asesor').value);
   setLabelPendiente('f-fecha',         !document.getElementById('f-fecha').value);
-  setLabelPendiente('f-nombre-alumno', !document.getElementById('f-nombre-alumno').value.trim());
+  setLabelPendiente('f-nombre',        !document.getElementById('f-nombre').value.trim());
+  setLabelPendiente('f-apellido',      !document.getElementById('f-apellido').value.trim());
   setLabelPendiente('f-pais',          !pais);
   setLabelPendiente('f-monto',         !parseFloat(document.getElementById('f-monto').value));
   setLabelPendiente('f-pago',          !document.getElementById('f-pago').value);
@@ -2622,10 +2679,10 @@ function actualizarCompletitud() {
   var mlLabel = mlGrp ? mlGrp.querySelector('.form-label') : null;
   if (mlLabel) {
     if (requiereML) {
-      mlLabel.textContent = 'Monto local *';
+      mlLabel.textContent = 'Pago alumno (local) *';
       mlLabel.classList.toggle('label-pendiente', !parseFloat(mlField.value));
     } else {
-      mlLabel.textContent = 'Monto local (opcional)';
+      mlLabel.textContent = 'Pago alumno (local)';
       mlLabel.classList.remove('label-pendiente');
     }
   }
@@ -3262,13 +3319,13 @@ const SESSION_KEY = 'coach_hub_sess_v1';
 const SESSION_TTL = 48 * 60 * 60 * 1000; // 48 horas
 
 const USUARIOS_DEFAULT = {
-  'Matteo':  { pin:'007', adminRO:false, secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'] },
-  'Dianela': { pin:'142', adminRO:false, secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'] },
-  'Ruben':   { pin:'835', adminRO:true,  secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar'] },
-  'Facundo': { pin:'294', adminRO:false, secciones:['inicio','ventas','plantillas','stats','clientes','myf','cargar'] },
-  'Stefany': { pin:'561', adminRO:true,  secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar'] },
-  'Anita':   { pin:'738', adminRO:false, secciones:['plantillas','stats','myf'] },
-  'Fran':    { pin:'416', adminRO:false, secciones:['plantillas','stats','myf'] },
+  'Matteo':  { pin:'007', adminRO:false, rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'] },
+  'Dianela': { pin:'142', adminRO:false, rol:'Admin',       secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'] },
+  'Ruben':   { pin:'835', adminRO:true,  rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar'] },
+  'Facundo': { pin:'294', adminRO:false, rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','clientes','myf','cargar'] },
+  'Stefany': { pin:'561', adminRO:true,  rol:'Post Venta',  secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar'] },
+  'Anita':   { pin:'738', adminRO:false, rol:'Marketing',   secciones:['plantillas','stats','myf'] },
+  'Fran':    { pin:'416', adminRO:false, rol:'Marketing',   secciones:['plantillas','stats','myf'] },
 };
 
 let USUARIOS_CONFIG = {};
@@ -3352,7 +3409,7 @@ function aplicarPermisos() {
 
   // Saludo
   const greetEl = document.getElementById('nav-hola-nombre');
-  if (greetEl) { greetEl.textContent = 'Hola ' + usuarioActual; greetEl.style.display = ''; }
+  if (greetEl) { greetEl.textContent = 'Hola ' + usuarioActual; greetEl.style.display = 'inline-block'; }
 
   // Botón logout
   const btnLogout = document.getElementById('btn-logout');
@@ -3466,7 +3523,7 @@ function renderUsuarios() {
   nombres.forEach(function(nombre) {
     var u = USUARIOS_CONFIG[nombre];
     var secs = (u.secciones || []);
-    var rolLabel = u.adminRO ? 'Admin RO' : (secs.includes('usuarios') ? 'Admin' : 'Asesor');
+    var rolLabel = u.rol || (u.adminRO ? 'Admin RO' : (secs.includes('usuarios') ? 'Admin' : 'Asesor'));
     html += '<div class="usuario-pill">';
     html += '<div class="usuario-pill-header">';
     html += '<span class="usuario-pill-name">' + nombre + '</span>';
@@ -3522,6 +3579,7 @@ function abrirEditorUsuario(nombre) {
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:20px">';
   html += '<div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="ued-nombre" placeholder="Ej: Sofia" value="' + (esNuevo ? '' : nombre) + '"></div>';
   html += '<div class="form-group"><label class="form-label">PIN (3 dígitos)</label><input class="form-input" id="ued-pin" maxlength="3" placeholder="000" value="' + (u.pin||'') + '" type="tel" style="letter-spacing:4px;font-size:18px"></div>';
+  html += '<div class="form-group"><label class="form-label">Rol / Cargo</label><input class="form-input" id="ued-rol" placeholder="Ej: Coach Sales, Marketing..." value="' + (u.rol||'') + '"></div>';
   html += '</div>';
   html += '<label class="form-label" style="display:block;margin-bottom:10px">Secciones con acceso</label>';
   html += '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">';
@@ -3559,6 +3617,7 @@ async function guardarUsuario() {
     return USUARIOS_CONFIG[n].pin === pin && n !== nombreOriginal;
   });
   if (pinDuplicado) { showToast('Ese PIN ya lo usa ' + pinDuplicado); return; }
+  var rol = ((document.getElementById('ued-rol')||{}).value || '').trim();
   var secciones = ALL_SECS.filter(function(sec){ var el=document.getElementById('ucd-'+sec.id); return el && el.checked; }).map(function(s){ return s.id; });
   var adminRO = (document.getElementById('ued-adminro')||{}).checked || false;
   // Si cambió el nombre, eliminar la clave vieja
@@ -3572,7 +3631,7 @@ async function guardarUsuario() {
       if (greetEl) greetEl.textContent = 'Hola ' + nombreNuevo;
     }
   }
-  USUARIOS_CONFIG[nombreNuevo] = { pin:pin, secciones:secciones, adminRO:adminRO };
+  USUARIOS_CONFIG[nombreNuevo] = { pin:pin, rol:rol, secciones:secciones, adminRO:adminRO };
   try {
     await dbSet('/config/usuarios', USUARIOS_CONFIG);
     showToast('✓ Guardado');
