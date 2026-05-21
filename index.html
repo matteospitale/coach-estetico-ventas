@@ -937,7 +937,7 @@ body.admin-ro .admin-edit { display:none!important; }
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Valor oficial</th><th>Pago alumno</th><th>Descuento</th><th>Monto neto</th><th>Neto Local</th><th>M. Final USD</th><th>M. Final ARS</th><th>Estado</th><th style="width:36px"></th>
+              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Valor oficial</th><th>Pago alumno</th><th>Descuento</th><th>Venta neta</th><th style="border-left:2px solid var(--border)">M.Final USD</th><th>= USD</th><th style="border-left:2px solid var(--border)">M.Final ARS</th><th>= ARS</th><th>Estado</th><th style="width:36px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -2393,49 +2393,61 @@ function renderAdmin() {
   if (totalEl) totalEl.textContent = vf.length + ' ventas · $' + totalMes.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD aprobado';
   document.getElementById('admin-title').textContent = 'Administración';
   const tbody = document.getElementById('admin-body');
-  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
+  if (!vf.length) { tbody.innerHTML = '<tr><td colspan="15"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
 
   tbody.innerHTML = vf.map(function(v) {
     const est = v.estado || 'Pendiente';
     const expanded = adminExpandidos.has(v._key);
     const com = parseFloat(v.adminComision||0);
     const pagoAlumno = parseFloat(v.monto||0);
-    const descPct = parseFloat(v.descuento||0);
-    const montoNeto = v.montoNeto ? parseFloat(v.montoNeto) : (descPct > 0 ? pagoAlumno * (1 - descPct/100) : pagoAlumno);
-    // Final USD/ARS: stored or computed from formula fields
-    const mFinalUSD = v.montoFinalUSD || '';
-    const mFinalARS = v.montoFinalARS || '';
-    const montoComision = com > 0 ? (montoNeto * com / 100).toFixed(2) : '';
+
+    // Descuento: tipo % o monto exacto
+    var descuentoTipo = v.descuentoTipo || 'pct';
+    var descPct = descuentoTipo === 'pct' ? parseFloat(v.descuento||0) : 0;
+    var descuentoMontoVal = descuentoTipo === 'monto' ? parseFloat(v.descuentoMonto||0) : 0;
 
     var esHotmart = v.pago === 'Hotmart';
     var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
     var esBs = v.pago === 'Bolívares';
-    // Moneda del alumno según forma de pago (no según país)
+    var esZelle = v.pago === 'Zelle';
+
+    // Moneda del alumno según forma de pago
     var localCurrencyMap = {
       'Link Mercado Pago Argentina':'ARS', 'Transferencia Argentina':'ARS',
       'Bolívares':'Bs',
       'Zelle':'USD', 'Hotmart':'USD',
       'Pesos Chilenos':'CLP', 'Pesos Dominicanos':'DOP',
       'Pesos Colombianos':'COP', 'Pesos Peruanos':'PEN',
-      'PayPal':''  // multidivisa — solo monto
+      'PayPal':''
     };
     var pagoEnMapa = Object.prototype.hasOwnProperty.call(localCurrencyMap, v.pago||'');
     var montoLocalNum = parseFloat(v.montoLocal || 0);
     var currLabel = pagoEnMapa ? localCurrencyMap[v.pago] : '';
+
+    // Monto efectivo del alumno: Hotmart = valor oficial USD; otros = montoLocal
+    var montoEfectivo = esHotmart ? pagoAlumno : montoLocalNum;
+
+    // Venta neta = montoEfectivo − descuento (en la misma moneda que pago alumno)
+    var ventaNeta = descuentoTipo === 'pct'
+      ? montoEfectivo * (1 - descPct / 100)
+      : Math.max(0, montoEfectivo - descuentoMontoVal);
+
     // Solo ARS y Bs necesitan TC para convertir a USD
     var esLocalConTC = (esARS || esBs) && montoLocalNum > 0;
-    var montoNetoLocal = esLocalConTC ? montoLocalNum * (1 - descPct / 100) : null;
-    var pagoLocalARS = esARS && montoNetoLocal !== null ? montoNetoLocal : null;
+    var pagoLocalARS = esARS ? ventaNeta : null;
     var adminTC = parseFloat(v.adminTC || 0);
-    var valFinalUSD = esHotmart
-      ? montoNeto
-      : (esLocalConTC && adminTC > 0 ? montoNetoLocal / adminTC : calcFinal(v.montoFinalUSD, esLocalConTC && montoNetoLocal !== null ? montoNetoLocal : montoNeto));
-    var valFinalARS = esARS ? pagoLocalARS : calcFinal(v.montoFinalARS, montoNeto);
+
+    // M. Final USD: auto para Hotmart/Zelle (=ventaNeta en USD), TC para ARS/Bs, fórmula para resto
+    var valFinalUSD = (esHotmart || esZelle)
+      ? ventaNeta
+      : (esLocalConTC && adminTC > 0 ? ventaNeta / adminTC : calcFinal(v.montoFinalUSD, ventaNeta));
+    var valFinalARS = esARS ? pagoLocalARS : calcFinal(v.montoFinalARS, ventaNeta);
+    var montoComision = com > 0 ? (pagoAlumno * com / 100).toFixed(2) : '';
 
     let expandedHtml = '';
     if (expanded) {
       expandedHtml = '<tr id="admin-exp-' + v._key + '" style="background:var(--surface2)">' +
-        '<td colspan="14" style="padding:0">' +
+        '<td colspan="15" style="padding:0">' +
           '<div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">' +
 
             // Datos del lead
@@ -2489,25 +2501,33 @@ function renderAdmin() {
       '</tr>';
     }
 
-    var cellFinalUSD = esHotmart
-      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>'
-      : (esLocalConTC && adminTC > 0 && montoNetoLocal !== null
-          ? '<div><span style="font-size:13px;font-weight:700;color:var(--text)">$' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><div style="font-size:10px;color:var(--text3)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ' + currLabel + ' ÷ ' + adminTC + '</div></div>'
-          : '<div class="admin-formula-cell"><input class="admin-inline-input" style="width:62px" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' + (valFinalUSD !== null ? '<span class="admin-formula-result">$' + valFinalUSD.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' : '') + '</div>');
-    var cellMontoNetoLocal = montoNetoLocal !== null
-      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>'
-      : (valFinalARS !== null
-          ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">ARS</span>'
-          : '<span style="color:var(--text3);font-size:11px">—</span>');
-    var cellFinalARS = esARS
-      ? (pagoLocalARS !== null ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '<span style="color:var(--text3);font-size:11px">—</span>')
-      : '<div class="admin-formula-cell"><input class="admin-inline-input" style="width:62px" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valFinalARS !== null ? '<span class="admin-formula-result">$' + valFinalARS.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' : '') + '</div>';
-    // cellPagoLocal: muestra el monto del alumno con la divisa según la forma de pago
+    // cellPagoLocal: pago alumno con divisa según forma de pago (Hotmart = valor oficial)
     var cellPagoLocal = pagoEnMapa
-      ? (montoLocalNum > 0
-          ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + montoLocalNum.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' +
+      ? (montoEfectivo > 0
+          ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + montoEfectivo.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' +
             (currLabel ? '<span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>' : '')
           : '<span style="color:var(--text3);font-size:11px">—</span>')
+      : '<span style="color:var(--text3);font-size:11px">—</span>';
+    // cellVentaNeta: ventaNeta con divisa del pago alumno
+    var cellVentaNeta = montoEfectivo > 0
+      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + ventaNeta.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' +
+        (currLabel ? '<span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>' : '')
+      : '<span style="color:var(--text3);font-size:11px">—</span>';
+    // M.Final USD: formula + result (auto para Hotmart/Zelle, ÷TC para ARS/Bs con TC, input para el resto)
+    var cellFinalUSDFormula = (esHotmart || esZelle)
+      ? '<span style="font-size:11px;color:var(--text3)">Auto</span>'
+      : (esLocalConTC && adminTC > 0
+          ? '<span style="font-size:11px;color:var(--text3)">÷' + adminTC + '</span>'
+          : '<input class="admin-inline-input" style="width:62px" value="' + escAdm(v.montoFinalUSD||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">');
+    var cellFinalUSDResult = valFinalUSD !== null
+      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + valFinalUSD.toLocaleString('en-US',{maximumFractionDigits:2}) + '</span>'
+      : '<span style="color:var(--text3);font-size:11px">—</span>';
+    // M.Final ARS: formula + result (auto para ARS, input para el resto)
+    var cellFinalARSFormula = esARS
+      ? '<span style="font-size:11px;color:var(--text3)">Auto</span>'
+      : '<input class="admin-inline-input" style="width:62px" value="' + escAdm(v.montoFinalARS||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">';
+    var cellFinalARSResult = valFinalARS !== null
+      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + valFinalARS.toLocaleString('en-US',{maximumFractionDigits:2}) + '</span>'
       : '<span style="color:var(--text3);font-size:11px">—</span>';
     return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
@@ -2517,11 +2537,20 @@ function renderAdmin() {
       '<td style="font-size:12px;color:var(--text2)">' + (v.pais||'—') + '</td>' +
       '<td style="font-size:13px;font-weight:700;color:var(--text)">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellPagoLocal + '</td>' +
-      '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:3px"><input type="number" class="admin-inline-input" style="width:46px;text-align:center" value="' + (descPct||0) + '" min="0" max="100" placeholder="0" onclick="event.stopPropagation()" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)"><span style="font-size:11px;color:var(--text3)">%</span></div></td>' +
-      '<td style="font-size:13px;font-weight:700;color:var(--text)">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
-      '<td style="padding:6px 8px;text-align:right">' + cellMontoNetoLocal + '</td>' +
-      '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellFinalUSD + '</td>' +
-      '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellFinalARS + '</td>' +
+      '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center">' +
+        '<div style="display:flex;align-items:center;justify-content:center;gap:3px">' +
+          '<input type="number" class="admin-inline-input" style="width:52px;text-align:center" value="' + (descuentoTipo==='pct' ? (descPct||0) : (descuentoMontoVal||0)) + '" min="0" placeholder="0" onclick="event.stopPropagation()" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)">' +
+          '<select class="admin-inline-input" style="width:42px;padding:2px 2px;font-size:11px" onclick="event.stopPropagation()" onchange="adminUpdateDescuentoTipo(\'' + v._key + '\',this.value)">' +
+            '<option value="pct"' + (descuentoTipo==='pct'?' selected':'') + '>%</option>' +
+            '<option value="monto"' + (descuentoTipo==='monto'?' selected':'') + '>$</option>' +
+          '</select>' +
+        '</div>' +
+      '</td>' +
+      '<td style="padding:6px 8px">' + cellVentaNeta + '</td>' +
+      '<td onclick="event.stopPropagation()" style="padding:6px 8px;border-left:2px solid var(--border)">' + cellFinalUSDFormula + '</td>' +
+      '<td style="padding:6px 8px">' + cellFinalUSDResult + '</td>' +
+      '<td onclick="event.stopPropagation()" style="padding:6px 8px;border-left:2px solid var(--border)">' + cellFinalARSFormula + '</td>' +
+      '<td style="padding:6px 8px">' + cellFinalARSResult + '</td>' +
       '<td onclick="event.stopPropagation()"><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
         '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
         '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
@@ -2815,14 +2844,24 @@ async function updateAdminField(key, field, value) {
 }
 // Sync-first helpers (update local array before rendering, fire Firebase in background)
 function adminUpdateDescuento(key, rawVal) {
-  var desc = parseFloat(rawVal)||0;
+  var val = parseFloat(rawVal)||0;
   var v = ventas.find(function(x){return x._key===key;});
   if (!v) return;
-  var pago = parseFloat(v.monto||0);
-  var neto = parseFloat((pago*(1-desc/100)).toFixed(2));
-  v.descuento = desc; v.montoNeto = neto;
-  dbSet('/ventas/'+key+'/descuento', desc);
-  dbSet('/ventas/'+key+'/montoNeto', neto);
+  var tipo = v.descuentoTipo || 'pct';
+  if (tipo === 'pct') {
+    v.descuento = val;
+    dbSet('/ventas/'+key+'/descuento', val);
+  } else {
+    v.descuentoMonto = val;
+    dbSet('/ventas/'+key+'/descuentoMonto', val);
+  }
+  renderAdmin();
+}
+function adminUpdateDescuentoTipo(key, tipo) {
+  var v = ventas.find(function(x){return x._key===key;});
+  if (!v) return;
+  v.descuentoTipo = tipo;
+  dbSet('/ventas/'+key+'/descuentoTipo', tipo);
   renderAdmin();
 }
 function adminUpdateFinal(key, campo, rawVal) {
