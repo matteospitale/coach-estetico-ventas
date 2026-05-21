@@ -903,9 +903,8 @@ body.admin-ro .admin-edit { display:none!important; }
       <div class="section-header">
         <div class="section-title" id="admin-title">Administración</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <div id="admin-total-mes" style="font-size:13px;font-weight:700;color:var(--text);background:var(--surface2);padding:6px 12px;border-radius:8px;white-space:nowrap"></div>
-          <div id="admin-cartera-wrap" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"></div>
           <div id="admin-cierre-btn-wrap" style="display:flex;align-items:center;gap:6px"></div>
+          <div id="admin-cartera-wrap" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"></div>
           <button class="btn btn-ghost" onclick="abrirNotificaciones()" style="position:relative" title="Notificaciones">
             🔔 <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:#fff;border-radius:50%;font-size:10px;font-weight:700;width:16px;height:16px;line-height:16px;text-align:center">0</span>
           </button>
@@ -2471,14 +2470,11 @@ function renderAdmin() {
     }
     return true;
   });
-  // Total del mes visible
-  const totalMes = vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).reduce(function(s,v){ return s + parseFloat(v.montoNeto||v.monto||0); }, 0);
-  const totalEl = document.getElementById('admin-total-mes');
-  if (totalEl) totalEl.textContent = vf.length + ' ventas · $' + totalMes.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD aprobado';
-  // Cartera USD & ARS por asesor (M.Final de ventas aprobadas)
+  // Cartera USD & ARS — total + Matteo + Facundo
   var carteraByAsesor = {};
   var carteraUSDTotal = 0, carteraARSTotal = 0;
-  vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).forEach(function(v) {
+  // Use ALL ventas (not filtered) for cartera — shows full portfolio
+  ventas.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).forEach(function(v) {
     var a = v.asesor || 'Sin asesor';
     if (!carteraByAsesor[a]) carteraByAsesor[a] = { usd: 0, ars: 0 };
     var vals = computeValFinales(v);
@@ -2487,43 +2483,34 @@ function renderAdmin() {
   });
   var carteraWrap = document.getElementById('admin-cartera-wrap');
   if (carteraWrap) {
-    var _aOrd = ['Matteo','Facundo','Dianela','Stefany','Ruben'];
-    var _aBadgeCols = {Matteo:'#3B6B9E',Facundo:'#4A8C5C',Dianela:'#9B5E9B',Stefany:'#b87333',Ruben:'#888'};
-    var carteraKeys = Object.keys(carteraByAsesor).sort(function(a,b){
-      var ia=_aOrd.indexOf(a),ib=_aOrd.indexOf(b);
-      if(ia===-1)ia=99;if(ib===-1)ib=99;return ia!==ib?ia-ib:a.localeCompare(b);
-    });
+    var fmtUSD = function(n){ return '$' + n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' USD'; };
+    var fmtARS = function(n){ return '$' + n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' ARS'; };
     var carteraHTML = '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);padding:4px 4px 4px 0">Cartera</span>';
-    if (carteraARSTotal > 0) carteraHTML += '<span style="font-size:12px;font-weight:700;color:#4A8C5C;background:rgba(74,140,92,0.12);padding:4px 10px;border-radius:999px;white-space:nowrap">$' + carteraARSTotal.toLocaleString('en-US',{maximumFractionDigits:0}) + ' ARS</span>';
-    if (carteraUSDTotal > 0) carteraHTML += '<span style="font-size:12px;font-weight:700;color:#3B6B9E;background:rgba(59,107,158,0.12);padding:4px 10px;border-radius:999px;white-space:nowrap">$' + carteraUSDTotal.toLocaleString('en-US',{maximumFractionDigits:0}) + ' USD</span>';
-    if (carteraKeys.length > 1) {
-      carteraHTML += '<span style="color:var(--border);font-size:14px">|</span>';
-      carteraKeys.forEach(function(a) {
-        var d = carteraByAsesor[a];
-        var col = _aBadgeCols[a] || '#888';
-        var parts = [];
-        if (d.ars > 0) parts.push('$' + d.ars.toLocaleString('en-US',{maximumFractionDigits:0}) + ' ARS');
-        if (d.usd > 0) parts.push('$' + d.usd.toLocaleString('en-US',{maximumFractionDigits:0}) + ' USD');
-        if (parts.length) carteraHTML += '<span style="font-size:11px;font-weight:600;color:' + col + ';white-space:nowrap">' + a + ': ' + parts.join(' · ') + '</span>';
-      });
-    }
+    // Totales generales
+    carteraHTML += '<span style="font-size:12px;font-weight:700;color:#3B6B9E;background:rgba(59,107,158,0.12);padding:4px 10px;border-radius:999px;white-space:nowrap">' + fmtUSD(carteraUSDTotal) + '</span>';
+    if (carteraARSTotal > 0) carteraHTML += '<span style="font-size:12px;font-weight:700;color:#4A8C5C;background:rgba(74,140,92,0.12);padding:4px 10px;border-radius:999px;white-space:nowrap">' + fmtARS(carteraARSTotal) + '</span>';
+    // Matteo
+    var mD = carteraByAsesor['Matteo'] || { usd:0, ars:0 };
+    carteraHTML += '<span style="color:var(--border);font-size:14px">|</span>';
+    carteraHTML += '<span style="font-size:11px;font-weight:600;color:#3B6B9E;white-space:nowrap">Matteo: ' + fmtUSD(mD.usd) + (mD.ars > 0 ? ' · ' + fmtARS(mD.ars) : '') + '</span>';
+    // Facundo
+    var fD = carteraByAsesor['Facundo'] || { usd:0, ars:0 };
+    carteraHTML += '<span style="font-size:11px;font-weight:600;color:#4A8C5C;white-space:nowrap">Facundo: ' + fmtUSD(fD.usd) + (fD.ars > 0 ? ' · ' + fmtARS(fD.ars) : '') + '</span>';
     carteraWrap.innerHTML = carteraHTML;
   }
-  // Cierre de mes button — usa el mes global del header
+  // Cierre de mes — siempre visible, usa el mes global (o mes actual si está en "todos")
   var cierreBtnWrap = document.getElementById('admin-cierre-btn-wrap');
   if (cierreBtnWrap) {
-    var mesParaCierre = getMesVal();
-    if (mesParaCierre && mesParaCierre !== 'all') {
-      var esCerrado = !!cierres[mesParaCierre];
-      if (esCerrado) {
-        cierreBtnWrap.innerHTML =
-          '<span style="font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;background:rgba(0,0,0,0.07);color:var(--text3)">🔒 ' + mesLabel(mesParaCierre) + ' cerrado</span>' +
-          (usuarioActual === 'Dianela' ? ' <button class="btn btn-ghost" style="font-size:12px" onclick="abrirMes(\'' + mesParaCierre + '\')">Reabrir</button>' : '');
-      } else {
-        cierreBtnWrap.innerHTML = '<button class="btn btn-ghost" style="font-size:12px;color:var(--accent);border-color:rgba(182,31,58,0.3)" onclick="cerrarMes(\'' + mesParaCierre + '\')">🔒 Cierre de mes</button>';
-      }
+    var _mv = getMesVal();
+    var hoyRef = new Date();
+    var mesParaCierre = (_mv && _mv !== 'all') ? _mv : (hoyRef.getFullYear() + '-' + String(hoyRef.getMonth()+1).padStart(2,'0'));
+    var esCerrado = !!cierres[mesParaCierre];
+    if (esCerrado) {
+      cierreBtnWrap.innerHTML =
+        '<span style="font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;background:rgba(0,0,0,0.07);color:var(--text3)">🔒 ' + mesLabel(mesParaCierre) + ' cerrado</span>' +
+        (usuarioActual === 'Dianela' ? ' <button class="btn btn-ghost" style="font-size:12px" onclick="abrirMes(\'' + mesParaCierre + '\')">Reabrir</button>' : '');
     } else {
-      cierreBtnWrap.innerHTML = '';
+      cierreBtnWrap.innerHTML = '<button class="btn btn-ghost" style="font-size:12px;color:var(--accent);border-color:rgba(182,31,58,0.3)" onclick="cerrarMes(\'' + mesParaCierre + '\')">🔒 Cierre de mes</button>';
     }
   }
   document.getElementById('admin-title').textContent = 'Administración';
@@ -3793,6 +3780,22 @@ async function cargarUsuariosConfig() {
     const data = await dbGet('/config/usuarios');
     if (data && typeof data === 'object' && Object.keys(data).length > 0) {
       USUARIOS_CONFIG = data;
+      // Merge any secciones from USUARIOS_DEFAULT that are missing in Firebase data
+      // (happens when new tabs are added after config was saved)
+      var needsSave = false;
+      Object.keys(USUARIOS_DEFAULT).forEach(function(nombre) {
+        if (!USUARIOS_CONFIG[nombre]) return;
+        var defSecs = USUARIOS_DEFAULT[nombre].secciones || [];
+        var curSecs = USUARIOS_CONFIG[nombre].secciones || [];
+        defSecs.forEach(function(s) {
+          if (!curSecs.includes(s)) { curSecs.push(s); needsSave = true; }
+        });
+        if (needsSave) USUARIOS_CONFIG[nombre].secciones = curSecs;
+      });
+      if (needsSave) {
+        // Save merged config back to Firebase silently
+        dbSet('/config/usuarios', USUARIOS_CONFIG).catch(function(){});
+      }
     } else {
       USUARIOS_CONFIG = JSON.parse(JSON.stringify(USUARIOS_DEFAULT));
       await dbSet('/config/usuarios', USUARIOS_CONFIG);
@@ -3831,7 +3834,7 @@ function logout() {
   const btnNV = document.getElementById('btn-nueva-venta-nav');
   if (btnNV) btnNV.style.display = 'none';
   // Ocultar todas las secciones del nav
-  ['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'].forEach(tab => {
+  ['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'].forEach(tab => {
     const el = document.getElementById('nav-'+tab);
     if (el) el.style.display = 'none';
     const mel = document.getElementById('mnav-'+tab);
@@ -3847,7 +3850,7 @@ function aplicarPermisos() {
   const u = USUARIOS_CONFIG[usuarioActual];
 
   // Mostrar/ocultar nav items según secciones del usuario
-  const todasSecs = ['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'];
+  const todasSecs = ['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'];
   todasSecs.forEach(tab => {
     const visible = (u.secciones || []).includes(tab);
     const el = document.getElementById('nav-'+tab); if (el) el.style.display = visible ? '' : 'none';
@@ -4241,7 +4244,25 @@ init();
 <div id="login-overlay">
   <div id="login-card">
     <div id="login-left">
-      <div id="login-logo-text" style="font-size:38px;font-weight:800;color:#b61f3a;letter-spacing:-0.04em;line-height:1;margin-bottom:6px">CE</div>
+      <div id="login-logo-text" style="margin-bottom:6px;display:flex;justify-content:center">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="36" cy="36" r="34" fill="#b61f3a"/>
+          <circle cx="36" cy="36" r="34" fill="url(#lg1)" opacity="0.25"/>
+          <defs>
+            <radialGradient id="lg1" cx="35%" cy="30%" r="60%">
+              <stop offset="0%" stop-color="#fff"/>
+              <stop offset="100%" stop-color="#b61f3a"/>
+            </radialGradient>
+          </defs>
+          <!-- Stylised C arc -->
+          <path d="M50 22.5C45.5 18.2 39.2 16 32.5 17.2C22.8 18.8 15.5 27.5 16 37.5C16.5 47.5 24.5 55.5 34.5 55.8C40.8 56 46.5 53.5 50.5 49.2" stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
+          <!-- E strokes -->
+          <line x1="53" y1="27" x2="53" y2="45" stroke="white" stroke-width="5.5" stroke-linecap="round"/>
+          <line x1="53" y1="27" x2="62" y2="27" stroke="white" stroke-width="5" stroke-linecap="round"/>
+          <line x1="53" y1="36" x2="61" y2="36" stroke="white" stroke-width="5" stroke-linecap="round"/>
+          <line x1="53" y1="45" x2="62" y2="45" stroke="white" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </div>
       <div id="login-brand">Coach Estético</div>
       <div id="login-sub">Hub de ventas</div>
     </div>
