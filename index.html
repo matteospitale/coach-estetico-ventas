@@ -837,7 +837,7 @@ body.admin-ro .admin-edit { display:none!important; }
           <!-- Fila 4: Canal · País · ID Lead · Teléfono -->
           <div class="form-group">
             <label class="form-label">Canal *</label>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+            <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px">
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)">
                 <input type="radio" name="canal" value="Instagram" style="accent-color:#C13584;width:15px;height:15px" onchange="actualizarCompletitud()"> Instagram
               </label>
@@ -2936,11 +2936,14 @@ function _buildClienteMap() {
   var map = {};
   ventas.forEach(function(v) {
     var key = (v.email||'').toLowerCase().trim() || ('noemail_' + (v.lead||v._key));
-    if (!map[key]) map[key] = { _key: key, email: v.email||'', nombre: v.nombre||'', pais: v.pais||'', lead: v.lead||'', ventas: [] };
+    if (!map[key]) map[key] = { _key: key, email: v.email||'', nombre: v.nombre||'', apellido: v.apellido||'', pais: v.pais||'', lead: v.lead||'', telefono: v.telefono||'', asesor: v.asesor||'', ventas: [] };
     map[key].ventas.push(v);
     if (!map[key].nombre && v.nombre) map[key].nombre = v.nombre;
+    if (!map[key].apellido && v.apellido) map[key].apellido = v.apellido;
     if (!map[key].pais && v.pais) map[key].pais = v.pais;
     if (!map[key].lead && v.lead) map[key].lead = v.lead;
+    if (!map[key].telefono && v.telefono) map[key].telefono = v.telefono;
+    if (!map[key].asesor && v.asesor) map[key].asesor = v.asesor;
   });
   return map;
 }
@@ -3045,7 +3048,7 @@ function renderClientes() {
         '<div style="display:flex;align-items:center;gap:10px;min-width:0">' +
           '<div style="width:32px;height:32px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--accent);flex-shrink:0">' + ini + '</div>' +
           '<div style="min-width:0">' +
-            '<div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (cl.nombre||'Sin nombre') + '</div>' +
+            '<div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (cl.apellido ? (cl.nombre||'') + ' ' + cl.apellido : (cl.nombre||'Sin nombre')) + '</div>' +
             '<div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (cl.email||'—') + '</div>' +
           '</div>' +
         '</div>' +
@@ -3079,10 +3082,12 @@ function _renderClienteDetalle(cl, body) {
   var ini = (cl.nombre||cl.email||'?').charAt(0).toUpperCase();
 
   body.innerHTML =
-    // ── Botón volver ──
-    '<div style="margin-bottom:18px">' +
+    // ── Botón volver + editar ──
+    '<div style="margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">' +
       '<button onclick="volverClientes()" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text);font-family:inherit;transition:background 0.15s;display:inline-flex;align-items:center;gap:6px"' +
         ' onmouseenter="this.style.background=\'var(--surface)\'" onmouseleave="this.style.background=\'var(--surface2)\'">← Alumnos</button>' +
+      '<button onclick="editarCliente(\'' + cl._key.replace(/'/g,"\\'") + '\')" style="background:var(--accent-light);border:1px solid rgba(182,31,58,0.25);border-radius:var(--radius);padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--accent);font-family:inherit;transition:background 0.15s;display:inline-flex;align-items:center;gap:6px"' +
+        ' onmouseenter="this.style.background=\'rgba(182,31,58,0.18)\'" onmouseleave="this.style.background=\'var(--accent-light)\'">✏️ Editar alumno</button>' +
     '</div>' +
 
     // ── Perfil + métricas ──
@@ -3090,7 +3095,7 @@ function _renderClienteDetalle(cl, body) {
       '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
         '<div style="width:54px;height:54px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;color:var(--accent);flex-shrink:0">' + ini + '</div>' +
         '<div style="flex:1;min-width:180px">' +
-          '<div style="font-size:21px;font-weight:700;color:var(--text)">' + (cl.nombre||'Sin nombre') + '</div>' +
+          '<div style="font-size:21px;font-weight:700;color:var(--text)">' + (cl.apellido ? (cl.nombre||'') + ' ' + cl.apellido : (cl.nombre||'Sin nombre')) + '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;align-items:center">' +
             (cl.email ? '<span style="font-size:12px;color:var(--text3)">' + cl.email + '</span>' : '') +
             (cl.pais ? '<span style="font-size:11px;background:var(--surface2);color:var(--text2);border-radius:20px;padding:2px 10px">' + cl.pais + '</span>' : '') +
@@ -3185,6 +3190,81 @@ function _renderClienteDetalle(cl, body) {
 
       '</div>' + // fin columna derecha
     '</div>'; // fin grid
+}
+
+// ── EDITAR ALUMNO ──
+function editarCliente(clKey) {
+  var map = _buildClienteMap();
+  var cl = map[clKey];
+  if (!cl) return;
+  document.getElementById('ec-nombre').value    = cl.nombre   || '';
+  document.getElementById('ec-apellido').value  = cl.apellido || '';
+  document.getElementById('ec-email').value     = cl.email    || '';
+  document.getElementById('ec-lead').value      = cl.lead     || '';
+  document.getElementById('ec-telefono').value  = cl.telefono || '';
+  var aseSel = document.getElementById('ec-asesor');
+  if (aseSel) aseSel.value = cl.asesor || '';
+  window._editandoClienteKey = clKey;
+  document.getElementById('modal-editar-cliente').classList.add('show');
+}
+
+async function guardarEdicionCliente() {
+  var clKey = window._editandoClienteKey;
+  if (!clKey) return;
+  var map = _buildClienteMap();
+  var cl = map[clKey];
+  if (!cl) return;
+
+  var nuevoNombre   = (document.getElementById('ec-nombre').value   || '').trim();
+  var nuevoApellido = (document.getElementById('ec-apellido').value || '').trim();
+  var nuevoEmail    = (document.getElementById('ec-email').value    || '').trim().toLowerCase();
+  var nuevoLead     = (document.getElementById('ec-lead').value     || '').trim();
+  var nuevoTelefono = (document.getElementById('ec-telefono').value || '').trim();
+  var nuevoAsesor   = (document.getElementById('ec-asesor').value   || '').trim();
+
+  if (!nuevoNombre || !nuevoEmail) { showToast('Nombre y email son obligatorios'); return; }
+
+  var btn = document.getElementById('ec-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  var promises = cl.ventas.map(function(v) {
+    var updated = Object.assign({}, v);
+    updated.nombre    = nuevoNombre;
+    updated.apellido  = nuevoApellido;
+    updated.email     = nuevoEmail;
+    updated.lead      = nuevoLead;
+    updated.telefono  = nuevoTelefono;
+    if (nuevoAsesor) updated.asesor = nuevoAsesor;
+    delete updated._key;
+    return dbSet('/ventas/' + v._key, updated);
+  });
+
+  await Promise.all(promises);
+
+  // Update local ventas array
+  ventas.forEach(function(v) {
+    if ((v.email||'').toLowerCase().trim() === clKey || v._key && cl.ventas.some(function(cv){ return cv._key === v._key; })) {
+      v.nombre    = nuevoNombre;
+      v.apellido  = nuevoApellido;
+      v.email     = nuevoEmail;
+      v.lead      = nuevoLead;
+      v.telefono  = nuevoTelefono;
+      if (nuevoAsesor) v.asesor = nuevoAsesor;
+    }
+  });
+
+  // New key is the (possibly changed) email
+  clienteDetalle = nuevoEmail;
+
+  document.getElementById('modal-editar-cliente').classList.remove('show');
+  if (btn) { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+
+  showToast('✓ Alumno actualizado correctamente');
+  renderClientes();
+}
+
+function cerrarEditarCliente() {
+  document.getElementById('modal-editar-cliente').classList.remove('show');
 }
 
 // ── MATTEO Y FACU ──
@@ -3477,8 +3557,6 @@ function intentarLogin() {
 document.addEventListener('keydown', function(e) {
   var overlay = document.getElementById('login-overlay');
   if (!overlay || overlay.style.display === 'none') return;
-  var step2 = document.getElementById('login-step2');
-  if (!step2 || step2.style.display === 'none') return;
   if (e.key >= '0' && e.key <= '9') pinKey(e.key);
   else if (e.key === 'Backspace') pinKey('del');
 });
@@ -3657,6 +3735,49 @@ async function eliminarUsuario(nombre) {
 document.getElementById('f-fecha').valueAsDate = new Date();
 init();
 </script>
+
+<!-- MODAL EDITAR ALUMNO -->
+<div class="modal-overlay" id="modal-editar-cliente">
+  <div class="modal" style="max-width:480px;width:96vw">
+    <div class="modal-title" style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">✏️</span> Editar alumno
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Nombre *</label>
+        <input type="text" class="form-input" id="ec-nombre" placeholder="Ej: Antonia">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Apellido</label>
+        <input type="text" class="form-input" id="ec-apellido" placeholder="Ej: García">
+      </div>
+      <div class="form-group" style="margin-bottom:0;grid-column:1/-1">
+        <label class="form-label">Email *</label>
+        <input type="email" class="form-input" id="ec-email" placeholder="Ej: alumna@gmail.com">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">⚠️ Cambiar el email actualiza todas las ventas de este alumno</div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">ID Lead Kommo</label>
+        <input type="text" class="form-input" id="ec-lead" placeholder="Ej: 123456">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Teléfono</label>
+        <input type="text" class="form-input" id="ec-telefono" placeholder="Ej: +54911...">
+      </div>
+      <div class="form-group" style="margin-bottom:0;grid-column:1/-1">
+        <label class="form-label">Asesor</label>
+        <select class="form-select" id="ec-asesor">
+          <option value="">Sin cambiar</option>
+          <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Stefany</option><option>Ruben</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarEditarCliente()">Cancelar</button>
+      <button class="btn btn-accent" id="ec-save-btn" onclick="guardarEdicionCliente()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
 
 <!-- LOGIN OVERLAY -->
 <div id="login-overlay">
