@@ -902,6 +902,9 @@ body.admin-ro .admin-edit { display:none!important; }
         <div class="section-title" id="admin-title">Administración</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div id="admin-total-mes" style="font-size:13px;font-weight:700;color:var(--text);background:var(--surface2);padding:6px 12px;border-radius:8px;white-space:nowrap"></div>
+          <div id="admin-cartera-usd" style="font-size:13px;font-weight:700;color:#3B6B9E;background:rgba(59,107,158,0.12);padding:6px 12px;border-radius:8px;white-space:nowrap" title="Cartera USD (M.Final aprobado)">— USD</div>
+          <div id="admin-cartera-ars" style="font-size:13px;font-weight:700;color:#4A8C5C;background:rgba(74,140,92,0.12);padding:6px 12px;border-radius:8px;white-space:nowrap" title="Cartera ARS (M.Final aprobado)">— ARS</div>
+          <div id="admin-cierre-btn-wrap" style="display:flex;align-items:center;gap:6px"></div>
           <button class="btn btn-ghost" onclick="abrirNotificaciones()" style="position:relative" title="Notificaciones">
             🔔 <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:#fff;border-radius:50%;font-size:10px;font-weight:700;width:16px;height:16px;line-height:16px;text-align:center">0</span>
           </button>
@@ -1007,7 +1010,7 @@ body.admin-ro .admin-edit { display:none!important; }
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
 
-let ventas = [], plantillas = [], pendiente = null;
+let ventas = [], plantillas = [], pendiente = null, cierres = {};
 let inicioFiltro = null, modoEdicion = false, seleccionados = new Set();
 let catActual = 'todos', plantillasInicializadas = false;
 
@@ -1057,6 +1060,16 @@ async function loadPlantillas() {
   }
 }
 
+async function loadCierres() {
+  var data = await dbGet('/cierres');
+  if (data) {
+    cierres = {};
+    Object.entries(data).forEach(function(kv) { cierres[kv[0]] = kv[1]; });
+  } else {
+    cierres = {};
+  }
+}
+
 // ── POLLING (refresh every 15s) ──
 async function refreshData() {
   await loadVentas();
@@ -1080,6 +1093,7 @@ async function init() {
       renderLoginUsuarios();
     }
     await loadVentas();
+    await loadCierres();
     document.getElementById('loading-state').style.display = 'none';
     renderAll();
     await loadPlantillas();
@@ -1132,11 +1146,24 @@ function switchTab(t) {
     if (nav) nav.classList.toggle('active', s===t);
   });
   document.getElementById('content-title').textContent = TITLES[t] || '';
-  if (t === 'ventas') { fillMesOptions('fil-mes'); renderTabla(); }
-  if (t === 'inicio') renderResumen();
+  if (t === 'ventas') {
+    fillMesOptions('fil-mes');
+    var _mv = getMesVal();
+    var _fl = document.getElementById('fil-mes');
+    if (_fl && _mv) _fl.value = _mv;
+    renderTabla();
+  }
+  if (t === 'inicio') { renderResumen(); renderInicioDashboard(); }
   if (t === 'stats') renderStats();
   if (t === 'plantillas') renderPlantillas();
-  if (t === 'admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); setTimeout(enforceAdminRO, 50); }
+  if (t === 'admin') {
+    fillMesOptions('admin-fil-mes');
+    var _mv = getMesVal();
+    var _af = document.getElementById('admin-fil-mes');
+    if (_af && _mv) _af.value = _mv;
+    renderAdmin();
+    setTimeout(enforceAdminRO, 50);
+  }
   if (t === 'clientes') { clienteDetalle = null; fillClientesFilters(); var cf=document.getElementById('clientes-filters'); if(cf) cf.style.display=''; renderClientes(); }
   if (t === 'myf') { renderMYF(); }
   if (t === 'cargar') { actualizarCompletitud(); }
@@ -1153,8 +1180,16 @@ function syncMes(src) {
     : document.getElementById('header-mes-sel').value;
   document.getElementById('header-mes-sel').value = val;
   document.getElementById('header-mes-sel-mob').value = val;
+  // Sync section-level month selects
+  var filMes = document.getElementById('fil-mes');
+  if (filMes) filMes.value = val;
+  var adminFilMes = document.getElementById('admin-fil-mes');
+  if (adminFilMes) adminFilMes.value = val;
   renderResumen();
+  renderInicioDashboard();
   if (document.getElementById('sec-stats').classList.contains('active')) renderStats();
+  if (document.getElementById('sec-ventas').classList.contains('active')) renderTabla();
+  if (document.getElementById('sec-admin').classList.contains('active')) renderAdmin();
 }
 
 function fillHeaderMes() {
@@ -1236,9 +1271,12 @@ function renderInicioDashboard() {
   var diasMes = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0).getDate();
   var diaActual = hoy.getDate();
   var diasRestantes = diasMes - diaActual;
-  var mesKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
   var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var fechaStr = diaActual + ' de ' + meses[hoy.getMonth()] + ' ' + hoy.getFullYear();
+  var mesVal = getMesVal();
+  var mesKey = (mesVal && mesVal !== 'all')
+    ? mesVal
+    : (hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0'));
 
   function calcAsesor(nombre) {
     var mv = ventas.filter(function(v){ return v.asesor===nombre && (v.estado||'Pendiente')!=='Rechazada' && (v.fecha||'').startsWith(mesKey); });
@@ -1825,7 +1863,41 @@ function renderStats() {
         '<thead><tr><th>Fecha</th><th>Asesor</th><th>Canal</th><th>USD</th><th>Pago</th><th>Curso</th></tr></thead>' +
         '<tbody id="stats-drill-tbody"></tbody>' +
       '</table></div></div>' +
-    '</div>';
+    '</div>' +
+
+    // ── Cierres de mes ──
+    (function() {
+      var cierresArr = Object.entries(cierres).sort(function(a,b){ return b[0].localeCompare(a[0]); });
+      var rows = cierresArr.length ? cierresArr.map(function(kv) {
+        var k = kv[0], c = kv[1];
+        var fechaTs = c.timestamp ? new Date(c.timestamp) : null;
+        var fechaStr = fechaTs ? fechaTs.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + fechaTs.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '—';
+        return '<tr style="border-bottom:1px solid var(--surface2)">' +
+          '<td style="padding:9px 8px;font-weight:700;color:var(--text)">' + mesLabel(k) + '</td>' +
+          '<td style="padding:9px 8px;text-align:right;font-weight:700;color:#3B6B9E">$' + (c.carteraUSD||0).toLocaleString('en-US',{maximumFractionDigits:0}) + ' <span style="font-size:10px;font-weight:400;color:var(--text3)">USD</span></td>' +
+          '<td style="padding:9px 8px;text-align:right;font-weight:700;color:#4A8C5C">$' + (c.carteraARS||0).toLocaleString('en-US',{maximumFractionDigits:0}) + ' <span style="font-size:10px;font-weight:400;color:var(--text3)">ARS</span></td>' +
+          '<td style="padding:9px 8px;text-align:center;color:var(--text2);font-size:13px">' + (c.ventasCount||0) + '</td>' +
+          '<td style="padding:9px 8px;color:var(--text2);font-size:13px">' + (c.cerradoPor||'—') + '</td>' +
+          '<td style="padding:9px 8px;font-size:11px;color:var(--text3)">' + fechaStr + '</td>' +
+        '</tr>';
+      }).join('') : '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3);font-size:13px">No hay cierres registrados</td></tr>';
+      return '<div class="chart-card" style="margin-bottom:16px">' +
+        '<div class="chart-title">Cierres de mes</div>' +
+        '<div style="overflow-x:auto">' +
+          '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+            '<thead><tr style="border-bottom:1px solid var(--border)">' +
+              '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Mes</th>' +
+              '<th style="text-align:right;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cartera USD</th>' +
+              '<th style="text-align:right;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cartera ARS</th>' +
+              '<th style="text-align:center;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Ventas apr.</th>' +
+              '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cerrado por</th>' +
+              '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Fecha</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+    })();
 
   // Event delegation for stat bars
   document.querySelectorAll('.stat-bar-row').forEach(function(el) {
@@ -2391,6 +2463,34 @@ function renderAdmin() {
   const totalMes = vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).reduce(function(s,v){ return s + parseFloat(v.montoNeto||v.monto||0); }, 0);
   const totalEl = document.getElementById('admin-total-mes');
   if (totalEl) totalEl.textContent = vf.length + ' ventas · $' + totalMes.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD aprobado';
+  // Cartera USD & ARS (M.Final de ventas aprobadas)
+  var carteraUSD = 0, carteraARS = 0;
+  vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).forEach(function(v) {
+    var vals = computeValFinales(v);
+    if (vals.valFinalUSD !== null && !isNaN(vals.valFinalUSD)) carteraUSD += vals.valFinalUSD;
+    if (vals.valFinalARS !== null && !isNaN(vals.valFinalARS)) carteraARS += vals.valFinalARS;
+  });
+  var usdEl = document.getElementById('admin-cartera-usd');
+  var arsEl = document.getElementById('admin-cartera-ars');
+  if (usdEl) usdEl.textContent = '$' + carteraUSD.toLocaleString('en-US',{maximumFractionDigits:0}) + ' USD';
+  if (arsEl) arsEl.textContent = '$' + carteraARS.toLocaleString('en-US',{maximumFractionDigits:0}) + ' ARS';
+  // Cierre de mes button
+  var cierreBtnWrap = document.getElementById('admin-cierre-btn-wrap');
+  if (cierreBtnWrap) {
+    var mesFilVal = document.getElementById('admin-fil-mes').value;
+    if (mesFilVal && mesFilVal !== 'all') {
+      var esCerrado = !!cierres[mesFilVal];
+      if (esCerrado) {
+        cierreBtnWrap.innerHTML =
+          '<span style="font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;background:rgba(0,0,0,0.07);color:var(--text3)">🔒 ' + mesLabel(mesFilVal) + ' cerrado</span>' +
+          (usuarioActual === 'Dianela' ? '<button class="btn btn-ghost" style="font-size:12px" onclick="abrirMes(\'' + mesFilVal + '\')">Reabrir</button>' : '');
+      } else {
+        cierreBtnWrap.innerHTML = '<button class="btn btn-ghost" style="font-size:12px;color:var(--accent);border-color:rgba(182,31,58,0.3)" onclick="cerrarMes(\'' + mesFilVal + '\')">🔒 Cierre de mes</button>';
+      }
+    } else {
+      cierreBtnWrap.innerHTML = '';
+    }
+  }
   document.getElementById('admin-title').textContent = 'Administración';
   const tbody = document.getElementById('admin-body');
   if (!vf.length) { tbody.innerHTML = '<tr><td colspan="15"><div class="empty-state">Sin ventas con esos filtros</div></td></tr>'; return; }
@@ -2443,6 +2543,9 @@ function renderAdmin() {
       : (esLocalConTC && adminTC > 0 ? ventaNeta / adminTC : calcFinal(v.montoFinalUSD, ventaNeta));
     var valFinalARS = esARS ? pagoLocalARS : calcFinal(v.montoFinalARS, ventaNeta);
     var montoComision = com > 0 ? (pagoAlumno * com / 100).toFixed(2) : '';
+    // Mes cerrado: bloquea edición de campos financieros y estado
+    var mesClave = (v.fecha||'').substring(0,7);
+    var mesCerrado = mesClave ? !!cierres[mesClave] : false;
 
     let expandedHtml = '';
     if (expanded) {
@@ -2514,48 +2617,68 @@ function renderAdmin() {
         (currLabel ? '<span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>' : '')
       : '<span style="color:var(--text3);font-size:11px">—</span>';
     // M.Final USD: formula + result (auto para Hotmart/Zelle, ÷TC para ARS/Bs con TC, input para el resto)
-    var cellFinalUSDFormula = (esHotmart || esZelle)
-      ? '<span style="font-size:11px;color:var(--text3)">Auto</span>'
-      : (esLocalConTC && adminTC > 0
-          ? '<span style="font-size:11px;color:var(--text3)">÷' + adminTC + '</span>'
-          : '<input class="admin-inline-input" style="width:62px" value="' + escAdm(v.montoFinalUSD||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">');
+    // Si el mes está cerrado, fórmula se muestra como texto bloqueado
+    var cellFinalUSDFormula = mesCerrado
+      ? '<span style="font-size:11px;color:var(--text3)">🔒</span>'
+      : ((esHotmart || esZelle)
+          ? '<span style="font-size:11px;color:var(--text3)">Auto</span>'
+          : (esLocalConTC && adminTC > 0
+              ? '<span style="font-size:11px;color:var(--text3)">÷' + adminTC + '</span>'
+              : '<input class="admin-inline-input" style="width:62px" value="' + escAdm(v.montoFinalUSD||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">'));
     var cellFinalUSDResult = valFinalUSD !== null
       ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + valFinalUSD.toLocaleString('en-US',{maximumFractionDigits:2}) + '</span>'
       : '<span style="color:var(--text3);font-size:11px">—</span>';
     // M.Final ARS: formula + result (auto para ARS, input para el resto)
-    var cellFinalARSFormula = esARS
-      ? '<span style="font-size:11px;color:var(--text3)">Auto</span>'
-      : '<input class="admin-inline-input" style="width:62px" value="' + escAdm(v.montoFinalARS||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">';
+    var cellFinalARSFormula = mesCerrado
+      ? '<span style="font-size:11px;color:var(--text3)">🔒</span>'
+      : (esARS
+          ? '<span style="font-size:11px;color:var(--text3)">Auto</span>'
+          : '<input class="admin-inline-input" style="width:62px" value="' + escAdm(v.montoFinalARS||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">');
     var cellFinalARSResult = valFinalARS !== null
       ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + valFinalARS.toLocaleString('en-US',{maximumFractionDigits:2}) + '</span>'
       : '<span style="color:var(--text3);font-size:11px">—</span>';
-    return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
-      '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
+    // Celda de descuento: si mes cerrado → solo texto
+    var cellDescuento = mesCerrado
+      ? '<td style="padding:6px 8px;text-align:center;font-size:12px;color:var(--text2)">' +
+          (descuentoTipo==='pct'
+            ? (descPct ? descPct + '%' : '—')
+            : (descuentoMontoVal ? '$' + descuentoMontoVal : '—')) +
+        '</td>'
+      : '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center">' +
+          '<div style="display:flex;align-items:center;justify-content:center;gap:3px">' +
+            '<input type="number" class="admin-inline-input" style="width:52px;text-align:center" value="' + (descuentoTipo==='pct' ? (descPct||0) : (descuentoMontoVal||0)) + '" min="0" placeholder="0" onclick="event.stopPropagation()" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)">' +
+            '<select class="admin-inline-input" style="width:42px;padding:2px 2px;font-size:11px" onclick="event.stopPropagation()" onchange="adminUpdateDescuentoTipo(\'' + v._key + '\',this.value)">' +
+              '<option value="pct"' + (descuentoTipo==='pct'?' selected':'') + '>%</option>' +
+              '<option value="monto"' + (descuentoTipo==='monto'?' selected':'') + '>$</option>' +
+            '</select>' +
+          '</div>' +
+        '</td>';
+    // Estado: si mes cerrado → badge estático
+    var cellEstado = mesCerrado
+      ? '<td><span class="estado-select ' + estadoClass(est) + '">' + est + '</span></td>'
+      : '<td onclick="event.stopPropagation()"><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
+          '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
+          '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
+          '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
+        '</select></td>';
+    return '<tr style="cursor:pointer' + (mesCerrado ? ';opacity:0.88;background:rgba(0,0,0,0.02)' : '') + '" onclick="toggleAdmin(\'' + v._key + '\')">' +
+      '<td class="mono" style="white-space:nowrap">' +
+        (mesCerrado ? '<span style="font-size:10px;color:var(--text3);margin-right:3px">🔒</span>' : '') +
+        ((v.fecha||'').split('-').reverse().join('/') || '—') +
+      '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="font-size:13px;font-weight:500">' + (v.nombre||'<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
       '<td style="font-size:12px;color:var(--text2)">' + (v.pais||'—') + '</td>' +
       '<td style="font-size:13px;font-weight:700;color:var(--text)">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellPagoLocal + '</td>' +
-      '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center">' +
-        '<div style="display:flex;align-items:center;justify-content:center;gap:3px">' +
-          '<input type="number" class="admin-inline-input" style="width:52px;text-align:center" value="' + (descuentoTipo==='pct' ? (descPct||0) : (descuentoMontoVal||0)) + '" min="0" placeholder="0" onclick="event.stopPropagation()" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)">' +
-          '<select class="admin-inline-input" style="width:42px;padding:2px 2px;font-size:11px" onclick="event.stopPropagation()" onchange="adminUpdateDescuentoTipo(\'' + v._key + '\',this.value)">' +
-            '<option value="pct"' + (descuentoTipo==='pct'?' selected':'') + '>%</option>' +
-            '<option value="monto"' + (descuentoTipo==='monto'?' selected':'') + '>$</option>' +
-          '</select>' +
-        '</div>' +
-      '</td>' +
+      cellDescuento +
       '<td style="padding:6px 8px">' + cellVentaNeta + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px;border-left:2px solid var(--border)">' + cellFinalUSDFormula + '</td>' +
       '<td style="padding:6px 8px">' + cellFinalUSDResult + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px;border-left:2px solid var(--border)">' + cellFinalARSFormula + '</td>' +
       '<td style="padding:6px 8px">' + cellFinalARSResult + '</td>' +
-      '<td onclick="event.stopPropagation()"><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
-        '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
-        '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
-        '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
-      '</select></td>' +
+      cellEstado +
       '<td style="text-align:center;color:var(--text3);font-size:16px">' + (expanded ? '▲' : '▼') + '</td>' +
     '</tr>' + expandedHtml;
   }).join('');
@@ -2879,6 +3002,68 @@ function calcFinal(formula, base) {
   var n=parseFloat(f); return isNaN(n)?null:n;
 }
 
+// Helper: calcula M.Final USD y ARS para una venta (para cartera y cierre de mes)
+function computeValFinales(v) {
+  var pagoAlumno = parseFloat(v.monto||0);
+  var descuentoTipo = v.descuentoTipo || 'pct';
+  var descPct = descuentoTipo === 'pct' ? parseFloat(v.descuento||0) : 0;
+  var descuentoMontoVal = descuentoTipo === 'monto' ? parseFloat(v.descuentoMonto||0) : 0;
+  var esHotmart = v.pago === 'Hotmart';
+  var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
+  var esBs = v.pago === 'Bolívares';
+  var esZelle = v.pago === 'Zelle';
+  var montoLocalNum = parseFloat(v.montoLocal || 0);
+  var montoEfectivo = esHotmart ? pagoAlumno : montoLocalNum;
+  var ventaNeta = descuentoTipo === 'pct'
+    ? montoEfectivo * (1 - descPct / 100)
+    : Math.max(0, montoEfectivo - descuentoMontoVal);
+  var esLocalConTC = (esARS || esBs) && montoLocalNum > 0;
+  var adminTC = parseFloat(v.adminTC || 0);
+  var pagoLocalARS = esARS ? ventaNeta : null;
+  var valFinalUSD = (esHotmart || esZelle)
+    ? ventaNeta
+    : (esLocalConTC && adminTC > 0 ? ventaNeta / adminTC : calcFinal(v.montoFinalUSD, ventaNeta));
+  var valFinalARS = esARS ? pagoLocalARS : calcFinal(v.montoFinalARS, ventaNeta);
+  return { valFinalUSD: valFinalUSD, valFinalARS: valFinalARS };
+}
+
+// ── CIERRE DE MES ──
+async function cerrarMes(mes) {
+  if (!confirm('¿Cerrar el mes ' + mesLabel(mes) + '?\nLas ventas de ese mes quedarán bloqueadas y no se podrán editar.')) return;
+  var aprobadas = ventas.filter(function(v) {
+    return (v.fecha||'').startsWith(mes) && (v.estado||'Pendiente') === 'Aprobado';
+  });
+  var totalUSD = 0, totalARS = 0;
+  aprobadas.forEach(function(v) {
+    var vals = computeValFinales(v);
+    if (vals.valFinalUSD !== null && !isNaN(vals.valFinalUSD)) totalUSD += vals.valFinalUSD;
+    if (vals.valFinalARS !== null && !isNaN(vals.valFinalARS)) totalARS += vals.valFinalARS;
+  });
+  var cierre = {
+    cerradoPor: usuarioActual || '—',
+    timestamp: new Date().toISOString(),
+    mes: mes,
+    carteraUSD: Math.round(totalUSD * 100) / 100,
+    carteraARS: Math.round(totalARS * 100) / 100,
+    ventasCount: aprobadas.length
+  };
+  await dbSet('/cierres/' + mes, cierre);
+  cierres[mes] = cierre;
+  showToast('Mes ' + mesLabel(mes) + ' cerrado ✓');
+  renderAdmin();
+  if (document.getElementById('sec-stats').classList.contains('active')) renderStats();
+}
+
+async function abrirMes(mes) {
+  if (usuarioActual !== 'Dianela') { showToast('Solo Dianela puede reabrir un mes cerrado'); return; }
+  if (!confirm('¿Reabrir el mes ' + mesLabel(mes) + '? Se podrán editar las ventas nuevamente.')) return;
+  await dbSet('/cierres/' + mes, null);
+  delete cierres[mes];
+  showToast('Mes ' + mesLabel(mes) + ' reabierto');
+  renderAdmin();
+  if (document.getElementById('sec-stats').classList.contains('active')) renderStats();
+}
+
 
 const PAIS_MONEDA = {
   'Alemania':'EUR','Andorra':'EUR','Argentina':'ARS','Aruba':'AWG','Australia':'AUD',
@@ -3054,14 +3239,19 @@ function renderAll() {
   renderInicioDashboard();
   updateHeaderDate();
   fillHeaderMes();
-  fillMesOptions('fil-mes');
+  // Sync section-level month selects with header
+  var _hMes = getMesVal();
+  var _filMes = document.getElementById('fil-mes');
+  if (_filMes) { fillMesOptions('fil-mes'); if (_hMes) _filMes.value = _hMes; }
+  var _admMes = document.getElementById('admin-fil-mes');
+  if (_admMes) { fillMesOptions('admin-fil-mes'); if (_hMes) _admMes.value = _hMes; }
   renderResumen();
   const activeEl = document.querySelector('.section.active');
   const active = activeEl ? activeEl.id.replace('sec-','') : 'inicio';
   if (active==='ventas') renderTabla();
   if (active==='stats') renderStats();
   if (active==='plantillas') renderPlantillas();
-  if (active==='admin') { fillMesOptions('admin-fil-mes'); renderAdmin(); }
+  if (active==='admin') renderAdmin();
   if (active==='myf') renderMYF();
   if (active==='clientes') { fillClientesFilters(); renderClientes(); }
 }
