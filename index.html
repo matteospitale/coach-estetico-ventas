@@ -700,7 +700,7 @@ body.admin-ro .admin-edit { display:none!important; }
       <div class="filters">
         <select id="fil-asesor" onchange="renderTabla()">
           <option value="all">Todos los asesores</option>
-          <option>Matteo</option><option>Facundo</option><option>Dianela</option>
+          <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Stefany</option><option>Ruben</option>
         </select>
         <select id="fil-mes" onchange="renderTabla()">
           <option value="all">Todos los meses</option>
@@ -1429,7 +1429,12 @@ function renderTabla() {
       if ((v.estado||'Pendiente')==='Aprobado') asMap[a].apr += m;
       else asMap[a].pend += m;
     });
-    var asKeys = Object.keys(asMap).sort();
+    var _asOrder = ['Matteo','Facundo','Dianela','Stefany','Ruben'];
+    var asKeys = Object.keys(asMap).sort(function(a,b){
+      var ia = _asOrder.indexOf(a); var ib = _asOrder.indexOf(b);
+      if (ia === -1) ia = 99; if (ib === -1) ib = 99;
+      return ia !== ib ? ia - ib : a.localeCompare(b);
+    });
     resEl.innerHTML = asKeys.map(function(a) {
       var d = asMap[a]; var tot = d.apr + d.pend;
       return '<span style="margin-right:12px"><strong style="color:var(--text)">' + a + '</strong>' +
@@ -2453,33 +2458,6 @@ function renderAdmin() {
               '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.promocion||'') + '" placeholder="Ej: Lanzamiento $125" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Forma de pago</label>' +
               '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.pago||'—') + '</div></div>' +
-
-            // Conversiones y comisiones
-            '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Conversiones y comisiones</div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Valor oficial</label>' +
-              '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Descuento %</label>' +
-              '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.descuento||0) + '" placeholder="0" min="0" max="100" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)"></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto neto</label>' +
-              '<div style="font-size:15px;font-weight:700;color:var(--text);padding:4px 2px">$' + montoNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div></div>' +
-            (esLocalConTC ? '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto neto local</label>' +
-              '<div style="font-size:15px;font-weight:700;color:var(--text);padding:4px 2px">' + (montoNetoLocal !== null ? montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + ' <span style="font-size:12px;font-weight:400;color:var(--text3)">' + currLabel + '</span>' : '—') + '</div></div>' : '') +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final USD' + (esLocalConTC && adminTC > 0 ? '' : '<br><small style="font-weight:400;color:var(--text3)">*1420, /1420 o valor directo</small>') + '</label>' +
-              (esLocalConTC && adminTC > 0 && montoNetoLocal !== null
-                ? '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '<div style="font-size:11px;font-weight:400;color:var(--text3);margin-top:2px">Auto: ' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ' + currLabel + ' ÷ TC ' + adminTC + '</div></div>'
-                : '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.montoFinalUSD||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' +
-                  (valFinalUSD !== null ? '<div style="font-size:11px;color:var(--text3);margin-top:3px">= $' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' : ''))
-              + '</div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final ARS' + (esARS ? '' : '<br><small style="font-weight:400;color:var(--text3)">*1420, /1420 o valor directo</small>') + '</label>' +
-              (esARS
-                ? '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">' + (pagoLocalARS !== null ? '$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ARS' : '<span style="color:var(--text3);font-weight:400;font-size:13px">Sin monto local cargado</span>') + '<div style="font-size:11px;font-weight:400;color:var(--text3);margin-top:2px">Auto: monto local ARS × (1 − descuento%)</div></div>'
-                : '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.montoFinalARS||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' +
-                  (valFinalARS !== null ? '<div style="font-size:11px;color:var(--text3);margin-top:3px">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' : ''))
-              + '</div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Comisión %</label>' +
-              '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.adminComision||'') + '" placeholder="%" min="0" max="100" onchange="adminUpdateFinal(\'' + v._key + '\',\'adminComision\',this.value)"></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto comisión USD</label>' +
-              '<div style="font-size:15px;font-weight:600;color:var(--text);padding:4px 2px">' + (montoComision ? '$' + parseFloat(montoComision).toLocaleString('en-US',{minimumFractionDigits:2}) : '—') + '</div></div>' +
 
             // Estado y comprobante
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Estado y verificación</div>' +
