@@ -2434,8 +2434,10 @@ function renderAdmin() {
 
             // Datos del lead
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border)">Datos del lead</div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Nombre y Apellido</label>' +
-              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.nombre||'') + '" placeholder="Nombre completo" onchange="updateAdminField(\'' + v._key + '\',\'nombre\',this.value)"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Nombre</label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.nombre||'') + '" placeholder="Nombre" onchange="updateAdminField(\'' + v._key + '\',\'nombre\',this.value)"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Apellido</label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.apellido||'') + '" placeholder="Apellido" onchange="updateAdminField(\'' + v._key + '\',\'apellido\',this.value)"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">País</label>' +
               '<select class="form-select" style="font-size:13px;padding:6px 10px" onchange="updateAdminField(\'' + v._key + '\',\'pais\',this.value)">' +
                 '<option value="">Seleccionar...</option>' +
@@ -2452,8 +2454,8 @@ function renderAdmin() {
 
             // Datos de la venta
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Venta</div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Curso</label>' +
-              '<div style="font-size:13px;padding:6px 2px;color:var(--text)">' + (v.curso||'—') + '</div></div>' +
+            '<div class="admin-field" style="grid-column:1/-1"><label class="form-label" style="font-size:11px">Curso</label>' +
+              '<div style="font-size:13px;padding:6px 2px;color:var(--text);font-weight:500">' + (v.curso||'—') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Promoción</label>' +
               '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.promocion||'') + '" placeholder="Ej: Lanzamiento $125" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Forma de pago</label>' +
