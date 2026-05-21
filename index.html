@@ -3662,6 +3662,23 @@ function renderMYF() {
   var totalBruto = mesVentas.reduce(function(s,v){ return s+parseFloat(v.monto||0); },0);
   var totalNeto = totalBruto * 0.85; // menos 15%
 
+  // TC real: weighted average of adminTC across ARS sales this month
+  var arsVentas = mesVentas.filter(function(v) {
+    var tc = parseFloat(v.adminTC || 0);
+    return (v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina') && tc > 0;
+  });
+  var tcReal = null;
+  if (arsVentas.length > 0) {
+    var sumLocal = 0, sumUSD = 0;
+    arsVentas.forEach(function(v) {
+      var ml = parseFloat(v.montoLocal || 0);
+      var tc = parseFloat(v.adminTC || 0);
+      if (ml > 0 && tc > 0) { sumLocal += ml; sumUSD += ml / tc; }
+    });
+    if (sumUSD > 0) tcReal = Math.round(sumLocal / sumUSD);
+    else tcReal = Math.round(arsVentas.reduce(function(s,v){ return s + parseFloat(v.adminTC||0); }, 0) / arsVentas.length);
+  }
+
   var body = document.getElementById('myf-body');
   if (!body) return;
 
@@ -3720,7 +3737,8 @@ function renderMYF() {
         '<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Por día</span><span style="font-weight:700;color:var(--text)">' + (alcanzado?'—':porDia.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})+' USD') + '</span></div>' +
         '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">' +
           '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text3)">' + n.label + ' | ' + n.pct + '%</span><span style="font-weight:700;color:' + (alcanzado ? '#155724' : 'var(--text2)') + '">' + comision.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD</span></div>' +
-          '<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">En ARS (TC ' + TC_ARS + ')</span><span style="font-weight:800;font-size:13px;color:' + (alcanzado ? '#155724' : 'var(--text)') + '">$' + (comision*TC_ARS).toLocaleString('es-AR',{maximumFractionDigits:0}) + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">En ARS (TC ' + TC_ARS + ' — estimado)</span><span style="font-weight:600;font-size:12px;color:var(--text3)">$' + (comision*TC_ARS).toLocaleString('es-AR',{maximumFractionDigits:0}) + '</span></div>' +
+          (tcReal ? '<div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px dashed rgba(0,0,0,0.1)"><span style="color:var(--text2);font-weight:700;font-size:12px"><span style="font-size:10px;font-weight:400;color:var(--text3)">TC real ~' + tcReal.toLocaleString('es-AR') + '</span><br>' + n.label + ' | ' + n.pct + '% en pesos</span><span style="font-weight:800;font-size:14px;color:' + (alcanzado ? '#155724' : 'var(--accent)') + '">$' + (comision*tcReal).toLocaleString('es-AR',{maximumFractionDigits:0}) + '</span></div>' : '') +
         '</div>' +
       '</div>' +
     '</div>';
@@ -3761,7 +3779,7 @@ function renderMYF() {
 
 // ── USUARIOS / SESIÓN ────────────────────────────────────────────────────────
 const SESSION_KEY = 'coach_hub_sess_v1';
-const SESSION_TTL = 48 * 60 * 60 * 1000; // 48 horas
+const SESSION_TTL = 7 * 24 * 60 * 60 * 1000; // 7 días
 
 const USUARIOS_DEFAULT = {
   'Matteo':  { pin:'007', adminRO:false, rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'] },
@@ -3971,16 +3989,28 @@ function renderCalendario() {
       '<div style="text-align:center;padding:60px 20px">' +
         '<div style="font-size:40px;margin-bottom:16px">📅</div>' +
         '<div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Calendario no configurado</div>' +
-        '<div style="font-size:14px;color:var(--text3);margin-bottom:24px;max-width:420px;margin-left:auto;margin-right:auto">Configurá el calendario de Google para verlo aquí. Necesitás el enlace de incorporación de tu Google Calendar.</div>' +
+        '<div style="font-size:14px;color:var(--text3);margin-bottom:24px;max-width:460px;margin-left:auto;margin-right:auto">Necesitás el <strong>enlace de incorporación</strong> de Google Calendar.<br><span style="font-size:12px">Google Calendar → Configuración del calendario → Integrar → copiar «Enlace de incorporación»</span></div>' +
         '<button class="btn btn-accent" onclick="abrirConfigCalendario()">⚙ Configurar calendario</button>' +
       '</div>';
     return;
   }
-  var tz = encodeURIComponent(_calendarioConfig.timezone || 'America/Argentina/Buenos_Aires');
   var src = _calendarioConfig.embedUrl.trim();
-  // Asegurar que tiene el parámetro de timezone
+  // Validate: must be a Google Calendar embed URL
+  if (src.indexOf('calendar.google.com') === -1) {
+    el.innerHTML =
+      '<div style="text-align:center;padding:60px 20px">' +
+        '<div style="font-size:18px;font-weight:700;color:var(--danger);margin-bottom:8px">URL inválida</div>' +
+        '<div style="font-size:13px;color:var(--text3);margin-bottom:20px;max-width:460px;margin-left:auto;margin-right:auto">La URL guardada no parece un enlace de Google Calendar.<br>Debe comenzar con <code>https://calendar.google.com/calendar/embed?src=...</code></div>' +
+        '<div style="display:flex;gap:10px;justify-content:center">' +
+          '<button class="btn btn-ghost" onclick="limpiarConfigCalendario()">Limpiar</button>' +
+          '<button class="btn btn-accent" onclick="abrirConfigCalendario()">⚙ Reconfigurar</button>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+  var tz = encodeURIComponent(_calendarioConfig.timezone || 'America/Argentina/Buenos_Aires');
   if (src.indexOf('ctz=') === -1) src += (src.indexOf('?') === -1 ? '?' : '&') + 'ctz=' + tz;
-  // Use DOM API to avoid breaking if URL contains quotes or special chars
+  // Use DOM API to avoid breaking if URL contains special chars
   el.innerHTML = '';
   var wrap = document.createElement('div');
   wrap.style.cssText = 'border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--glass-shadow);background:var(--glass)';
@@ -3993,6 +4023,18 @@ function renderCalendario() {
   iframe.setAttribute('loading', 'lazy');
   wrap.appendChild(iframe);
   el.appendChild(wrap);
+  // Show reconfigure link below iframe
+  var hint = document.createElement('div');
+  hint.style.cssText = 'text-align:right;padding:6px 2px';
+  hint.innerHTML = '<button class="btn btn-ghost" style="font-size:11px" onclick="abrirConfigCalendario()">⚙ Reconfigurar</button> <button class="btn btn-ghost" style="font-size:11px;color:var(--danger)" onclick="limpiarConfigCalendario()">Limpiar URL</button>';
+  el.appendChild(hint);
+}
+
+async function limpiarConfigCalendario() {
+  if (!confirm('¿Eliminar la URL del calendario guardada?')) return;
+  _calendarioConfig = null;
+  await dbSet('/config/calendario', null);
+  renderCalendario();
 }
 
 function abrirConfigCalendario() {
