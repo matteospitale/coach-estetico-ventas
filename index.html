@@ -422,57 +422,84 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 /* ── LOGIN OVERLAY ── */
 #login-overlay {
   position:fixed;inset:0;z-index:9999;
-  background:linear-gradient(150deg,rgba(253,248,245,0.97) 0%,rgba(212,133,122,0.97) 100%);
-  backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+  background:linear-gradient(145deg,#fdf8f5 0%,#e8b4a8 60%,#d4857a 100%);
   display:flex;align-items:center;justify-content:center;transition:opacity 0.35s ease;
 }
 #login-overlay.fade-out { opacity:0;pointer-events:none; }
 #login-card {
-  background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
-  border:1px solid var(--glass-border);border-radius:var(--radius-xl);
-  padding:40px 36px;width:340px;max-width:92vw;
-  box-shadow:0 20px 60px rgba(0,0,0,0.15),0 2px 4px rgba(0,0,0,0.06);text-align:center;
+  background:rgba(255,255,255,0.68);
+  backdrop-filter:blur(32px) saturate(210%);-webkit-backdrop-filter:blur(32px) saturate(210%);
+  border:1.5px solid rgba(255,255,255,0.9);border-radius:28px;
+  width:640px;max-width:96vw;overflow:hidden;
+  box-shadow:0 28px 70px rgba(0,0,0,0.14),0 2px 4px rgba(0,0,0,0.04),inset 0 1.5px 0 rgba(255,255,255,0.95);
+  display:flex;
 }
-#login-logo-text { font-size:21px;font-weight:800;color:var(--accent);letter-spacing:-0.02em;margin-bottom:4px; }
-#login-sub { font-size:12px;color:var(--text3);margin-bottom:28px; }
-#login-step1-prompt { font-size:14px;font-weight:600;color:var(--text2);margin-bottom:14px; }
-#login-users-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
-.login-user-btn {
-  padding:11px 8px;border-radius:var(--radius);border:1.5px solid var(--border);
-  background:rgba(255,255,255,0.6);font-family:inherit;font-size:13px;font-weight:600;
-  color:var(--text);cursor:pointer;transition:all 0.14s;
+#login-left {
+  flex:1;padding:52px 40px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,rgba(255,255,255,0.45) 0%,rgba(255,255,255,0.2) 100%);
+  border-right:1px solid rgba(255,255,255,0.65);
 }
-.login-user-btn:hover { border-color:var(--accent);background:var(--accent-light);color:var(--accent); }
-#login-pin-prompt { font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px; }
-#login-pin-dots { display:flex;justify-content:center;gap:16px;margin:18px 0 22px; }
-.pin-dot { width:16px;height:16px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all 0.18s; }
-.pin-dot.filled { background:var(--accent);border-color:var(--accent);transform:scale(1.15); }
-#login-numpad { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+#login-logo-img { height:96px;width:auto;margin-bottom:18px;filter:drop-shadow(0 6px 16px rgba(182,31,58,0.2)); }
+#login-brand { font-size:22px;font-weight:800;color:#3a1a12;letter-spacing:-0.02em;line-height:1.25; }
+#login-sub { font-size:13px;color:var(--text3);margin-top:6px;letter-spacing:0.01em; }
+#login-right {
+  width:256px;padding:44px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+#login-right-title { font-size:13px;font-weight:600;color:var(--text2);margin-bottom:22px;text-align:center;letter-spacing:0.03em;text-transform:uppercase; }
+#login-pin-dots { display:flex;justify-content:center;gap:20px;margin-bottom:26px; }
+.pin-dot { width:17px;height:17px;border-radius:50%;border:2.5px solid rgba(182,31,58,0.3);background:transparent;transition:all 0.2s cubic-bezier(.34,1.56,.64,1); }
+.pin-dot.filled { background:var(--accent);border-color:var(--accent);transform:scale(1.18);box-shadow:0 2px 8px rgba(182,31,58,0.4); }
+#login-numpad { display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%; }
 .numpad-btn {
-  padding:15px;border-radius:var(--radius);border:1px solid var(--border);
-  background:rgba(255,255,255,0.65);font-family:inherit;font-size:19px;font-weight:600;
-  color:var(--text);cursor:pointer;transition:all 0.1s;
+  padding:14px 10px;border-radius:14px;
+  border:1px solid rgba(255,255,255,0.85);
+  background:rgba(255,255,255,0.75);
+  backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%);
+  font-family:inherit;font-size:20px;font-weight:700;color:var(--text);
+  cursor:pointer;transition:all 0.12s;
+  box-shadow:0 2px 8px rgba(0,0,0,0.07),inset 0 1.5px 0 rgba(255,255,255,0.95);
 }
-.numpad-btn:hover { background:rgba(255,255,255,0.95);border-color:var(--accent); }
-.numpad-btn:active { transform:scale(0.91); }
+.numpad-btn:hover { background:rgba(255,255,255,0.96);transform:translateY(-2px);box-shadow:0 5px 16px rgba(0,0,0,0.1),inset 0 1.5px 0 rgba(255,255,255,0.95); }
+.numpad-btn:active { transform:scale(0.9);box-shadow:0 1px 4px rgba(0,0,0,0.08); }
 .numpad-btn.empty { visibility:hidden; }
-#login-error { font-size:13px;color:var(--danger);margin-top:14px;min-height:18px; }
+#login-error { font-size:12px;color:var(--danger);margin-top:12px;min-height:16px;text-align:center;font-weight:500; }
 @keyframes login-shake {
-  0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-9px); }
-  40%{ transform:translateX(9px); } 60%{ transform:translateX(-6px); } 80%{ transform:translateX(6px); }
+  0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-10px); }
+  40%{ transform:translateX(10px); } 60%{ transform:translateX(-6px); } 80%{ transform:translateX(6px); }
 }
-.shake { animation:login-shake 0.38s ease; }
-#login-back-btn { margin-top:14px;background:none;border:none;font-family:inherit;font-size:13px;color:var(--text3);cursor:pointer;text-decoration:underline; }
-#login-back-btn:hover { color:var(--text2); }
+.shake { animation:login-shake 0.4s ease; }
+@media(max-width:580px) {
+  #login-card { flex-direction:column;width:330px; }
+  #login-left { border-right:none;border-bottom:1px solid rgba(255,255,255,0.65);padding:30px 24px 24px; }
+  #login-logo-img { height:64px; }  #login-brand { font-size:18px; }
+  #login-right { width:100%;padding:24px 28px 30px; }
+}
 
 /* ── USUARIOS SECTION ── */
-.usuarios-table { width:100%;border-collapse:collapse; }
-.usuarios-table th { font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text3);padding:8px 12px;border-bottom:2px solid var(--border);text-align:left; }
-.usuarios-table td { padding:12px;border-bottom:1px solid var(--border);font-size:14px;vertical-align:middle; }
-.sec-tag { display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--accent-light);color:var(--accent);margin:2px; }
-.pin-mask { font-family:monospace;letter-spacing:4px;font-size:15px; }
-.ued-form { background:var(--glass);backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:24px;margin-top:20px; }
-.ued-form h3 { font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text); }
+.usuarios-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;padding:2px; }
+.usuario-pill {
+  background:rgba(255,255,255,0.72);
+  backdrop-filter:blur(20px) saturate(200%);-webkit-backdrop-filter:blur(20px) saturate(200%);
+  border:1.5px solid rgba(255,255,255,0.9);border-radius:20px;padding:20px 22px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04),inset 0 1.5px 0 rgba(255,255,255,0.95);
+  transition:all 0.18s;
+}
+.usuario-pill:hover { box-shadow:0 8px 28px rgba(0,0,0,0.1),inset 0 1.5px 0 rgba(255,255,255,0.95);transform:translateY(-2px); }
+.usuario-pill-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
+.usuario-pill-name { font-size:17px;font-weight:800;color:var(--text); }
+.usuario-pill-role { font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--accent-light);color:var(--accent);letter-spacing:0.04em;text-transform:uppercase; }
+.usuario-pill-pin { display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;color:var(--text2); }
+.pin-mask { font-family:monospace;letter-spacing:4px;font-size:15px;color:var(--text); }
+.usuario-pill-secs { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px; }
+.sec-tag { display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;background:var(--accent-light);color:var(--accent);margin:2px; }
+.usuario-pill-actions { display:flex;gap:8px; }
+.ued-form {
+  background:rgba(255,255,255,0.78);
+  backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);
+  border:1.5px solid rgba(255,255,255,0.92);border-radius:22px;padding:28px;margin-top:20px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.09),inset 0 1.5px 0 rgba(255,255,255,0.98);
+}
+.ued-form h3 { font-size:15px;font-weight:800;margin-bottom:18px;color:var(--text); }
 
 /* ── ADMIN SOLO LECTURA ── */
 body.admin-ro .admin-edit { display:none!important; }
@@ -1030,6 +1057,11 @@ async function refreshPlantillas() {
 // ── INIT ──
 async function init() {
   try {
+    // Copiar logo al overlay de login inmediatamente
+    var _navImg = document.querySelector('.topnav-logo img');
+    var _loginImg = document.getElementById('login-logo-img');
+    if (_navImg && _loginImg) _loginImg.src = _navImg.src;
+
     await cargarUsuariosConfig();
     if (!checkSession()) {
       renderLoginUsuarios();
@@ -3296,8 +3328,6 @@ function logout() {
   renderLoginUsuarios();
   const overlay = document.getElementById('login-overlay');
   if (overlay) { overlay.style.display = 'flex'; overlay.style.opacity = '1'; overlay.classList.remove('fade-out'); }
-  document.getElementById('login-step1').style.display = '';
-  document.getElementById('login-step2').style.display = 'none';
 }
 
 function aplicarPermisos() {
@@ -3343,30 +3373,14 @@ function aplicarPermisos() {
 
 // ── LOGIN UI ─────────────────────────────────────────────────────────────────
 function renderLoginUsuarios() {
-  const grid = document.getElementById('login-users-grid');
-  if (!grid) return;
-  const nombres = Object.keys(USUARIOS_CONFIG);
-  grid.innerHTML = nombres.map(n =>
-    '<button class="login-user-btn" onclick="seleccionarUsuario(\'' + n + '\')">' + n + '</button>'
-  ).join('');
-}
-
-function seleccionarUsuario(nombre) {
-  loginNombreSel = nombre;
   loginPinBuffer = '';
   updatePinDots();
-  document.getElementById('login-pin-prompt').textContent = 'Hola ' + nombre + ', ingresá tu PIN';
-  document.getElementById('login-error').textContent = '';
-  document.getElementById('login-step1').style.display = 'none';
-  document.getElementById('login-step2').style.display = '';
-  document.getElementById('login-card').classList.remove('shake');
-}
-
-function volverSeleccionUsuario() {
-  loginNombreSel = ''; loginPinBuffer = '';
-  updatePinDots();
-  document.getElementById('login-step1').style.display = '';
-  document.getElementById('login-step2').style.display = 'none';
+  var errEl = document.getElementById('login-error');
+  if (errEl) errEl.textContent = '';
+  // Copiar logo del nav al login
+  var navImg = document.querySelector('.topnav-logo img');
+  var loginImg = document.getElementById('login-logo-img');
+  if (navImg && loginImg && !loginImg.src) loginImg.src = navImg.src;
 }
 
 function pinKey(k) {
@@ -3385,14 +3399,18 @@ function updatePinDots() {
 }
 
 function intentarLogin() {
-  var u = USUARIOS_CONFIG[loginNombreSel];
-  if (u && u.pin === loginPinBuffer) {
-    guardarSession(loginNombreSel);
-    usuarioActual = loginNombreSel;
+  // Buscar usuario por PIN (sin selección previa de nombre)
+  var encontrado = null;
+  Object.keys(USUARIOS_CONFIG).forEach(function(nombre) {
+    if (USUARIOS_CONFIG[nombre].pin === loginPinBuffer) encontrado = nombre;
+  });
+  if (encontrado) {
+    guardarSession(encontrado);
+    usuarioActual = encontrado;
     aplicarPermisos();
   } else {
     loginPinBuffer = ''; updatePinDots();
-    document.getElementById('login-error').textContent = 'PIN incorrecto, intentá de nuevo';
+    document.getElementById('login-error').textContent = 'PIN incorrecto';
     var card = document.getElementById('login-card');
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
   }
@@ -3444,27 +3462,33 @@ function renderUsuarios() {
   var el = document.getElementById('usuarios-content');
   if (!el) return;
   var nombres = Object.keys(USUARIOS_CONFIG);
-  var html = '<div style="overflow-x:auto"><table class="usuarios-table"><thead><tr>';
-  html += '<th>Usuario</th><th>PIN</th><th>Admin RO</th><th>Secciones</th><th></th>';
-  html += '</tr></thead><tbody>';
+  var html = '<div class="usuarios-grid">';
   nombres.forEach(function(nombre) {
     var u = USUARIOS_CONFIG[nombre];
     var secs = (u.secciones || []);
-    html += '<tr>';
-    html += '<td style="font-weight:700;white-space:nowrap">' + nombre + '</td>';
-    html += '<td><span class="pin-mask" id="pm-' + nombre + '">•••</span> ';
-    html += '<button style="margin-left:6px;background:none;border:1px solid var(--border);border-radius:6px;font-size:11px;padding:2px 8px;cursor:pointer" onclick="togglePinVis(\'' + nombre + '\')"  id="pvbtn-' + nombre + '">Ver</button></td>';
-    html += '<td style="text-align:center">' + (u.adminRO ? '✅' : '—') + '</td>';
-    html += '<td>' + secs.map(function(s) {
+    var rolLabel = u.adminRO ? 'Admin RO' : (secs.includes('usuarios') ? 'Admin' : 'Asesor');
+    html += '<div class="usuario-pill">';
+    html += '<div class="usuario-pill-header">';
+    html += '<span class="usuario-pill-name">' + nombre + '</span>';
+    html += '<span class="usuario-pill-role">' + rolLabel + '</span>';
+    html += '</div>';
+    html += '<div class="usuario-pill-pin">';
+    html += '<span style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em">PIN</span>';
+    html += '<span class="pin-mask" id="pm-' + nombre + '">•••</span>';
+    html += '<button style="background:rgba(255,255,255,0.7);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:8px;font-size:11px;padding:2px 9px;cursor:pointer;font-family:inherit;font-weight:600" onclick="togglePinVis(\'' + nombre + '\')" id="pvbtn-' + nombre + '">Ver</button>';
+    html += '</div>';
+    html += '<div class="usuario-pill-secs">' + secs.map(function(s) {
       var sec = ALL_SECS.find(function(x){ return x.id===s; });
       return '<span class="sec-tag">' + (sec ? sec.label : s) + '</span>';
-    }).join('') + '</td>';
-    html += '<td><button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="abrirEditorUsuario(\'' + nombre + '\')">Editar</button></td>';
-    html += '</tr>';
+    }).join('') + '</div>';
+    html += '<div class="usuario-pill-actions">';
+    html += '<button class="btn btn-ghost" style="font-size:12px;padding:5px 14px" onclick="abrirEditorUsuario(\'' + nombre + '\')">Editar</button>';
+    html += '</div>';
+    html += '</div>';
   });
-  html += '</tbody></table></div>';
+  html += '</div>';
   html += '<div id="usuario-editor" style="margin-top:20px"></div>';
-  html += '<div style="margin-top:16px"><button class="btn btn-accent" onclick="abrirEditorUsuario(null)">+ Agregar usuario</button></div>';
+  html += '<div style="margin-top:18px"><button class="btn btn-accent" onclick="abrirEditorUsuario(null)">+ Nuevo usuario</button></div>';
   el.innerHTML = html;
   if (_editandoUsuario !== undefined) {
     abrirEditorUsuario(_editandoUsuario);
@@ -3496,11 +3520,7 @@ function abrirEditorUsuario(nombre) {
   var html = '<div class="ued-form">';
   html += '<h3>' + (esNuevo ? '✚ Nuevo usuario' : 'Editar: ' + nombre) + '</h3>';
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:20px">';
-  if (esNuevo) {
-    html += '<div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="ued-nombre" placeholder="Ej: Sofia" value=""></div>';
-  } else {
-    html += '<div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="ued-nombre" value="' + nombre + '" readonly style="opacity:0.6;cursor:not-allowed"></div>';
-  }
+  html += '<div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="ued-nombre" placeholder="Ej: Sofia" value="' + (esNuevo ? '' : nombre) + '"></div>';
   html += '<div class="form-group"><label class="form-label">PIN (3 dígitos)</label><input class="form-input" id="ued-pin" maxlength="3" placeholder="000" value="' + (u.pin||'') + '" type="tel" style="letter-spacing:4px;font-size:18px"></div>';
   html += '</div>';
   html += '<label class="form-label" style="display:block;margin-bottom:10px">Secciones con acceso</label>';
@@ -3529,22 +3549,36 @@ function cerrarEditorUsuario() {
 }
 
 async function guardarUsuario() {
-  var nombre = (document.getElementById('ued-nombre')||{}).value || '';
-  nombre = nombre.trim();
-  var pin = (document.getElementById('ued-pin')||{}).value || '';
-  pin = pin.trim();
-  if (!nombre) { showToast('Ingresá un nombre'); return; }
+  var nombreNuevo = ((document.getElementById('ued-nombre')||{}).value || '').trim();
+  var nombreOriginal = (_editandoUsuario === null) ? null : _editandoUsuario; // null = nuevo usuario
+  var pin = ((document.getElementById('ued-pin')||{}).value || '').trim();
+  if (!nombreNuevo) { showToast('Ingresá un nombre'); return; }
   if (!/^\d{3}$/.test(pin)) { showToast('El PIN debe ser exactamente 3 dígitos'); return; }
-  var secciones = ALL_SECS.filter(function(sec){ return document.getElementById('ucd-'+sec.id)?.checked; }).map(function(s){ return s.id; });
-  var adminRO = document.getElementById('ued-adminro')?.checked || false;
-  USUARIOS_CONFIG[nombre] = { pin:pin, secciones:secciones, adminRO:adminRO };
+  // Verificar que el PIN no lo use otro usuario
+  var pinDuplicado = Object.keys(USUARIOS_CONFIG).find(function(n) {
+    return USUARIOS_CONFIG[n].pin === pin && n !== nombreOriginal;
+  });
+  if (pinDuplicado) { showToast('Ese PIN ya lo usa ' + pinDuplicado); return; }
+  var secciones = ALL_SECS.filter(function(sec){ var el=document.getElementById('ucd-'+sec.id); return el && el.checked; }).map(function(s){ return s.id; });
+  var adminRO = (document.getElementById('ued-adminro')||{}).checked || false;
+  // Si cambió el nombre, eliminar la clave vieja
+  if (nombreOriginal && nombreOriginal !== nombreNuevo) {
+    delete USUARIOS_CONFIG[nombreOriginal];
+    // Si el usuario renombrado es el actual, actualizar la sesión
+    if (nombreOriginal === usuarioActual) {
+      usuarioActual = nombreNuevo;
+      guardarSession(nombreNuevo);
+      var greetEl = document.getElementById('nav-hola-nombre');
+      if (greetEl) greetEl.textContent = 'Hola ' + nombreNuevo;
+    }
+  }
+  USUARIOS_CONFIG[nombreNuevo] = { pin:pin, secciones:secciones, adminRO:adminRO };
   try {
     await dbSet('/config/usuarios', USUARIOS_CONFIG);
-    showToast('✓ Usuario guardado');
+    showToast('✓ Guardado');
     _editandoUsuario = undefined;
     renderUsuarios();
-    // Si el usuario editó su propio perfil, reaplica permisos
-    if (nombre === usuarioActual) aplicarPermisos();
+    if (nombreNuevo === usuarioActual) aplicarPermisos();
   } catch(e) { showToast('Error al guardar: ' + e.message); }
 }
 
@@ -3568,16 +3602,13 @@ init();
 <!-- LOGIN OVERLAY -->
 <div id="login-overlay">
   <div id="login-card">
-    <div id="login-logo-text">🌸 Coach Estético</div>
-    <div id="login-sub">Hub de ventas</div>
-
-    <div id="login-step1">
-      <div id="login-step1-prompt">¿Quién sos?</div>
-      <div id="login-users-grid"></div>
+    <div id="login-left">
+      <img id="login-logo-img" alt="Coach Estético">
+      <div id="login-brand">Coach Estético</div>
+      <div id="login-sub">Hub de ventas</div>
     </div>
-
-    <div id="login-step2" style="display:none">
-      <div id="login-pin-prompt">Ingresá tu PIN</div>
+    <div id="login-right">
+      <div id="login-right-title">Tu PIN</div>
       <div id="login-pin-dots">
         <div class="pin-dot" id="pd-0"></div>
         <div class="pin-dot" id="pd-1"></div>
@@ -3598,7 +3629,6 @@ init();
         <button class="numpad-btn empty"></button>
       </div>
       <div id="login-error"></div>
-      <button id="login-back-btn" onclick="volverSeleccionUsuario()">← Cambiar usuario</button>
     </div>
   </div>
 </div>
