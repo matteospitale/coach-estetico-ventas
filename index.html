@@ -439,7 +439,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
   background:linear-gradient(160deg,rgba(255,255,255,0.45) 0%,rgba(255,255,255,0.2) 100%);
   border-right:1px solid rgba(255,255,255,0.65);
 }
-#login-logo-img { height:96px;width:auto;margin-bottom:18px;filter:drop-shadow(0 6px 16px rgba(182,31,58,0.2)); }
+#login-logo-text { font-size:38px;font-weight:800;color:var(--accent);letter-spacing:-0.04em;line-height:1;margin-bottom:6px;text-shadow:0 6px 16px rgba(182,31,58,0.2); }
 #login-brand { font-size:22px;font-weight:800;color:#3a1a12;letter-spacing:-0.02em;line-height:1.25; }
 #login-sub { font-size:13px;color:var(--text3);margin-top:6px;letter-spacing:0.01em; }
 #login-right {
@@ -631,6 +631,7 @@ body.admin-ro .admin-edit { display:none!important; }
     <button class="pill" id="nav-admin" onclick="switchTab('admin')">Admin</button>
     <button class="pill" id="nav-clientes" onclick="switchTab('clientes')">Alumnos</button>
     <button class="pill" id="nav-myf" onclick="switchTab('myf')">Coach Sales</button>
+    <button class="pill" id="nav-calendario" onclick="switchTab('calendario')">Calendario</button>
     <button class="pill" id="nav-usuarios" onclick="switchTab('usuarios')" style="display:none">Usuarios</button>
   </div>
   <div class="topnav-right">
@@ -652,6 +653,7 @@ body.admin-ro .admin-edit { display:none!important; }
   <button class="pill" id="mnav-admin" onclick="switchTab('admin');closeMobDrawer()">Admin</button>
   <button class="pill" id="mnav-clientes" onclick="switchTab('clientes');closeMobDrawer()">Alumnos</button>
   <button class="pill" id="mnav-myf" onclick="switchTab('myf');closeMobDrawer()">Coach Sales</button>
+  <button class="pill" id="mnav-calendario" onclick="switchTab('calendario');closeMobDrawer()">Calendario</button>
   <button class="pill" id="mnav-usuarios" onclick="switchTab('usuarios');closeMobDrawer()" style="display:none">Usuarios</button>
   <div class="mob-drawer-mes"><select id="header-mes-sel-mob" onchange="syncMes('mob')"><option value="all">Todos los meses</option></select></div>
 </div>
@@ -692,7 +694,7 @@ body.admin-ro .admin-edit { display:none!important; }
       <div class="section-header">
         <div class="section-title" id="ventas-title">Todas las ventas</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <div id="ventas-resumen-asesores" style="display:none;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;line-height:1.8"></div>
+          <div id="ventas-resumen-asesores" style="display:none;font-size:12px"></div>
           <button class="btn btn-ghost" onclick="exportCSV()">↓ Excel</button>
           <button class="btn btn-ghost" id="btn-modo-edicion" onclick="toggleModoEdicion()">✎ Editar / Eliminar</button>
         </div>
@@ -902,8 +904,7 @@ body.admin-ro .admin-edit { display:none!important; }
         <div class="section-title" id="admin-title">Administración</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div id="admin-total-mes" style="font-size:13px;font-weight:700;color:var(--text);background:var(--surface2);padding:6px 12px;border-radius:8px;white-space:nowrap"></div>
-          <div id="admin-cartera-usd" style="font-size:13px;font-weight:700;color:#3B6B9E;background:rgba(59,107,158,0.12);padding:6px 12px;border-radius:8px;white-space:nowrap" title="Cartera USD (M.Final aprobado)">— USD</div>
-          <div id="admin-cartera-ars" style="font-size:13px;font-weight:700;color:#4A8C5C;background:rgba(74,140,92,0.12);padding:6px 12px;border-radius:8px;white-space:nowrap" title="Cartera ARS (M.Final aprobado)">— ARS</div>
+          <div id="admin-cartera-wrap" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"></div>
           <div id="admin-cierre-btn-wrap" style="display:flex;align-items:center;gap:6px"></div>
           <button class="btn btn-ghost" onclick="abrirNotificaciones()" style="position:relative" title="Notificaciones">
             🔔 <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:#fff;border-radius:50%;font-size:10px;font-weight:700;width:16px;height:16px;line-height:16px;text-align:center">0</span>
@@ -986,7 +987,16 @@ body.admin-ro .admin-edit { display:none!important; }
       <div id="myf-body"></div>
     </section>
 
-
+    <!-- CALENDARIO -->
+    <section class="section" id="sec-calendario">
+      <div class="section-header">
+        <div class="section-title">Calendario</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-ghost" onclick="abrirConfigCalendario()" style="font-size:12px">⚙ Configurar</button>
+        </div>
+      </div>
+      <div id="calendario-body"></div>
+    </section>
 
   </div>
 </div>
@@ -1083,17 +1093,13 @@ async function refreshPlantillas() {
 // ── INIT ──
 async function init() {
   try {
-    // Copiar logo al overlay de login inmediatamente
-    var _navImg = document.querySelector('.topnav-logo img');
-    var _loginImg = document.getElementById('login-logo-img');
-    if (_navImg && _loginImg) _loginImg.src = _navImg.src;
-
     await cargarUsuariosConfig();
     if (!checkSession()) {
       renderLoginUsuarios();
     }
     await loadVentas();
     await loadCierres();
+    await loadCalendarioConfig();
     document.getElementById('loading-state').style.display = 'none';
     renderAll();
     await loadPlantillas();
@@ -1125,8 +1131,8 @@ function closeSidebar() {
 }
 
 // ── NAVIGATION ──
-const TABS = ['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', admin:'Administración', clientes:'Alumnos', myf:'Coach Sales', cargar:'Cargar venta', usuarios:'Gestión de Usuarios' };
+const TABS = ['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'];
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', admin:'Administración', clientes:'Alumnos', myf:'Coach Sales', calendario:'Calendario', cargar:'Cargar venta', usuarios:'Gestión de Usuarios' };
 
 function switchTab(t) {
   // Redirigir si el usuario no tiene acceso a esta sección
@@ -1166,6 +1172,7 @@ function switchTab(t) {
   }
   if (t === 'clientes') { clienteDetalle = null; fillClientesFilters(); var cf=document.getElementById('clientes-filters'); if(cf) cf.style.display=''; renderClientes(); }
   if (t === 'myf') { renderMYF(); }
+  if (t === 'calendario') { renderCalendario(); }
   if (t === 'cargar') { actualizarCompletitud(); }
   if (t === 'usuarios') { renderUsuarios(); }
 
@@ -1473,13 +1480,17 @@ function renderTabla() {
       if (ia === -1) ia = 99; if (ib === -1) ib = 99;
       return ia !== ib ? ia - ib : a.localeCompare(b);
     });
-    resEl.innerHTML = asKeys.map(function(a) {
+    resEl.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:6px">' + asKeys.map(function(a) {
       var d = asMap[a]; var tot = d.apr + d.pend;
-      return '<span style="margin-right:12px"><strong style="color:var(--text)">' + a + '</strong>' +
-        ' <span style="color:#155724">✅$' + d.apr.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' +
-        ' <span style="color:#004085">🔵$' + d.pend.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' +
-        ' <span style="color:var(--text3)">· $' + tot.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span></span>';
-    }).join('');
+      var aBadgeColors = {Matteo:'#3B6B9E',Facundo:'#4A8C5C',Dianela:'#9B5E9B',Stefany:'#b87333',Ruben:'#888'};
+      var col = aBadgeColors[a] || '#888';
+      return '<div style="display:flex;align-items:center;gap:0;background:var(--glass);border:1px solid var(--border);border-radius:999px;overflow:hidden;font-size:12px;font-weight:600;white-space:nowrap">' +
+        '<span style="padding:4px 10px 4px 10px;background:rgba(0,0,0,0.04);color:' + col + '">' + a + '</span>' +
+        '<span style="padding:4px 8px;color:#155724;border-left:1px solid var(--border)">✅ $' + d.apr.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' +
+        '<span style="padding:4px 8px;color:#004085;border-left:1px solid var(--border)">🔵 $' + d.pend.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' +
+        '<span style="padding:4px 10px;color:var(--text2);border-left:1px solid var(--border)">$' + tot.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' +
+      '</div>';
+    }).join('') + '</div>';
     resEl.style.display = '';
   } else if (resEl) { resEl.style.display = 'none'; }
   const tbody = document.getElementById('tabla-body');
@@ -1994,7 +2005,9 @@ function renderPlantillas() {
   if (!lista) return;
   const countEl = document.getElementById('plant-count');
 
-  if (catActual === 'todos') {
+  const q = (document.getElementById('plant-search') ? document.getElementById('plant-search').value : '').toLowerCase().trim();
+
+  if (catActual === 'todos' && !q) {
     if (countEl) countEl.textContent = '';
     lista.innerHTML = '<div class="cat-covers-grid">' +
       CAT_ORDER.map(function(cat) {
@@ -2014,16 +2027,15 @@ function renderPlantillas() {
     return;
   }
 
-  const q = (document.getElementById('plant-search') ? document.getElementById('plant-search').value : '').toLowerCase();
   const filtered = plantillas.filter(function(p) {
-    const matchCat = p.categoria === catActual;
+    const matchCat = catActual === 'todos' ? true : (p.categoria === catActual);
     const matchQ = !q || limpiarTitulo(p.titulo).toLowerCase().includes(q) || (p.texto||'').toLowerCase().includes(q);
     return matchCat && matchQ;
   });
 
-  if (countEl) countEl.textContent = filtered.length + ' curso' + (filtered.length!==1?'s':'');
+  if (countEl) countEl.textContent = filtered.length + ' curso' + (filtered.length!==1?'s':'') + (q ? ' · "' + q + '"' : '');
   if (!filtered.length) {
-    lista.innerHTML = '<div class="empty-state" style="color:var(--text3);font-size:14px;padding:24px 0;">No hay plantillas en esta categoría</div>';
+    lista.innerHTML = '<div class="empty-state" style="color:var(--text3);font-size:14px;padding:24px 0;">No hay resultados' + (q ? ' para "' + q + '"' : ' en esta categoría') + '</div>';
     return;
   }
   lista.innerHTML = filtered.map(function(p) {
@@ -2463,29 +2475,52 @@ function renderAdmin() {
   const totalMes = vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).reduce(function(s,v){ return s + parseFloat(v.montoNeto||v.monto||0); }, 0);
   const totalEl = document.getElementById('admin-total-mes');
   if (totalEl) totalEl.textContent = vf.length + ' ventas · $' + totalMes.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD aprobado';
-  // Cartera USD & ARS (M.Final de ventas aprobadas)
-  var carteraUSD = 0, carteraARS = 0;
+  // Cartera USD & ARS por asesor (M.Final de ventas aprobadas)
+  var carteraByAsesor = {};
+  var carteraUSDTotal = 0, carteraARSTotal = 0;
   vf.filter(function(v){ return (v.estado||'Pendiente')==='Aprobado'; }).forEach(function(v) {
+    var a = v.asesor || 'Sin asesor';
+    if (!carteraByAsesor[a]) carteraByAsesor[a] = { usd: 0, ars: 0 };
     var vals = computeValFinales(v);
-    if (vals.valFinalUSD !== null && !isNaN(vals.valFinalUSD)) carteraUSD += vals.valFinalUSD;
-    if (vals.valFinalARS !== null && !isNaN(vals.valFinalARS)) carteraARS += vals.valFinalARS;
+    if (vals.valFinalUSD !== null && !isNaN(vals.valFinalUSD)) { carteraByAsesor[a].usd += vals.valFinalUSD; carteraUSDTotal += vals.valFinalUSD; }
+    if (vals.valFinalARS !== null && !isNaN(vals.valFinalARS)) { carteraByAsesor[a].ars += vals.valFinalARS; carteraARSTotal += vals.valFinalARS; }
   });
-  var usdEl = document.getElementById('admin-cartera-usd');
-  var arsEl = document.getElementById('admin-cartera-ars');
-  if (usdEl) usdEl.textContent = '$' + carteraUSD.toLocaleString('en-US',{maximumFractionDigits:0}) + ' USD';
-  if (arsEl) arsEl.textContent = '$' + carteraARS.toLocaleString('en-US',{maximumFractionDigits:0}) + ' ARS';
-  // Cierre de mes button
+  var carteraWrap = document.getElementById('admin-cartera-wrap');
+  if (carteraWrap) {
+    var _aOrd = ['Matteo','Facundo','Dianela','Stefany','Ruben'];
+    var _aBadgeCols = {Matteo:'#3B6B9E',Facundo:'#4A8C5C',Dianela:'#9B5E9B',Stefany:'#b87333',Ruben:'#888'};
+    var carteraKeys = Object.keys(carteraByAsesor).sort(function(a,b){
+      var ia=_aOrd.indexOf(a),ib=_aOrd.indexOf(b);
+      if(ia===-1)ia=99;if(ib===-1)ib=99;return ia!==ib?ia-ib:a.localeCompare(b);
+    });
+    var carteraHTML = '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);padding:4px 4px 4px 0">Cartera</span>';
+    if (carteraARSTotal > 0) carteraHTML += '<span style="font-size:12px;font-weight:700;color:#4A8C5C;background:rgba(74,140,92,0.12);padding:4px 10px;border-radius:999px;white-space:nowrap">$' + carteraARSTotal.toLocaleString('en-US',{maximumFractionDigits:0}) + ' ARS</span>';
+    if (carteraUSDTotal > 0) carteraHTML += '<span style="font-size:12px;font-weight:700;color:#3B6B9E;background:rgba(59,107,158,0.12);padding:4px 10px;border-radius:999px;white-space:nowrap">$' + carteraUSDTotal.toLocaleString('en-US',{maximumFractionDigits:0}) + ' USD</span>';
+    if (carteraKeys.length > 1) {
+      carteraHTML += '<span style="color:var(--border);font-size:14px">|</span>';
+      carteraKeys.forEach(function(a) {
+        var d = carteraByAsesor[a];
+        var col = _aBadgeCols[a] || '#888';
+        var parts = [];
+        if (d.ars > 0) parts.push('$' + d.ars.toLocaleString('en-US',{maximumFractionDigits:0}) + ' ARS');
+        if (d.usd > 0) parts.push('$' + d.usd.toLocaleString('en-US',{maximumFractionDigits:0}) + ' USD');
+        if (parts.length) carteraHTML += '<span style="font-size:11px;font-weight:600;color:' + col + ';white-space:nowrap">' + a + ': ' + parts.join(' · ') + '</span>';
+      });
+    }
+    carteraWrap.innerHTML = carteraHTML;
+  }
+  // Cierre de mes button — usa el mes global del header
   var cierreBtnWrap = document.getElementById('admin-cierre-btn-wrap');
   if (cierreBtnWrap) {
-    var mesFilVal = document.getElementById('admin-fil-mes').value;
-    if (mesFilVal && mesFilVal !== 'all') {
-      var esCerrado = !!cierres[mesFilVal];
+    var mesParaCierre = getMesVal();
+    if (mesParaCierre && mesParaCierre !== 'all') {
+      var esCerrado = !!cierres[mesParaCierre];
       if (esCerrado) {
         cierreBtnWrap.innerHTML =
-          '<span style="font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;background:rgba(0,0,0,0.07);color:var(--text3)">🔒 ' + mesLabel(mesFilVal) + ' cerrado</span>' +
-          (usuarioActual === 'Dianela' ? '<button class="btn btn-ghost" style="font-size:12px" onclick="abrirMes(\'' + mesFilVal + '\')">Reabrir</button>' : '');
+          '<span style="font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;background:rgba(0,0,0,0.07);color:var(--text3)">🔒 ' + mesLabel(mesParaCierre) + ' cerrado</span>' +
+          (usuarioActual === 'Dianela' ? ' <button class="btn btn-ghost" style="font-size:12px" onclick="abrirMes(\'' + mesParaCierre + '\')">Reabrir</button>' : '');
       } else {
-        cierreBtnWrap.innerHTML = '<button class="btn btn-ghost" style="font-size:12px;color:var(--accent);border-color:rgba(182,31,58,0.3)" onclick="cerrarMes(\'' + mesFilVal + '\')">🔒 Cierre de mes</button>';
+        cierreBtnWrap.innerHTML = '<button class="btn btn-ghost" style="font-size:12px;color:var(--accent);border-color:rgba(182,31,58,0.3)" onclick="cerrarMes(\'' + mesParaCierre + '\')">🔒 Cierre de mes</button>';
       }
     } else {
       cierreBtnWrap.innerHTML = '';
@@ -2646,7 +2681,7 @@ function renderAdmin() {
         '</td>'
       : '<td onclick="event.stopPropagation()" style="padding:6px 8px;text-align:center">' +
           '<div style="display:flex;align-items:center;justify-content:center;gap:3px">' +
-            '<input type="number" class="admin-inline-input" style="width:52px;text-align:center" value="' + (descuentoTipo==='pct' ? (descPct||0) : (descuentoMontoVal||0)) + '" min="0" placeholder="0" onclick="event.stopPropagation()" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)">' +
+            '<input type="number" class="admin-inline-input" style="width:68px;text-align:center" value="' + (descuentoTipo==='pct' ? (descPct||0) : (descuentoMontoVal||0)) + '" min="0" placeholder="0" onclick="event.stopPropagation()" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)">' +
             '<select class="admin-inline-input" style="width:42px;padding:2px 2px;font-size:11px" onclick="event.stopPropagation()" onchange="adminUpdateDescuentoTipo(\'' + v._key + '\',this.value)">' +
               '<option value="pct"' + (descuentoTipo==='pct'?' selected':'') + '>%</option>' +
               '<option value="monto"' + (descuentoTipo==='monto'?' selected':'') + '>$</option>' +
@@ -3739,13 +3774,13 @@ const SESSION_KEY = 'coach_hub_sess_v1';
 const SESSION_TTL = 48 * 60 * 60 * 1000; // 48 horas
 
 const USUARIOS_DEFAULT = {
-  'Matteo':  { pin:'007', adminRO:false, rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'] },
-  'Dianela': { pin:'142', adminRO:false, rol:'Admin',       secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'] },
-  'Ruben':   { pin:'835', adminRO:true,  rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar'] },
-  'Facundo': { pin:'294', adminRO:false, rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','clientes','myf','cargar'] },
-  'Stefany': { pin:'561', adminRO:true,  rol:'Post Venta',  secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar'] },
-  'Anita':   { pin:'738', adminRO:false, rol:'Marketing',   secciones:['plantillas','stats','myf'] },
-  'Fran':    { pin:'416', adminRO:false, rol:'Marketing',   secciones:['plantillas','stats','myf'] },
+  'Matteo':  { pin:'007', adminRO:false, rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'] },
+  'Dianela': { pin:'142', adminRO:false, rol:'Admin',       secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'] },
+  'Ruben':   { pin:'835', adminRO:true,  rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar'] },
+  'Facundo': { pin:'294', adminRO:false, rol:'Coach Sales', secciones:['inicio','ventas','plantillas','stats','clientes','myf','calendario','cargar'] },
+  'Stefany': { pin:'561', adminRO:true,  rol:'Post Venta',  secciones:['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar'] },
+  'Anita':   { pin:'738', adminRO:false, rol:'Marketing',   secciones:['plantillas','stats','myf','calendario'] },
+  'Fran':    { pin:'416', adminRO:false, rol:'Marketing',   secciones:['plantillas','stats','myf','calendario'] },
 };
 
 let USUARIOS_CONFIG = {};
@@ -3854,10 +3889,6 @@ function renderLoginUsuarios() {
   updatePinDots();
   var errEl = document.getElementById('login-error');
   if (errEl) errEl.textContent = '';
-  // Copiar logo del nav al login
-  var navImg = document.querySelector('.topnav-logo img');
-  var loginImg = document.getElementById('login-logo-img');
-  if (navImg && loginImg && !loginImg.src) loginImg.src = navImg.src;
 }
 
 function pinKey(k) {
@@ -3918,6 +3949,75 @@ function enforceAdminRO() {
   });
 }
 
+// ── CALENDARIO ────────────────────────────────────────────────────────────────
+var _calendarioConfig = null; // { embedUrl: '...', timezone: '...' }
+
+async function loadCalendarioConfig() {
+  var data = await dbGet('/config/calendario');
+  _calendarioConfig = data || null;
+}
+
+function renderCalendario() {
+  var el = document.getElementById('calendario-body');
+  if (!el) return;
+  if (!_calendarioConfig || !_calendarioConfig.embedUrl) {
+    el.innerHTML =
+      '<div style="text-align:center;padding:60px 20px">' +
+        '<div style="font-size:40px;margin-bottom:16px">📅</div>' +
+        '<div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Calendario no configurado</div>' +
+        '<div style="font-size:14px;color:var(--text3);margin-bottom:24px;max-width:420px;margin-left:auto;margin-right:auto">Configurá el calendario de Google para verlo aquí. Necesitás el enlace de incorporación de tu Google Calendar.</div>' +
+        '<button class="btn btn-accent" onclick="abrirConfigCalendario()">⚙ Configurar calendario</button>' +
+      '</div>';
+    return;
+  }
+  var tz = encodeURIComponent(_calendarioConfig.timezone || 'America/Argentina/Buenos_Aires');
+  var src = _calendarioConfig.embedUrl;
+  // Asegurar que tiene el parámetro de timezone y modo agenda
+  if (src.indexOf('ctz=') === -1) src += (src.indexOf('?') === -1 ? '?' : '&') + 'ctz=' + tz;
+  el.innerHTML =
+    '<div style="border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--glass-shadow);background:var(--glass)">' +
+      '<iframe src="' + src + '" style="width:100%;height:700px;border:0;min-height:500px" frameborder="0" scrolling="no" allowfullscreen loading="lazy"></iframe>' +
+    '</div>';
+}
+
+function abrirConfigCalendario() {
+  var cur = _calendarioConfig || {};
+  var html =
+    '<div style="position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px">' +
+    '<div style="background:var(--glass);backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:28px 28px 24px;max-width:520px;width:100%;box-shadow:var(--glass-shadow-hover)">' +
+      '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:18px">⚙ Configurar calendario</div>' +
+      '<div style="margin-bottom:14px">' +
+        '<label class="form-label" style="font-size:12px">Enlace de incorporación de Google Calendar</label>' +
+        '<input id="cal-config-url" class="form-input" style="font-size:13px;margin-top:6px" placeholder="https://calendar.google.com/calendar/embed?src=..." value="' + (cur.embedUrl || '') + '">' +
+        '<div style="font-size:11px;color:var(--text3);margin-top:6px">En Google Calendar → Configuración del calendario → Integrar calendario → Copiar "Enlace de incorporación"</div>' +
+      '</div>' +
+      '<div style="margin-bottom:20px">' +
+        '<label class="form-label" style="font-size:12px">Zona horaria</label>' +
+        '<input id="cal-config-tz" class="form-input" style="font-size:13px;margin-top:6px" placeholder="America/Argentina/Buenos_Aires" value="' + (cur.timezone || 'America/Argentina/Buenos_Aires') + '">' +
+      '</div>' +
+      '<div style="display:flex;gap:10px;justify-content:flex-end">' +
+        '<button class="btn btn-ghost" onclick="document.getElementById(\'cal-config-modal\').remove()">Cancelar</button>' +
+        '<button class="btn btn-accent" onclick="guardarConfigCalendario()">Guardar</button>' +
+      '</div>' +
+    '</div></div>';
+  var div = document.createElement('div');
+  div.id = 'cal-config-modal';
+  div.innerHTML = html;
+  document.body.appendChild(div);
+}
+
+async function guardarConfigCalendario() {
+  var url = (document.getElementById('cal-config-url')||{}).value || '';
+  var tz = (document.getElementById('cal-config-tz')||{}).value || 'America/Argentina/Buenos_Aires';
+  if (!url) { showToast('Ingresá el enlace del calendario'); return; }
+  _calendarioConfig = { embedUrl: url, timezone: tz };
+  await dbSet('/config/calendario', _calendarioConfig);
+  var modal = document.getElementById('cal-config-modal');
+  if (modal) modal.remove();
+  showToast('Calendario configurado ✓');
+  renderCalendario();
+}
+
 // ── GESTIÓN DE USUARIOS ───────────────────────────────────────────────────────
 const ALL_SECS = [
   { id:'inicio',    label:'Inicio'       },
@@ -3928,6 +4028,7 @@ const ALL_SECS = [
   { id:'admin',     label:'Admin'        },
   { id:'clientes',  label:'Alumnos'      },
   { id:'myf',       label:'Coach Sales'  },
+  { id:'calendario',label:'Calendario'   },
   { id:'usuarios',  label:'Usuarios'     },
 ];
 
@@ -4140,7 +4241,7 @@ init();
 <div id="login-overlay">
   <div id="login-card">
     <div id="login-left">
-      <img id="login-logo-img" alt="Coach Estético">
+      <div id="login-logo-text" style="font-size:38px;font-weight:800;color:#b61f3a;letter-spacing:-0.04em;line-height:1;margin-bottom:6px">CE</div>
       <div id="login-brand">Coach Estético</div>
       <div id="login-sub">Hub de ventas</div>
     </div>
