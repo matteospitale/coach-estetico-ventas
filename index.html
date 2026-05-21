@@ -691,7 +691,8 @@ body.admin-ro .admin-edit { display:none!important; }
     <section class="section" id="sec-ventas">
       <div class="section-header">
         <div class="section-title" id="ventas-title">Todas las ventas</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div id="ventas-resumen-asesores" style="display:none;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;line-height:1.8"></div>
           <button class="btn btn-ghost" onclick="exportCSV()">↓ Excel</button>
           <button class="btn btn-ghost" id="btn-modo-edicion" onclick="toggleModoEdicion()">✎ Editar / Eliminar</button>
         </div>
@@ -725,7 +726,7 @@ body.admin-ro .admin-edit { display:none!important; }
           <table>
             <thead><tr>
               <th>Fecha</th><th>Asesor</th><th>Canal</th>
-              <th>Monto USD</th><th>Monto local</th><th>Forma de pago</th>
+              <th>Valor oficial</th><th>Pago alumno</th><th>Forma de pago</th>
               <th>Curso / Producto</th><th>ID Lead</th><th>Teléfono</th>
               <th>Email</th><th>Código</th><th>Aclaración</th><th>Comprobante</th><th>Estado</th>
               <th id="th-check" style="display:none;width:36px">
@@ -901,6 +902,9 @@ body.admin-ro .admin-edit { display:none!important; }
         <div class="section-title" id="admin-title">Administración</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div id="admin-total-mes" style="font-size:13px;font-weight:700;color:var(--text);background:var(--surface2);padding:6px 12px;border-radius:8px;white-space:nowrap"></div>
+          <button class="btn btn-ghost" onclick="abrirNotificaciones()" style="position:relative" title="Notificaciones">
+            🔔 <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:#fff;border-radius:50%;font-size:10px;font-weight:700;width:16px;height:16px;line-height:16px;text-align:center">0</span>
+          </button>
           <button class="btn btn-ghost" onclick="exportAdminCSV()">↓ CSV</button>
           <button class="btn btn-accent" style="padding:7px 14px;font-size:13px" onclick="switchTab('cargar')">+ Nueva venta</button>
         </div>
@@ -933,7 +937,7 @@ body.admin-ro .admin-edit { display:none!important; }
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Pago alumno</th><th>Pago Local</th><th>Descuento</th><th>Monto neto</th><th>Neto Local</th><th>M. Final USD</th><th>M. Final ARS</th><th>Estado</th><th style="width:36px"></th>
+              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Valor oficial</th><th>Pago alumno</th><th>Descuento</th><th>Monto neto</th><th>Neto Local</th><th>M. Final USD</th><th>M. Final ARS</th><th>Estado</th><th style="width:36px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -1079,11 +1083,13 @@ async function init() {
     document.getElementById('loading-state').style.display = 'none';
     renderAll();
     await loadPlantillas();
+    await loadNotificaciones();
     if (usuarioActual) {
       aplicarPermisos();
     }
     setInterval(refreshData, 15000);
     setInterval(refreshPlantillas, 30000);
+    setInterval(loadNotificaciones, 60000);
   } catch(e) {
     document.getElementById('loading-state').innerHTML =
       '<div style="padding:40px;color:red;font-size:14px">' +
@@ -1412,6 +1418,27 @@ function renderTabla() {
   const vf = filteredVentas(asesor, mes, pago, search, estado);
   const total = vf.reduce((s,v)=>s+parseFloat(v.monto||0),0);
   document.getElementById('ventas-title').textContent = vf.length + ' venta' + (vf.length!==1?'s':'') + ' · $' + total.toLocaleString('en-US') + ' USD';
+  // Resumen por asesor
+  var resEl = document.getElementById('ventas-resumen-asesores');
+  if (resEl && vf.length) {
+    var asMap = {};
+    vf.forEach(function(v) {
+      var a = v.asesor||'Sin asesor';
+      if (!asMap[a]) asMap[a] = { apr:0, pend:0 };
+      var m = parseFloat(v.monto||0);
+      if ((v.estado||'Pendiente')==='Aprobado') asMap[a].apr += m;
+      else asMap[a].pend += m;
+    });
+    var asKeys = Object.keys(asMap).sort();
+    resEl.innerHTML = asKeys.map(function(a) {
+      var d = asMap[a]; var tot = d.apr + d.pend;
+      return '<span style="margin-right:12px"><strong style="color:var(--text)">' + a + '</strong>' +
+        ' <span style="color:#155724">✅$' + d.apr.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' +
+        ' <span style="color:#004085">🔵$' + d.pend.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' +
+        ' <span style="color:var(--text3)">· $' + tot.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span></span>';
+    }).join('');
+    resEl.style.display = '';
+  } else if (resEl) { resEl.style.display = 'none'; }
   const tbody = document.getElementById('tabla-body');
   const cardsEl = document.getElementById('tabla-body-cards');
   const isMobile = window.innerWidth <= 700;
@@ -1441,11 +1468,7 @@ function renderTabla() {
       '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + fechaCorta + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (v.curso||'—') + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Pago</span><span class="venta-card-val">' + (v.pago||'—') + (v.montoLocal?' · '+v.montoLocal:'') + '</span></div>' +
-      '<div class="venta-card-row"><span class="venta-card-label">Estado</span><span class="venta-card-val"><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
-        '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
-        '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
-        '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
-      '</select></span></div>' +
+      '<div class="venta-card-row"><span class="venta-card-label">Estado</span><span class="venta-card-val"><span class="estado-select ' + estadoClass(est) + '">' + est + '</span></span></div>' +
       (v.lead ? '<div class="venta-card-row"><span class="venta-card-label">ID Lead</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);font-weight:600">' + v.lead + '</a></span></div>' : '') +
       (v.telefono ? '<div class="venta-card-row"><span class="venta-card-label">Teléfono</span><span class="venta-card-val">' + v.telefono + '</span></div>' : '') +
       (v.email ? '<div class="venta-card-row"><span class="venta-card-label">Email</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent)">' + v.email + '</a></span></div>' : '') +
@@ -1473,11 +1496,7 @@ function renderTabla() {
       '<td class="mono" style="color:var(--text3)">' + (v.codigo||'—') + '</td>' +
       '<td style="font-size:11px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.nota||'') + '">' + (v.nota||'—') + '</td>' +
       '<td onclick="v_compr_click(event)" style="cursor:pointer">' + (v.comprobante ? '<img src="' + v.comprobante + '" data-full="' + v._key + '" style="height:28px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="ventaComprobanteClick(event,ventas.find(function(x){return x._key===\'' + v._key + '\'}))">' : '—') + '</td>' +
-      '<td><select class="estado-select ' + estadoClass(est) + '" onchange="cambiarEstado(\'' + v._key + '\',this)">' +
-        '<option' + (est==='Aprobado'?' selected':'') + '>Aprobado</option>' +
-        '<option' + (est==='Pendiente'?' selected':'') + '>Pendiente</option>' +
-        '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
-      '</select></td>' +
+      '<td><span class="estado-select ' + estadoClass(est) + '">' + est + '</span></td>' +
       chkTd +
       '</tr>';
   }).join('');
@@ -1543,6 +1562,8 @@ async function eliminarVenta(key) {
 function editarVenta(key) {
   const v = ventas.find(x=>x._key===key);
   if (!v) return;
+  // Capture original state for auto-pending + notification
+  window._ventaOriginal = Object.assign({}, v);
   document.getElementById('f-asesor').value = v.asesor||'';
   document.getElementById('f-fecha').value = v.fecha||'';
   document.getElementById('f-monto').value = v.monto||'';
@@ -1563,8 +1584,9 @@ function editarVenta(key) {
   window._editKey = key;
   switchTab('cargar');
   actualizarCompletitud();
-  document.getElementById('btn-confirmar').textContent = 'Guardar cambios';
-  showToast('Editando venta — modificá y confirmá');
+  const wasApproved = (v.estado||'Pendiente') === 'Aprobado';
+  document.getElementById('btn-confirmar').textContent = wasApproved ? '⚠️ Guardar y volver a Pendiente' : 'Guardar cambios';
+  showToast(wasApproved ? '⚠️ Esta venta estaba Aprobada — al guardar vuelve a Pendiente' : 'Editando venta — modificá y confirmá');
 }
 
 // ── ESTADÍSTICAS ──
@@ -2332,6 +2354,8 @@ function ventaComprobanteClick(event, v) {
 
 // ── ADMINISTRACIÓN ──
 let adminExpandidos = new Set();
+// HTML escape helper – prevents broken attributes when user data contains " < >
+function escAdm(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function toggleAdmin(key) {
   if (adminExpandidos.has(key)) adminExpandidos.delete(key);
@@ -2406,7 +2430,7 @@ function renderAdmin() {
             // Datos del lead
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border)">Datos del lead</div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Nombre y Apellido</label>' +
-              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.nombre||'') + '" placeholder="Nombre completo" onchange="updateAdminField(\'' + v._key + '\',\'nombre\',this.value)"></div>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.nombre||'') + '" placeholder="Nombre completo" onchange="updateAdminField(\'' + v._key + '\',\'nombre\',this.value)"></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">País</label>' +
               '<select class="form-select" style="font-size:13px;padding:6px 10px" onchange="updateAdminField(\'' + v._key + '\',\'pais\',this.value)">' +
                 '<option value="">Seleccionar...</option>' +
@@ -2426,13 +2450,13 @@ function renderAdmin() {
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Curso</label>' +
               '<div style="font-size:13px;padding:6px 2px;color:var(--text)">' + (v.curso||'—') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Promoción</label>' +
-              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.promocion||'') + '" placeholder="Ej: Lanzamiento $125" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Pago alumno</label>' +
+              '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.promocion||'') + '" placeholder="Ej: Lanzamiento $125" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></div>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Forma de pago</label>' +
               '<div style="font-size:13px;padding:6px 2px;color:var(--text2)">' + (v.pago||'—') + '</div></div>' +
 
             // Conversiones y comisiones
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Conversiones y comisiones</div>' +
-            '<div class="admin-field"><label class="form-label" style="font-size:11px">Pago alumno</label>' +
+            '<div class="admin-field"><label class="form-label" style="font-size:11px">Valor oficial</label>' +
               '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Descuento %</label>' +
               '<input class="form-input" type="number" style="font-size:13px;padding:6px 10px" value="' + (v.descuento||0) + '" placeholder="0" min="0" max="100" onchange="adminUpdateDescuento(\'' + v._key + '\',this.value)"></div>' +
@@ -2443,13 +2467,13 @@ function renderAdmin() {
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final USD' + (esLocalConTC && adminTC > 0 ? '' : '<br><small style="font-weight:400;color:var(--text3)">*1420, /1420 o valor directo</small>') + '</label>' +
               (esLocalConTC && adminTC > 0 && montoNetoLocal !== null
                 ? '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">$' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '<div style="font-size:11px;font-weight:400;color:var(--text3);margin-top:2px">Auto: ' + montoNetoLocal.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ' + currLabel + ' ÷ TC ' + adminTC + '</div></div>'
-                : '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.montoFinalUSD||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' +
+                : '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.montoFinalUSD||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalUSD\',this.value)">' +
                   (valFinalUSD !== null ? '<div style="font-size:11px;color:var(--text3);margin-top:3px">= $' + valFinalUSD.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' : ''))
               + '</div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Monto final ARS' + (esARS ? '' : '<br><small style="font-weight:400;color:var(--text3)">*1420, /1420 o valor directo</small>') + '</label>' +
               (esARS
                 ? '<div style="font-size:15px;font-weight:700;color:var(--accent);padding:4px 2px">' + (pagoLocalARS !== null ? '$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + ' ARS' : '<span style="color:var(--text3);font-weight:400;font-size:13px">Sin monto local cargado</span>') + '<div style="font-size:11px;font-weight:400;color:var(--text3);margin-top:2px">Auto: monto local ARS × (1 − descuento%)</div></div>'
-                : '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + (v.montoFinalARS||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' +
+                : '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.montoFinalARS||'') + '" placeholder="*1420 o valor" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' +
                   (valFinalARS !== null ? '<div style="font-size:11px;color:var(--text3);margin-top:3px">= $' + valFinalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' : ''))
               + '</div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Comisión %</label>' +
@@ -2472,7 +2496,7 @@ function renderAdmin() {
                   : '<span style="font-size:12px;color:var(--text3)">Sin comprobante</span>') +
               '</div></div>' +
             '<div class="admin-field" style="grid-column:1/-1"><label class="form-label" style="font-size:11px">Notas admin</label>' +
-              '<textarea class="form-textarea" style="font-size:13px;min-height:60px" placeholder="Notas internas..." onchange="updateAdminField(\'' + v._key + '\',\'adminNota\',this.value)">' + (v.adminNota||'') + '</textarea></div>' +
+              '<textarea class="form-textarea" style="font-size:13px;min-height:60px" placeholder="Notas internas..." onchange="updateAdminField(\'' + v._key + '\',\'adminNota\',this.value)">' + escAdm(v.adminNota||'') + '</textarea></div>' +
 
           '</div>' +
         '</td>' +
@@ -2531,6 +2555,96 @@ async function cambiarEstado(key, sel) {
   renderAdmin();
 }
 
+// ── NOTIFICACIONES ──
+var notificaciones = [];
+var notificacionesLeidas = JSON.parse(localStorage.getItem('coach_notif_leidas_v1')||'[]');
+
+async function loadNotificaciones() {
+  var data = await dbGet('/notificaciones');
+  notificaciones = data ? Object.entries(data).map(function(kv){ return Object.assign({_key:kv[0]},kv[1]); }) : [];
+  notificaciones.sort(function(a,b){ return (b.timestamp||'').localeCompare(a.timestamp||''); });
+  actualizarBadgeNotif();
+}
+
+function noLeidas() {
+  return notificaciones.filter(function(n){ return notificacionesLeidas.indexOf(n._key) === -1; });
+}
+
+function actualizarBadgeNotif() {
+  var badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  var count = noLeidas().length;
+  badge.textContent = count > 9 ? '9+' : String(count);
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+function abrirNotificaciones() {
+  var body = document.getElementById('notif-body');
+  if (!body) return;
+  if (!notificaciones.length) {
+    body.innerHTML = '<div class="empty-state" style="padding:24px">Sin notificaciones</div>';
+  } else {
+    body.innerHTML = notificaciones.map(function(n) {
+      var leida = notificacionesLeidas.indexOf(n._key) !== -1;
+      var fecha = n.timestamp ? new Date(n.timestamp).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+      var cambiosHtml = '';
+      if (n.cambios) {
+        var campos = { asesor:'Asesor', fecha:'Fecha', monto:'Valor oficial', montoLocal:'Pago alumno', pago:'Forma de pago', curso:'Curso', canal:'Canal', nombre:'Nombre', apellido:'Apellido', pais:'País', email:'Email', lead:'ID Lead', telefono:'Teléfono', nota:'Aclaración', codigo:'Código' };
+        Object.keys(n.cambios).forEach(function(campo) {
+          var lbl = campos[campo] || campo;
+          var antes = String(n.cambios[campo].antes||'—');
+          var despues = String(n.cambios[campo].despues||'—');
+          cambiosHtml += '<div style="font-size:11px;color:var(--text3);margin-top:2px"><strong style="color:var(--text2)">' + lbl + ':</strong> <span style="text-decoration:line-through;color:#C0392B">' + antes + '</span> → <span style="color:#155724">' + despues + '</span></div>';
+        });
+      }
+      return '<div style="padding:14px 16px;border-bottom:1px solid var(--border);background:' + (leida ? 'transparent' : 'rgba(182,31,58,0.04)') + '">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">' +
+          '<div>' +
+            '<div style="font-size:13px;font-weight:' + (leida?'500':'700') + ';color:var(--text)">✏️ Venta aprobada editada' + (leida ? '' : ' <span style="font-size:10px;background:var(--accent);color:#fff;border-radius:20px;padding:1px 7px">Nueva</span>') + '</div>' +
+            '<div style="font-size:12px;color:var(--text3);margin-top:2px"><strong>' + (n.nombreAlumno||'—') + '</strong> · editada por <strong>' + (n.editadoPor||'—') + '</strong> · ' + fecha + '</div>' +
+            cambiosHtml +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+  document.getElementById('modal-notificaciones').classList.add('show');
+}
+
+function cerrarNotificaciones() {
+  document.getElementById('modal-notificaciones').classList.remove('show');
+}
+
+function marcarTodasLeidas() {
+  notificaciones.forEach(function(n) {
+    if (notificacionesLeidas.indexOf(n._key) === -1) notificacionesLeidas.push(n._key);
+  });
+  localStorage.setItem('coach_notif_leidas_v1', JSON.stringify(notificacionesLeidas));
+  actualizarBadgeNotif();
+  cerrarNotificaciones();
+}
+
+async function guardarNotificacionEdicion(ventaOriginal, ventaNueva) {
+  var CAMPOS_RASTREAR = ['asesor','fecha','monto','montoLocal','pago','curso','canal','nombre','apellido','pais','email','lead','telefono','nota','codigo'];
+  var cambios = {};
+  CAMPOS_RASTREAR.forEach(function(c) {
+    var antes = String(ventaOriginal[c]||'');
+    var despues = String(ventaNueva[c]||'');
+    if (antes !== despues) cambios[c] = { antes: antes, despues: despues };
+  });
+  if (!Object.keys(cambios).length) return; // nothing changed
+  var notif = {
+    type: 'edit_aprobada',
+    timestamp: new Date().toISOString(),
+    editadoPor: usuarioActual||'',
+    nombreAlumno: (ventaOriginal.nombre||'') + (ventaOriginal.apellido ? ' '+ventaOriginal.apellido : ''),
+    ventaFecha: ventaOriginal.fecha||'',
+    cambios: cambios
+  };
+  await dbPush('/notificaciones', notif);
+  await loadNotificaciones();
+}
+
 function confirmarVenta() {
   const asesor = document.getElementById('f-asesor').value;
   const fecha = document.getElementById('f-fecha').value;
@@ -2572,17 +2686,25 @@ function confirmarVenta() {
 async function guardarVenta() {
   closeModal();
   try {
+    var ventaOriginal = window._ventaOriginal || null;
+    var eraAprobada = ventaOriginal && (ventaOriginal.estado||'Pendiente') === 'Aprobado';
+    // pendiente always has estado:'Pendiente' — auto-reset is built in
     if (window._editKey) {
       await dbDelete('/ventas/' + window._editKey);
       window._editKey = null;
+      window._ventaOriginal = null;
       document.getElementById('btn-confirmar').textContent = 'Revisar y confirmar';
     }
     const saved = await dbPush('/ventas', pendiente);
     if (!saved) throw new Error('Firebase rechazó la escritura');
+    // If was approved → log notification with diff
+    if (eraAprobada) {
+      await guardarNotificacionEdicion(ventaOriginal, pendiente);
+    }
     limpiarForm();
     seleccionados.clear();
     if (modoEdicion) toggleModoEdicion();
-    showToast('Venta guardada — visible para todos');
+    showToast(eraAprobada ? '⚠️ Venta guardada — volvió a Pendiente' : 'Venta guardada — visible para todos');
     await loadVentas();
     fillMesOptions('admin-fil-mes');
     renderAdmin();
@@ -3021,13 +3143,14 @@ function renderClientes() {
 
   if (!_clientesArr.length) { body.innerHTML = '<div class="empty-state">Sin alumnos con esos filtros</div>'; return; }
 
-  var COLS = 'minmax(180px,2fr) 75px minmax(120px,1.5fr) 115px 85px 110px';
+  var COLS = 'minmax(180px,2fr) 85px 75px minmax(120px,1.5fr) 115px 85px 110px';
   var HS = 'font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em';
   body.innerHTML =
     '<div style="background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)">' +
-    '<div style="overflow-x:auto"><div style="min-width:680px">' +
+    '<div style="overflow-x:auto"><div style="min-width:760px">' +
     '<div style="display:grid;grid-template-columns:' + COLS + ';padding:9px 18px;gap:8px;background:var(--surface2);border-bottom:1.5px solid var(--border)">' +
       '<span style="' + HS + '">Alumno</span>' +
+      '<span style="' + HS + '">ID Kommo</span>' +
       '<span style="' + HS + '">País</span>' +
       '<span style="' + HS + '">Cursos</span>' +
       '<span style="' + HS + '">Asesor</span>' +
@@ -3052,6 +3175,7 @@ function renderClientes() {
             '<div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (cl.email||'—') + '</div>' +
           '</div>' +
         '</div>' +
+        '<div style="font-size:11px;font-weight:600">' + (cl.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + cl.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none">' + cl.lead + ' ↗</a>' : '<span style="color:var(--text3)">—</span>') + '</div>' +
         '<div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (cl.pais||'—') + '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">' +
           cursos.slice(0,2).map(function(cu){ return '<span style="font-size:10px;background:var(--accent-light);color:var(--accent);border-radius:20px;padding:2px 7px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block" title="' + cu.replace(/"/g,'&quot;') + '">' + cu + '</span>'; }).join('') +
@@ -3735,6 +3859,23 @@ async function eliminarUsuario(nombre) {
 document.getElementById('f-fecha').valueAsDate = new Date();
 init();
 </script>
+
+<!-- MODAL NOTIFICACIONES -->
+<div class="modal-overlay" id="modal-notificaciones">
+  <div class="modal" style="max-width:560px;width:96vw;max-height:80vh;display:flex;flex-direction:column">
+    <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>🔔 Notificaciones</span>
+      <button onclick="cerrarNotificaciones()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);padding:0 4px">✕</button>
+    </div>
+    <div id="notif-body" style="flex:1;overflow-y:auto;min-height:80px">
+      <div class="empty-state">Sin notificaciones</div>
+    </div>
+    <div class="modal-actions" style="border-top:1px solid var(--border);padding-top:14px;margin-top:8px">
+      <button class="btn btn-ghost" onclick="marcarTodasLeidas()">Marcar todas como leídas</button>
+      <button class="btn btn-ghost" onclick="cerrarNotificaciones()">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL EDITAR ALUMNO -->
 <div class="modal-overlay" id="modal-editar-cliente">
