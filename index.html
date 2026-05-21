@@ -2454,7 +2454,7 @@ function renderAdmin() {
 
             // Datos de la venta
             '<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:6px">Venta</div>' +
-            '<div class="admin-field" style="grid-column:1/-1"><label class="form-label" style="font-size:11px">Curso</label>' +
+            '<div class="admin-field" style="grid-column:span 2"><label class="form-label" style="font-size:11px">Curso</label>' +
               '<div style="font-size:13px;padding:6px 2px;color:var(--text);font-weight:500">' + (v.curso||'—') + '</div></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Promoción</label>' +
               '<input class="form-input" style="font-size:13px;padding:6px 10px" value="' + escAdm(v.promocion||'') + '" placeholder="Ej: Lanzamiento $125" onchange="updateAdminField(\'' + v._key + '\',\'promocion\',this.value)"></div>' +
