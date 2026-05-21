@@ -2410,17 +2410,23 @@ function renderAdmin() {
     var esHotmart = v.pago === 'Hotmart';
     var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
     var esBs = v.pago === 'Bolívares';
-    // Mapa de monedas locales por método de pago
-    var localCurrencyMap = {'Link Mercado Pago Argentina':'ARS','Transferencia Argentina':'ARS','Bolívares':'Bs','Pesos Chilenos':'CLP','Pesos Dominicanos':'DOP','Pesos Colombianos':'COP','Pesos Peruanos':'PEN'};
+    // Moneda del alumno según forma de pago (no según país)
+    var localCurrencyMap = {
+      'Link Mercado Pago Argentina':'ARS', 'Transferencia Argentina':'ARS',
+      'Bolívares':'Bs',
+      'Zelle':'USD', 'Hotmart':'USD',
+      'Pesos Chilenos':'CLP', 'Pesos Dominicanos':'DOP',
+      'Pesos Colombianos':'COP', 'Pesos Peruanos':'PEN',
+      'PayPal':''  // multidivisa — solo monto
+    };
+    var pagoEnMapa = Object.prototype.hasOwnProperty.call(localCurrencyMap, v.pago||'');
     var montoLocalNum = parseFloat(v.montoLocal || 0);
-    var currLabel = localCurrencyMap[v.pago] || '';
-    // ARS y Bolívares: monto neto local = montoLocal × (1 − descuento%)
+    var currLabel = pagoEnMapa ? localCurrencyMap[v.pago] : '';
+    // Solo ARS y Bs necesitan TC para convertir a USD
     var esLocalConTC = (esARS || esBs) && montoLocalNum > 0;
     var montoNetoLocal = esLocalConTC ? montoLocalNum * (1 - descPct / 100) : null;
-    // Para ARS: M.Final ARS = monto neto local (ya en ARS)
     var pagoLocalARS = esARS && montoNetoLocal !== null ? montoNetoLocal : null;
     var adminTC = parseFloat(v.adminTC || 0);
-    // M.Final USD para ARS/Bs: montoNetoLocal / TC; para el resto: fórmula o manual
     var valFinalUSD = esHotmart
       ? montoNeto
       : (esLocalConTC && adminTC > 0 ? montoNetoLocal / adminTC : calcFinal(v.montoFinalUSD, esLocalConTC && montoNetoLocal !== null ? montoNetoLocal : montoNeto));
@@ -2496,12 +2502,13 @@ function renderAdmin() {
     var cellFinalARS = esARS
       ? (pagoLocalARS !== null ? '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + pagoLocalARS.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' : '<span style="color:var(--text3);font-size:11px">—</span>')
       : '<div class="admin-formula-cell"><input class="admin-inline-input" style="width:62px" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valFinalARS !== null ? '<span class="admin-formula-result">$' + valFinalARS.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' : '') + '</div>';
-    var valPagoLocalUSD = !currLabel ? calcFinal(v.montoFinalARS, pagoAlumno) : null;
-    var cellPagoLocal = currLabel && montoLocalNum > 0
-      ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + montoLocalNum.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span><span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>'
-      : (currLabel
-          ? '<span style="color:var(--text3);font-size:11px">—</span>'
-          : '<div class="admin-formula-cell"><input class="admin-inline-input" style="width:62px" value="' + (v.montoFinalARS||'') + '" placeholder="*1420" onclick="event.stopPropagation()" onchange="adminUpdateFinal(\'' + v._key + '\',\'montoFinalARS\',this.value)">' + (valPagoLocalUSD !== null ? '<span class="admin-formula-result">$' + valPagoLocalUSD.toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' : '') + '</div>');
+    // cellPagoLocal: muestra el monto del alumno con la divisa según la forma de pago
+    var cellPagoLocal = pagoEnMapa
+      ? (montoLocalNum > 0
+          ? '<span style="font-size:13px;font-weight:700;color:var(--text)">' + montoLocalNum.toLocaleString('en-US',{minimumFractionDigits:2}) + '</span>' +
+            (currLabel ? '<span style="font-size:10px;color:var(--text3);margin-left:4px">' + currLabel + '</span>' : '')
+          : '<span style="color:var(--text3);font-size:11px">—</span>')
+      : '<span style="color:var(--text3);font-size:11px">—</span>';
     return '<tr style="cursor:pointer" onclick="toggleAdmin(\'' + v._key + '\')">' +
       '<td class="mono" style="white-space:nowrap">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
