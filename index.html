@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.35</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.36</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3668,22 +3668,34 @@ function _renderClienteDetalle(cl, body) {
 
 // ── CONVERSACIÓN KOMMO ──
 async function _kommoFetch(path) {
-  // Intenta directo; si falla por CORS reintenta con proxy
-  var url = 'https://api-g.kommo.com' + path;
-  var hdrs = { 'Authorization': 'Bearer ' + KOMMO_TOKEN };
-  var isCORS = function(e) { return e.message && (e.message.indexOf('Failed to fetch') >= 0 || e.message.indexOf('NetworkError') >= 0 || e.message.indexOf('Load failed') >= 0); };
+  var kommoUrl = 'https://api-g.kommo.com' + path;
+  var sep = path.indexOf('?') >= 0 ? '&' : '?';
+  // RFC 6750 §2.3: token como query param (evita preflight CORS)
+  var kommoUrlToken = kommoUrl + sep + 'access_token=' + KOMMO_TOKEN;
+  var authHdr = { 'Authorization': 'Bearer ' + KOMMO_TOKEN };
+
+  // Estrategia 1: directo con header Authorization
   try {
-    var r = await fetch(url, { headers: hdrs });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return await r.json();
-  } catch(e) {
-    if (!isCORS(e)) throw e;
-    // Reintentar vía proxy CORS
-    var proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
-    var r2 = await fetch(proxy, { headers: hdrs });
+    var r1 = await fetch(kommoUrl, { headers: authHdr });
+    if (!r1.ok) throw new Error('HTTP ' + r1.status);
+    return await r1.json();
+  } catch(e1) { console.info('[Kommo] directo falló:', e1.message); }
+
+  // Estrategia 2: allorigins.win — proxy server-side, token en URL (sin header = sin preflight)
+  try {
+    var r2 = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(kommoUrlToken));
     if (!r2.ok) throw new Error('HTTP ' + r2.status);
     return await r2.json();
-  }
+  } catch(e2) { console.info('[Kommo] allorigins falló:', e2.message); }
+
+  // Estrategia 3: corsproxy.io — proxy con header Authorization
+  try {
+    var r3 = await fetch('https://corsproxy.io/?' + encodeURIComponent(kommoUrl), { headers: authHdr });
+    if (!r3.ok) throw new Error('HTTP ' + r3.status);
+    return await r3.json();
+  } catch(e3) { console.info('[Kommo] corsproxy falló:', e3.message); }
+
+  throw new Error('Sin acceso a la API de Kommo (3 estrategias fallaron). Abrí la consola para más detalle.');
 }
 
 async function cargarConversacionKommo(leadId, container, nombreAlumna) {
