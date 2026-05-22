@@ -41,10 +41,10 @@ module.exports = async function handler(req, res) {
       return f ? (f.values && f.values[0] && f.values[0].value || '') : '';
     }
 
-    // Fetch ALL notes - no type filter to catch WhatsApp/Instagram messages
+    // Fetch notes (conversación completa: hasta 250 registros)
     var notas = [];
     try {
-      var notesR = await fetch(BASE + '/leads/' + lead.id + '/notes?limit=50&order[id]=asc', { headers: headers });
+      var notesR = await fetch(BASE + '/leads/' + lead.id + '/notes?limit=250&order[id]=asc', { headers: headers });
       var notesText = await notesR.text();
       if (notesText && notesText.trim() !== '') {
         var notesData = JSON.parse(notesText);
@@ -54,18 +54,34 @@ module.exports = async function handler(req, res) {
             var d = new Date(n.created_at * 1000);
             var fecha = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
                         ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-            // Detect direction: inbox/entrante types
+
+            // Dirección: created_by === 0 → entrante (del lead/sistema externo)
+            //            created_by  >  0 → saliente (del equipo)
+            var createdBy = n.created_by || 0;
+            var tipo = createdBy === 0 ? 'entrante' : 'saliente';
+
+            // Icono según tipo de nota
             var tipoNum = n.note_type;
-            var esEntrante = tipoNum === 4 || tipoNum === 102 || tipoNum === 'inbox_message';
-            var tipo = esEntrante ? 'entrante' : 'saliente';
-            // Extract text from all possible locations
+            var icono = '';
+            if (tipoNum === 25) icono = 'call_in';
+            else if (tipoNum === 26) icono = 'call_out';
+            else if (tipoNum === 12) icono = 'file';
+
+            // Extraer texto de todos los lugares posibles
             var texto = '';
             if (n.params) {
               texto = n.params.text || n.params.service || n.params.body || n.params.message || '';
             }
             if (!texto && n.text) texto = n.text;
             if (!texto && typeof n.params === 'string') texto = n.params;
-            return { fecha: fecha, tipo: tipo, texto: String(texto).substring(0, 600), note_type: tipoNum };
+
+            return {
+              fecha: fecha,
+              tipo: tipo,
+              icono: icono,
+              texto: String(texto).substring(0, 800),
+              note_type: tipoNum
+            };
           })
           .filter(function(n) { return n.texto && n.texto.trim().length > 2; });
       }
