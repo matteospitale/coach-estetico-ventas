@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.34</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.35</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3667,14 +3667,28 @@ function _renderClienteDetalle(cl, body) {
 }
 
 // ── CONVERSACIÓN KOMMO ──
+async function _kommoFetch(path) {
+  // Intenta directo; si falla por CORS reintenta con proxy
+  var url = 'https://api-g.kommo.com' + path;
+  var hdrs = { 'Authorization': 'Bearer ' + KOMMO_TOKEN };
+  var isCORS = function(e) { return e.message && (e.message.indexOf('Failed to fetch') >= 0 || e.message.indexOf('NetworkError') >= 0 || e.message.indexOf('Load failed') >= 0); };
+  try {
+    var r = await fetch(url, { headers: hdrs });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch(e) {
+    if (!isCORS(e)) throw e;
+    // Reintentar vía proxy CORS
+    var proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
+    var r2 = await fetch(proxy, { headers: hdrs });
+    if (!r2.ok) throw new Error('HTTP ' + r2.status);
+    return await r2.json();
+  }
+}
+
 async function cargarConversacionKommo(leadId, container, nombreAlumna) {
   try {
-    var resp = await fetch(
-      'https://api-g.kommo.com/api/v4/leads/' + leadId + '/notes?limit=250&order[id]=asc',
-      { headers: { 'Authorization': 'Bearer ' + KOMMO_TOKEN } }
-    );
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    var data = await resp.json();
+    var data = await _kommoFetch('/api/v4/leads/' + leadId + '/notes?limit=250&order[id]=asc');
     var notes = (data._embedded && data._embedded.notes) || [];
     var total = data._total_items || notes.length;
 
@@ -3731,11 +3745,8 @@ async function cargarConversacionKommo(leadId, container, nombreAlumna) {
 
   } catch(e) {
     var msg = e.message || 'Error desconocido';
-    var esCORS = msg.indexOf('Failed to fetch') >= 0 || msg.indexOf('NetworkError') >= 0 || msg.indexOf('CORS') >= 0;
     container.innerHTML =
-      '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">' +
-        (esCORS ? '⚠️ No se pudo conectar con Kommo (CORS o red).<br><small style="font-size:11px">Revisá la conexión o abrí el lead directamente.</small>' : '❌ Error: ' + escAdm(msg)) +
-      '</div>';
+      '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">❌ Error: ' + escAdm(msg) + '</div>';
   }
 }
 
