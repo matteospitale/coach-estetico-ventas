@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.25</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.27</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -5044,11 +5044,13 @@ function _renderImportPreview() {
   var PAGOS = ['Hotmart','Link Mercado Pago Argentina','Transferencia Argentina','Zelle','Bolívares','Pesos Chilenos','Pesos Dominicanos','Pesos Colombianos','Pesos Peruanos','PayPal'];
   var CANALES = ['Instagram','WhatsApp','IA/Web'];
 
-  // Base input style
-  var iBase = 'padding:3px 6px;font-size:11px;border-radius:5px;font-family:inherit;outline:none;box-sizing:border-box;';
-  var iOk   = iBase + 'border:1px solid var(--border);background:rgba(255,255,255,0.88);color:var(--text);';
-  var iOkG  = iBase + 'border:1px solid rgba(74,140,92,0.4);background:rgba(74,140,92,0.07);color:var(--facundo);font-weight:600;'; // verde Kommo
-  var iErr  = iBase + 'border:1.5px solid var(--danger);background:rgba(192,57,43,0.08);color:var(--text);';
+  // Estilos base — selects no soportan background en todos los browsers, usamos border-color
+  var iBase  = 'padding:3px 6px;font-size:11px;border-radius:5px;font-family:inherit;outline:none;box-sizing:border-box;';
+  var iOk    = iBase + 'border:1px solid var(--border);background:rgba(255,255,255,0.88);color:var(--text);';
+  var iOkG   = iBase + 'border:1.5px solid rgba(74,140,92,0.6);background:rgba(74,140,92,0.07);color:var(--facundo);font-weight:600;'; // verde input (tiene bg)
+  var iSelG  = iBase + 'border:1.5px solid rgba(74,140,92,0.6);color:var(--facundo);font-weight:600;';  // verde select (sin bg)
+  var iErr   = iBase + 'border:1.5px solid var(--danger);background:rgba(192,57,43,0.08);color:var(--text);';
+  var iSelE  = iBase + 'border:1.5px solid var(--danger);color:var(--text2);';                          // rojo select (sin bg)
 
   var cols = ['Fecha','Lead ID','Curso','$ USD','Pago','Nombre','Apellido','País','Canal','Email','Teléfono'];
   var html = '<div style="border-radius:8px;border:1px solid var(--border);overflow:auto;max-height:52vh">';
@@ -5064,34 +5066,39 @@ function _renderImportPreview() {
     var kommo = _importKommoMap[v.lead] || {};
     var bg    = i % 2 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)';
 
-    // Editable text input — verde si vino de Kommo, rojo si está vacío y es requerido
-    function inp(field, val, ph, w, required) {
+    // Input editable: vacío → rojo, de Kommo → verde, propio → normal
+    function inp(field, val, ph, w) {
       var fromKommo = fromK && val && kommo[field] === val;
-      var st = (!val && required) ? iErr : (fromKommo ? iOkG : iOk);
-      var escaped = (val || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-      return '<td style="padding:3px 5px;white-space:nowrap"><input type="text" value="' + escaped + '" placeholder="' + ph + '" ' +
-        'oninput="_importRows[' + i + '].' + field + '=this.value;this.style.border=this.value?\'1px solid var(--border)\':\'' + (required?'1.5px solid var(--danger)':'1px solid var(--border)') + '\'" ' +
-        'style="' + st + 'width:' + w + '"></td>';
+      var st = !val ? iErr : (fromKommo ? iOkG : iOk);
+      var onchg = 'var e=_importRows[' + i + '];e.' + field + '=this.value;' +
+        'this.style.cssText=this.value?' +
+        '(e._kommo_' + field + '===this.value?"' + iOkG.replace(/"/g,"'") + '":"' + iOk.replace(/"/g,"'") + '")' +
+        ':"' + iErr.replace(/"/g,"'") + '";this.style.width="' + w + '"';
+      var escaped = (val||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+      return '<td style="padding:3px 5px;white-space:nowrap"><input type="text" value="' + escaped + '" placeholder="' + ph + '" oninput="' + onchg + '" style="' + st + 'width:' + w + '"></td>';
     }
 
-    // Pago — select con opciones estándar, rojo si vacío
+    // Pago — select: vacío o no reconocido → borde rojo; válido → borde normal
     function pagoTd(val) {
-      var missing = !val || !PAGOS.includes(val);
-      var st = missing ? iErr : iOk;
-      var s = '<select onchange="_importRows[' + i + '].pago=this.value;this.style.border=\'1px solid var(--border)\'" style="' + st + 'width:180px;cursor:pointer">';
+      var ok = val && PAGOS.includes(val);
+      var st = ok ? iOk : iSelE;
+      var s = '<select onchange="_importRows[' + i + '].pago=this.value;this.style.border=\'1px solid var(--border)\'" style="' + st + 'width:182px;cursor:pointer">';
       s += '<option value="">— elegir —</option>';
-      PAGOS.forEach(function(o) { s += '<option value="' + o + '"' + (val === o ? ' selected' : '') + '>' + o + '</option>'; });
+      PAGOS.forEach(function(o) { s += '<option value="' + o + '"' + (val===o?' selected':'') + '>' + o + '</option>'; });
       return '<td style="padding:3px 5px">' + s + '</select></td>';
     }
 
-    // Canal — select siempre
+    // Canal — select: verde con borde si vino de Kommo, normal si no
     function canalTd(val) {
       var fromKommo = fromK && kommo.canal === val;
-      var st = fromKommo ? iOkG : iOk;
-      var s = '<select onchange="_importRows[' + i + '].canal=this.value" style="' + st + 'width:100px;cursor:pointer">';
-      CANALES.forEach(function(o) { s += '<option value="' + o + '"' + (val === o ? ' selected' : '') + '>' + o + '</option>'; });
+      var st = fromKommo ? iSelG : iOk;
+      var s = '<select onchange="_importRows[' + i + '].canal=this.value" style="' + st + 'width:102px;cursor:pointer">';
+      CANALES.forEach(function(o) { s += '<option value="' + o + '"' + (val===o?' selected':'') + '>' + o + '</option>'; });
       return '<td style="padding:3px 5px">' + s + '</select></td>';
     }
+
+    // Guarda referencia al valor Kommo para detectar cambios en el oninput
+    var km = kommo;
 
     html += '<tr style="border-bottom:1px solid rgba(200,185,175,0.14);background:' + bg + '">';
     html += '<td style="padding:5px 10px;white-space:nowrap;color:var(--text2);font-size:11px">' + (v.fecha||'—') + '</td>';
@@ -5099,12 +5106,12 @@ function _renderImportPreview() {
     html += '<td style="padding:5px 10px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="' + (v.curso||'') + '">' + (v.curso||'—') + '</td>';
     html += '<td style="padding:5px 10px;text-align:right;font-weight:700;white-space:nowrap">$' + (v.monto||0).toLocaleString('en-US') + '</td>';
     html += pagoTd(v.pago);
-    html += inp('nombre',   v.nombre,   'Nombre',  '78px',  true);
-    html += inp('apellido', v.apellido, 'Apellido','88px',  false);
-    html += inp('pais',     v.pais,     'País',    '96px',  true);
+    html += inp('nombre',   v.nombre,   'Nombre',   '78px');
+    html += inp('apellido', v.apellido, 'Apellido', '88px');
+    html += inp('pais',     v.pais,     'País',     '96px');
     html += canalTd(v.canal);
-    html += inp('email',    v.email,    'email@..','124px', true);
-    html += inp('telefono', v.telefono, '+549...',  '104px', false);
+    html += inp('email',    v.email,    'email@..', '124px');
+    html += inp('telefono', v.telefono, '+549...',  '104px');
     html += '</tr>';
   });
 
