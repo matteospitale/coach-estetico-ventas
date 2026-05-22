@@ -957,6 +957,7 @@ body.admin-ro .admin-edit { display:none!important; }
             🔔 <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:#fff;border-radius:50%;font-size:10px;font-weight:700;width:16px;height:16px;line-height:16px;text-align:center">0</span>
           </button>
           <button class="btn btn-ghost" onclick="exportAdminCSV()">↓ CSV</button>
+          <button class="btn btn-ghost" id="btn-import-excel-admin" onclick="abrirImportExcel()" title="Importar ventas desde Excel">⬆ Excel</button>
           <div id="admin-cierre-btn-wrap" style="display:flex;align-items:center;gap:6px"></div>
         </div>
       </div>
@@ -1052,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.16</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.20</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -4709,6 +4710,293 @@ async function guardarGeminiKey() {
   renderUsuarios();
 }
 
+// ── IMPORTAR VENTAS DESDE EXCEL ────────────────────────────────────────────
+var _importRows = [];
+var _importKommoMap = {};
+
+function abrirImportExcel() {
+  _importRows = [];
+  _importKommoMap = {};
+  var modal = document.getElementById('modal-import-excel');
+  modal.classList.add('show');
+  document.getElementById('imp-ventas-file').value = '';
+  document.getElementById('imp-kommo-file').value = '';
+  document.getElementById('imp-asesor').value = usuarioActual || 'Matteo';
+  document.getElementById('imp-status').textContent = '';
+  document.getElementById('imp-preview-wrap').style.display = 'none';
+  document.getElementById('imp-preview-wrap').innerHTML = '';
+  document.getElementById('imp-legend').style.display = 'none';
+  document.getElementById('btn-importar-excel').style.display = 'none';
+}
+
+function cerrarImportExcel() {
+  document.getElementById('modal-import-excel').classList.remove('show');
+}
+
+function _parseFechaImport(val) {
+  if (val === null || val === undefined || val === '') return '';
+  if (typeof val === 'number') {
+    // Excel serial date
+    var d = new Date(Math.round((val - 25569) * 86400000));
+    var y = d.getUTCFullYear(), m = d.getUTCMonth()+1, day = d.getUTCDate();
+    return y + '-' + String(m).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+  }
+  var s = String(val).trim();
+  var m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  var d2 = new Date(s);
+  if (!isNaN(d2.getTime())) return d2.toISOString().slice(0,10);
+  return '';
+}
+
+function _normHdr(h) {
+  return String(h||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+}
+
+function _rowGet(row, keys) {
+  var normKeys = keys.map(_normHdr);
+  var found = Object.keys(row).find(function(k){ return normKeys.indexOf(_normHdr(k)) !== -1; });
+  return found !== undefined ? String(row[found]||'').trim() : '';
+}
+
+function _canalDesdeUtm(utmSource, utmMedium) {
+  var s = _normHdr(utmSource), m = _normHdr(utmMedium);
+  if (s.includes('whatsapp') || m.includes('whatsapp')) return 'WhatsApp';
+  if (s.includes('google') || m.includes('google') || s.includes('web') || m.includes('web') || s.includes('ia') || m.includes('ia')) return 'IA/Web';
+  // instagram, facebook, tiktok, etc → Instagram (único canal de redes sociales disponible)
+  return 'Instagram';
+}
+
+function _splitNombre(fullName) {
+  if (!fullName) return { nombre: '', apellido: '' };
+  var parts = fullName.trim().split(/\s+/);
+  return { nombre: parts[0] || '', apellido: parts.slice(1).join(' ') };
+}
+
+function _parseNum(val) {
+  if (typeof val === 'number') return val;
+  // Remove thousands separators (commas), keep decimal point and minus
+  return parseFloat(String(val || '').replace(/,/g, '').replace(/[^0-9.-]/g, '')) || 0;
+}
+
+function _leerExcelBinario(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var wb = XLSX.read(e.target.result, { type: 'binary', cellDates: false });
+        resolve(wb);
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = function() { reject(new Error('No se pudo leer el archivo')); };
+    reader.readAsBinaryString(file);
+  });
+}
+
+async function procesarImportFiles() {
+  var ventasFile = document.getElementById('imp-ventas-file').files[0];
+  var kommoFile  = document.getElementById('imp-kommo-file').files[0];
+  var statusEl   = document.getElementById('imp-status');
+
+  if (!ventasFile) { showToast('Seleccioná el archivo de ventas primero'); return; }
+  statusEl.textContent = 'Leyendo archivos...';
+  document.getElementById('btn-importar-excel').style.display = 'none';
+  document.getElementById('imp-preview-wrap').style.display = 'none';
+  document.getElementById('imp-legend').style.display = 'none';
+
+  try {
+    // ── Leer Kommo (opcional) ──
+    _importKommoMap = {};
+    if (kommoFile) {
+      statusEl.textContent = 'Leyendo Kommo leads...';
+      var kommoWb = await _leerExcelBinario(kommoFile);
+      var kommoWs = kommoWb.Sheets[kommoWb.SheetNames[0]];
+      var kommoRows = XLSX.utils.sheet_to_json(kommoWs, { raw: false, defval: '' });
+      kommoRows.forEach(function(row) {
+        var id = _rowGet(row, ['ID','id','Id']);
+        if (!id) return;
+        id = id.replace(/\.0$/, ''); // quitar decimales de excel
+        var fullName = _rowGet(row, ['Nombre del lead','Contacto principal','nombre','Nombre']);
+        var na = _splitNombre(fullName);
+        var pais = _rowGet(row, ['Pais de Residencia (contacto)','Pais de Residencia','pais','País','Pais']);
+        var utmSrc = _rowGet(row, ['utm_source','UTM Source','Utm Source']);
+        var utmMed = _rowGet(row, ['utm_medium','UTM Medium','Utm Medium']);
+        var canal  = _canalDesdeUtm(utmSrc, utmMed);
+        var email  = _rowGet(row, ['Correo (contacto)','Email','Correo','correo','email']);
+        var tel    = _rowGet(row, ['Teléfono Whatsapp','Telefono','Teléfono','telefono','teléfono']);
+        _importKommoMap[id] = { nombre: na.nombre, apellido: na.apellido, pais: pais, canal: canal, email: email, telefono: tel };
+      });
+      statusEl.textContent = 'Kommo: ' + Object.keys(_importKommoMap).length + ' leads cargados · Leyendo ventas...';
+    }
+
+    // ── Leer archivo de ventas ──
+    var ventasWb = await _leerExcelBinario(ventasFile);
+    var ventasWs = ventasWb.Sheets[ventasWb.SheetNames[0]];
+    var ventasRows = XLSX.utils.sheet_to_json(ventasWs, { raw: true, defval: '' });
+
+    if (!ventasRows.length) { statusEl.textContent = '⚠️ El archivo de ventas está vacío'; return; }
+
+    // Detectar formato por headers
+    // Matteo: columnas "Monto" (USD) + "Real" (moneda local)
+    // Facundo: columna "Monto USD"
+    var headers = Object.keys(ventasRows[0]).map(_normHdr);
+    var formato = 'Matteo'; // default
+    if (headers.some(function(h){ return h === 'monto usd' || h.includes('monto usd'); })) formato = 'Facundo';
+
+    var asesor = document.getElementById('imp-asesor').value || usuarioActual || 'Matteo';
+    var ahora  = new Date().toISOString();
+
+    _importRows = [];
+    ventasRows.forEach(function(row) {
+      var lead = _rowGet(row, ['ID','id','Id']).replace(/\.0$/, '');
+      var fechaRaw = _rowGet(row, ['Fecha','fecha']);
+      // Si el valor raw es número (serial Excel), tomarlo del objeto raw
+      var fechaVal = row['Fecha'] !== undefined ? row['Fecha'] : (row['fecha'] !== undefined ? row['fecha'] : fechaRaw);
+      var fecha = _parseFechaImport(fechaVal !== '' ? fechaVal : fechaRaw);
+      var curso = _rowGet(row, ['Que compro','Qué compro','que compro','que compró','Producto','producto']);
+      var pago  = _rowGet(row, ['Forma de pago','forma de pago','Metodo de pago','método de pago','metodo de pago']);
+
+      var monto = 0, montoLocal = 0, email = '', telefono = '', nota = '';
+
+      if (formato === 'Matteo') {
+        // Matteo: "Monto" = USD, "Real" = monto en moneda local (ARS, Bs, etc.)
+        var montoStr = _rowGet(row, ['Monto','monto']);
+        monto = _parseNum(montoStr);
+        var realStr = _rowGet(row, ['Real','real']);
+        montoLocal = _parseNum(realStr);
+        email    = _rowGet(row, ['mail','Mail','email','Email','correo','Correo']);
+        telefono = _rowGet(row, ['telefono','teléfono','Telefono','Teléfono']);
+        nota     = _rowGet(row, ['aclaraciones','Aclaraciones','nota','Nota','notas','Notas']);
+      } else {
+        var montoUSD = _rowGet(row, ['Monto USD','monto usd']);
+        monto = _parseNum(montoUSD);
+        var montoLocStr = _rowGet(row, ['Moneda Local','moneda local','Monto Local','monto local']);
+        montoLocal = _parseNum(montoLocStr);
+        email    = _rowGet(row, ['Correo','correo','Email','email','mail','Mail']);
+        telefono = _rowGet(row, ['Telefono','Teléfono','telefono','teléfono']);
+        nota     = _rowGet(row, ['Link','link','Aclaraciones','aclaraciones','nota','Nota']);
+      }
+
+      // Saltar filas sin datos clave
+      if (!fecha || !monto || monto <= 0) return;
+
+      var kommo = _importKommoMap[lead] || {};
+      var venta = {
+        asesor:    asesor,
+        fecha:     fecha,
+        monto:     monto,
+        descuento: 0,
+        montoNeto: parseFloat(monto.toFixed(2)),
+        pago:      pago,
+        curso:     curso,
+        canal:     kommo.canal || 'Instagram',
+        lead:      lead,
+        codigo:    '',
+        email:     email || kommo.email || '',
+        telefono:  telefono || kommo.telefono || '',
+        nota:      nota,
+        nombre:    kommo.nombre || '',
+        apellido:  kommo.apellido || '',
+        pais:      kommo.pais || '',
+        cargado:   ahora,
+        estado:    'Pendiente',
+        comprobante: ''
+      };
+      if (montoLocal > 0) venta.montoLocal = montoLocal;
+      _importRows.push(venta);
+    });
+
+    if (!_importRows.length) {
+      statusEl.textContent = '⚠️ No se encontraron filas válidas (verificá que Fecha y Monto estén completos)';
+      return;
+    }
+
+    // Render preview
+    _renderImportPreview(formato);
+    var conKommo = _importRows.filter(function(v){ return v.nombre; }).length;
+    statusEl.textContent = '✅ Formato ' + formato + ' · ' + _importRows.length + ' ventas' +
+      (kommoFile ? ' · ' + conKommo + ' con datos de Kommo' : ' · Sin Kommo (nombre/país vacíos)');
+    document.getElementById('imp-legend').style.display = kommoFile ? '' : 'none';
+    document.getElementById('btn-importar-excel').style.display = '';
+    document.getElementById('btn-importar-excel').textContent = '⬆ Importar ' + _importRows.length + ' ventas';
+
+  } catch(err) {
+    statusEl.textContent = '❌ Error: ' + err.message;
+    console.error('Import error:', err);
+  }
+}
+
+function _renderImportPreview(formato) {
+  var wrap = document.getElementById('imp-preview-wrap');
+  if (!_importRows.length) { wrap.style.display = 'none'; return; }
+
+  var cols = ['Fecha','Lead ID','Curso','USD','Pago','Nombre','Apellido','País','Canal','Email','Tel'];
+  var html = '<div style="border-radius:8px;border:1px solid var(--border);overflow:auto;max-height:300px">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px">';
+  html += '<thead><tr style="background:rgba(255,255,255,0.92);position:sticky;top:0;z-index:1">';
+  cols.forEach(function(c) {
+    html += '<th style="padding:7px 9px;font-weight:600;text-align:left;white-space:nowrap;color:var(--text2);border-bottom:1.5px solid var(--border)">' + c + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  _importRows.forEach(function(v, i) {
+    var fromK = !!_importKommoMap[v.lead];
+    var bg = i % 2 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.22)';
+    var ks = fromK ? 'color:var(--facundo);font-weight:600' : 'color:var(--text3)';
+    html += '<tr style="border-bottom:1px solid rgba(200,185,175,0.18);background:' + bg + '">';
+    html += '<td style="padding:5px 9px;white-space:nowrap">' + (v.fecha||'—') + '</td>';
+    html += '<td style="padding:5px 9px;font-family:monospace;font-size:11px">' + (v.lead||'—') + '</td>';
+    html += '<td style="padding:5px 9px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.curso||'') + '">' + (v.curso||'—') + '</td>';
+    html += '<td style="padding:5px 9px;text-align:right;font-weight:600">$' + (v.monto||0).toLocaleString('en-US') + '</td>';
+    html += '<td style="padding:5px 9px;white-space:nowrap">' + (v.pago||'—') + '</td>';
+    html += '<td style="padding:5px 9px;' + ks + '">' + (v.nombre||'—') + '</td>';
+    html += '<td style="padding:5px 9px;' + ks + '">' + (v.apellido||'—') + '</td>';
+    html += '<td style="padding:5px 9px;' + ks + '">' + (v.pais||'—') + '</td>';
+    html += '<td style="padding:5px 9px;' + ks + '">' + (v.canal||'—') + '</td>';
+    html += '<td style="padding:5px 9px;font-size:11px;color:var(--text3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (v.email||'—') + '</td>';
+    html += '<td style="padding:5px 9px;font-size:11px;color:var(--text3);white-space:nowrap">' + (v.telefono||'—') + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+  wrap.style.display = '';
+}
+
+async function ejecutarImportExcel() {
+  if (!_importRows.length) { showToast('No hay ventas para importar'); return; }
+
+  var asesor   = document.getElementById('imp-asesor').value || usuarioActual || 'Matteo';
+  var statusEl = document.getElementById('imp-status');
+  var btn      = document.getElementById('btn-importar-excel');
+
+  // Actualizar asesor en todas las filas (por si cambió después del preview)
+  _importRows.forEach(function(v) { v.asesor = asesor; });
+
+  btn.disabled = true;
+  var ok = 0, fail = 0;
+
+  for (var i = 0; i < _importRows.length; i++) {
+    statusEl.textContent = 'Importando ' + (i + 1) + ' de ' + _importRows.length + '...';
+    try {
+      var saved = await dbPush('/ventas', _importRows[i]);
+      if (saved) ok++; else fail++;
+    } catch(e) { fail++; }
+  }
+
+  btn.disabled = false;
+  statusEl.textContent = '✅ ' + ok + ' ventas importadas' + (fail > 0 ? ' · ⚠️ ' + fail + ' errores' : '');
+  showToast(ok + ' ventas importadas correctamente');
+  _importRows = [];
+
+  cerrarImportExcel();
+  await loadVentas();
+  fillMesOptions('admin-fil-mes');
+  renderAdmin();
+  renderAll();
+}
+
 // Init
 document.getElementById('f-fecha').valueAsDate = new Date();
 init();
@@ -4770,6 +5058,48 @@ init();
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="cerrarEditarCliente()">Cancelar</button>
       <button class="btn btn-accent" id="ec-save-btn" onclick="guardarEdicionCliente()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR EXCEL -->
+<div class="modal-overlay" id="modal-import-excel" onclick="if(event.target===this)cerrarImportExcel()">
+  <div class="modal" style="max-width:940px;width:96vw;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>📊 Importar ventas desde Excel</span>
+      <button onclick="cerrarImportExcel()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);padding:0 4px">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding-right:2px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">📋 Archivo de ventas *</label>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Formato Matteo (col. Monto + Real) o Facundo (col. Monto USD) — .xlsx</div>
+          <input type="file" id="imp-ventas-file" accept=".xlsx,.xls" class="form-input" style="font-size:12px;padding:8px;cursor:pointer">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">🔗 Export de Kommo leads <span style="font-weight:400;color:var(--text3)">(opcional)</span></label>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Completa nombre, apellido, país y canal automáticamente</div>
+          <input type="file" id="imp-kommo-file" accept=".xlsx,.xls" class="form-input" style="font-size:12px;padding:8px;cursor:pointer">
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <div class="form-group" style="margin-bottom:0;min-width:160px">
+          <label class="form-label">Asesor</label>
+          <select class="form-select" id="imp-asesor">
+            <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Stefany</option><option>Ruben</option>
+          </select>
+        </div>
+        <button class="btn btn-accent" onclick="procesarImportFiles()">🔍 Leer y previsualizar</button>
+      </div>
+      <div id="imp-status" style="font-size:12px;color:var(--text3);margin-bottom:10px;min-height:18px"></div>
+      <div id="imp-preview-wrap" style="display:none;margin-bottom:10px;overflow-x:auto"></div>
+      <div id="imp-legend" style="display:none;font-size:11px;color:var(--text3)">
+        🟢 <span style="color:var(--facundo);font-weight:600">Verde</span> = datos completados desde Kommo · Las ventas se importan como <strong>Pendiente</strong>
+      </div>
+    </div>
+    <div class="modal-actions" style="border-top:1px solid var(--border);padding-top:14px;margin-top:8px">
+      <button class="btn btn-ghost" onclick="cerrarImportExcel()">Cancelar</button>
+      <button class="btn btn-accent" id="btn-importar-excel" style="display:none" onclick="ejecutarImportExcel()">⬆ Importar ventas</button>
     </div>
   </div>
 </div>
