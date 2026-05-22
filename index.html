@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.32</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.33</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -5112,11 +5112,13 @@ function _renderImportPreview() {
   _importRows.forEach(function(v, i) {
     var fromK      = !!_importKommoMap[v.lead];
     var kommo      = _importKommoMap[v.lead] || {};
-    var incompleta = !v.nombre || !v.pais || !v.email || !v.pago;
-    var bg = incompleta
+    // Fila roja entera = lead no encontrado en Kommo (sin nombre)
+    // Celda roja individual = campo específico vacío dentro de un lead encontrado
+    var sinKommo  = !v.nombre;
+    var bg        = sinKommo
       ? 'rgba(192,57,43,0.07)'
       : (i % 2 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)');
-    var rowBorder = incompleta ? 'border-bottom:1px solid rgba(192,57,43,0.18)' : 'border-bottom:1px solid rgba(200,185,175,0.14)';
+    var rowBorder = sinKommo ? 'border-bottom:1px solid rgba(192,57,43,0.18)' : 'border-bottom:1px solid rgba(200,185,175,0.14)';
 
     // Input editable: vacío → rojo, de Kommo → verde, propio → normal
     function inp(field, val, ph, w) {
