@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.33</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.34</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3648,6 +3648,95 @@ function _renderClienteDetalle(cl, body) {
 
       '</div>' + // fin columna derecha
     '</div>'; // fin grid
+
+  // ── Conversación Kommo (carga asíncrona) ──
+  if (cl.lead) {
+    var convWrap = document.createElement('div');
+    convWrap.style.cssText = 'margin-top:16px;background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow)';
+    convWrap.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em">Conversación Kommo</div>' +
+        '<a href="https://coachestetico.kommo.com/leads/detail/' + cl.lead + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">Ver en Kommo ↗</a>' +
+      '</div>' +
+      '<div id="kommo-conv-body" style="display:flex;flex-direction:column;gap:6px;max-height:560px;overflow-y:auto;padding-right:6px">' +
+        '<div style="text-align:center;padding:30px 0;color:var(--text3);font-size:13px">⏳ Cargando mensajes...</div>' +
+      '</div>';
+    body.appendChild(convWrap);
+    cargarConversacionKommo(cl.lead, convWrap.querySelector('#kommo-conv-body'), cl.nombre || 'Alumna');
+  }
+}
+
+// ── CONVERSACIÓN KOMMO ──
+async function cargarConversacionKommo(leadId, container, nombreAlumna) {
+  try {
+    var resp = await fetch(
+      'https://api-g.kommo.com/api/v4/leads/' + leadId + '/notes?limit=250&order[id]=asc',
+      { headers: { 'Authorization': 'Bearer ' + KOMMO_TOKEN } }
+    );
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    var notes = (data._embedded && data._embedded.notes) || [];
+    var total = data._total_items || notes.length;
+
+    if (!notes.length) {
+      container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Sin mensajes ni notas registradas</div>';
+      return;
+    }
+
+    var html = '';
+    notes.forEach(function(note) {
+      var ts = new Date((note.created_at || 0) * 1000);
+      var dateStr = ts.toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + ts.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      var type = note.note_type || 4;
+      var createdBy = note.created_by || 0;
+      var text = note.text || '';
+      if (!text && type !== 12) return;
+
+      // created_by === 0 → sistema/entrante (de la alumna); > 0 → equipo
+      var isIncoming = (createdBy === 0);
+      var align = isIncoming ? 'flex-start' : 'flex-end';
+
+      var label = '';
+      var icon = '';
+      if (type === 25)      { icon = '📞 '; label = 'Llamada entrante'; }
+      else if (type === 26) { icon = '📞 '; label = 'Llamada saliente'; }
+      else if (type === 12) { icon = '📎 '; label = 'Archivo adjunto'; text = text || 'Archivo'; }
+      else if (type !== 4)  { icon = '📋 '; }
+
+      var authorLabel = isIncoming
+        ? '<span style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:3px;display:block;padding-left:4px">' + escAdm(nombreAlumna) + '</span>'
+        : '<span style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:3px;display:block;text-align:right;padding-right:4px">Equipo</span>';
+
+      html += '<div style="display:flex;flex-direction:column;align-items:' + align + ';max-width:100%">' +
+        authorLabel +
+        '<div style="max-width:76%;min-width:60px;background:' + (isIncoming ? 'rgba(255,255,255,0.95)' : 'rgba(182,31,58,0.09)') + ';border:1px solid ' + (isIncoming ? 'var(--border)' : 'rgba(182,31,58,0.22)') + ';border-radius:' + (isIncoming ? '3px 14px 14px 14px' : '14px 3px 14px 14px') + ';padding:9px 13px">' +
+          (label ? '<div style="font-size:10px;color:var(--text3);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em">' + icon + label + '</div>' : '') +
+          '<div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word">' + escAdm(text) + '</div>' +
+          '<div style="font-size:10px;color:var(--text3);margin-top:5px;text-align:right">' + dateStr + '</div>' +
+        '</div>' +
+      '</div>';
+    });
+
+    if (!html) {
+      container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Sin mensajes de texto registrados</div>';
+      return;
+    }
+
+    container.innerHTML = html;
+    if (total > 250) {
+      container.insertAdjacentHTML('beforeend',
+        '<div style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">Mostrando los primeros 250 de ' + total + ' registros totales</div>');
+    }
+    container.scrollTop = container.scrollHeight;
+
+  } catch(e) {
+    var msg = e.message || 'Error desconocido';
+    var esCORS = msg.indexOf('Failed to fetch') >= 0 || msg.indexOf('NetworkError') >= 0 || msg.indexOf('CORS') >= 0;
+    container.innerHTML =
+      '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">' +
+        (esCORS ? '⚠️ No se pudo conectar con Kommo (CORS o red).<br><small style="font-size:11px">Revisá la conexión o abrí el lead directamente.</small>' : '❌ Error: ' + escAdm(msg)) +
+      '</div>';
+  }
 }
 
 // ── EDITAR ALUMNO ──
