@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.30</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.32</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -5049,33 +5049,40 @@ async function procesarImportFiles() {
 function _renderImportStatus(formato, tieneKommo) {
   var statusEl = document.getElementById('imp-status');
   var total    = _importRows.length;
-  var sinMatch = _importRows.filter(function(v){ return !v.nombre; });
-  var conMatch = total - sinMatch.length;
-
-  var html = '<span style="color:var(--facundo);font-weight:600">✅ Formato ' + formato + '</span>';
-  html += ' &nbsp;·&nbsp; <strong>' + total + '</strong> ventas';
-
+  var sinMatch = _importRows.filter(function(v){ return !v.nombre; }).length;
+  var conMatch = total - sinMatch;
+  var html = '';
+  if (formato) html += '<span style="color:var(--facundo);font-weight:600">✅ Formato ' + formato + '</span> &nbsp;·&nbsp; ';
+  html += '<strong>' + total + '</strong> ventas';
   if (tieneKommo) {
     html += ' &nbsp;·&nbsp; <strong>' + conMatch + '</strong> con datos de Kommo';
-    if (sinMatch.length > 0) {
-      html += ' &nbsp;·&nbsp; <span style="color:var(--danger);font-weight:600">' + sinMatch.length + ' sin match:</span> ';
-      html += sinMatch.map(function(v) {
-        var falta = [];
-        if (!v.nombre)   falta.push('nombre');
-        if (!v.pais)     falta.push('país');
-        if (!v.email)    falta.push('email');
-        if (!v.telefono) falta.push('tel');
-        return '<span style="font-family:monospace;font-size:11px">Lead&nbsp;' + v.lead +
-          '</span> <span style="color:var(--text3);font-size:11px">(' + falta.join(', ') + ')</span>';
-      }).join(' &nbsp;|&nbsp; ');
-    } else {
+    if (sinMatch > 0)
+      html += ' &nbsp;·&nbsp; <span style="color:var(--danger);font-weight:600">' + sinMatch + ' sin match — completá los campos rojos</span>';
+    else
       html += ' &nbsp;·&nbsp; <span style="color:var(--facundo)">todos completos ✓</span>';
-    }
   } else {
-    html += ' &nbsp;·&nbsp; <span style="color:var(--text3)">sin Kommo — nombre/país vacíos</span>';
+    html += ' &nbsp;·&nbsp; <span style="color:var(--text3)">sin Kommo — completá los campos rojos manualmente</span>';
   }
-
   statusEl.innerHTML = html;
+}
+
+function _checkImportReady() {
+  var btn = document.getElementById('btn-importar-excel');
+  if (!btn || !_importRows.length) return;
+  var incompletas = _importRows.filter(function(v) {
+    return !v.nombre || !v.pais || !v.email || !v.pago;
+  }).length;
+  if (incompletas > 0) {
+    btn.disabled = true;
+    btn.style.opacity = '0.45';
+    btn.style.cursor = 'not-allowed';
+    btn.textContent = '⚠️ ' + incompletas + ' fila' + (incompletas > 1 ? 's' : '') + ' incompleta' + (incompletas > 1 ? 's' : '');
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+    btn.textContent = '⬆ Importar ' + _importRows.length + ' ventas';
+  }
 }
 
 function _renderImportPreview() {
@@ -5103,33 +5110,38 @@ function _renderImportPreview() {
   html += '</tr></thead><tbody>';
 
   _importRows.forEach(function(v, i) {
-    var fromK = !!_importKommoMap[v.lead];
-    var kommo = _importKommoMap[v.lead] || {};
-    var bg    = i % 2 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)';
+    var fromK      = !!_importKommoMap[v.lead];
+    var kommo      = _importKommoMap[v.lead] || {};
+    var incompleta = !v.nombre || !v.pais || !v.email || !v.pago;
+    var bg = incompleta
+      ? 'rgba(192,57,43,0.07)'
+      : (i % 2 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)');
+    var rowBorder = incompleta ? 'border-bottom:1px solid rgba(192,57,43,0.18)' : 'border-bottom:1px solid rgba(200,185,175,0.14)';
 
     // Input editable: vacío → rojo, de Kommo → verde, propio → normal
     function inp(field, val, ph, w) {
       var fromKommo = fromK && val && kommo[field] === val;
       var st = !val ? iErr : (fromKommo ? iOkG : iOk);
-      var onchg = 'var e=_importRows[' + i + '];e.' + field + '=this.value;' +
-        'this.style.cssText=this.value?' +
-        '(e._kommo_' + field + '===this.value?"' + iOkG.replace(/"/g,"'") + '":"' + iOk.replace(/"/g,"'") + '")' +
-        ':"' + iErr.replace(/"/g,"'") + '";this.style.width="' + w + '"';
       var escaped = (val||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-      return '<td style="padding:3px 5px;white-space:nowrap"><input type="text" value="' + escaped + '" placeholder="' + ph + '" oninput="' + onchg + '" style="' + st + 'width:' + w + '"></td>';
+      return '<td style="padding:3px 5px;white-space:nowrap"><input type="text" value="' + escaped + '" placeholder="' + ph + '" ' +
+        'oninput="_importRows[' + i + '].' + field + '=this.value;this.style.cssText=this.value?' +
+        '\'border:1px solid var(--border);background:rgba(255,255,255,0.88);color:var(--text);\':' +
+        '\'border:1.5px solid var(--danger);background:rgba(192,57,43,0.08);color:var(--text);\';' +
+        'this.style.padding=\'3px 6px\';this.style.width=\'' + w + '\';_checkImportReady()" ' +
+        'style="' + st + 'width:' + w + '"></td>';
     }
 
-    // Pago — select: vacío o no reconocido → borde rojo; válido → borde normal
+    // Pago — select: vacío o no reconocido → borde rojo
     function pagoTd(val) {
       var ok = val && PAGOS.includes(val);
       var st = ok ? iOk : iSelE;
-      var s = '<select onchange="_importRows[' + i + '].pago=this.value;this.style.border=\'1px solid var(--border)\'" style="' + st + 'width:182px;cursor:pointer">';
+      var s = '<select onchange="_importRows[' + i + '].pago=this.value;this.style.border=\'1px solid var(--border)\';_checkImportReady()" style="' + st + 'width:182px;cursor:pointer">';
       s += '<option value="">— elegir —</option>';
       PAGOS.forEach(function(o) { s += '<option value="' + o + '"' + (val===o?' selected':'') + '>' + o + '</option>'; });
       return '<td style="padding:3px 5px">' + s + '</select></td>';
     }
 
-    // Canal — select: verde con borde si vino de Kommo, normal si no
+    // Canal — select: verde con borde si vino de Kommo
     function canalTd(val) {
       var fromKommo = fromK && kommo.canal === val;
       var st = fromKommo ? iSelG : iOk;
@@ -5138,10 +5150,7 @@ function _renderImportPreview() {
       return '<td style="padding:3px 5px">' + s + '</select></td>';
     }
 
-    // Guarda referencia al valor Kommo para detectar cambios en el oninput
-    var km = kommo;
-
-    html += '<tr style="border-bottom:1px solid rgba(200,185,175,0.14);background:' + bg + '">';
+    html += '<tr style="' + rowBorder + ';background:' + bg + '">';
     html += '<td style="padding:5px 10px;white-space:nowrap;color:var(--text2);font-size:11px">' + (v.fecha||'—') + '</td>';
     html += '<td style="padding:5px 10px;font-family:monospace;font-size:11px;color:var(--text3);white-space:nowrap">' + (v.lead||'—') + '</td>';
     html += '<td style="padding:5px 10px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="' + (v.curso||'') + '">' + (v.curso||'—') + '</td>';
@@ -5159,10 +5168,13 @@ function _renderImportPreview() {
   html += '</tbody></table></div>';
   wrap.innerHTML = html;
   wrap.style.display = '';
+  _checkImportReady();
 }
 
 async function ejecutarImportExcel() {
   if (!_importRows.length) { showToast('No hay ventas para importar'); return; }
+  var incompletas = _importRows.filter(function(v){ return !v.nombre || !v.pais || !v.email || !v.pago; }).length;
+  if (incompletas > 0) { showToast('Completá los ' + incompletas + ' filas en rojo antes de importar'); return; }
 
   var asesor   = document.getElementById('imp-asesor').value || usuarioActual || 'Matteo';
   var statusEl = document.getElementById('imp-status');
