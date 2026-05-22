@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Coach Estético — Hub</title>
+<meta name="description" content="Coach Estético Hub — plataforma interna de gestión de ventas, alumnos, plantillas de cursos, estadísticas y calendario del equipo.">
+<meta name="application-name" content="Coach Estético Hub">
+<meta property="og:title" content="Coach Estético — Hub">
+<meta property="og:description" content="Hub interno de ventas, plantillas, estadísticas y calendario de Coach Estético. Acceso restringido por PIN.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="index.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -329,6 +335,10 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 .cat-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .cat-tab { padding: 6px 16px; border-radius: 999px; border: 1px solid var(--border); font-size: 13px; cursor: pointer; background: var(--glass); color: var(--text2); font-family: inherit; font-weight: 500; transition: all 0.15s; backdrop-filter: blur(8px); }
 .cat-tab.active { background: var(--accent); color: #fff; border-color: var(--accent-dark); box-shadow: 0 2px 8px rgba(182,31,58,0.3); }
+.coach-subnav { display: flex; gap: 6px; margin-bottom: 24px; border-bottom: 1.5px solid var(--border); padding-bottom: 0; }
+.coach-subtab { padding: 8px 22px; border: none; background: none; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: all 0.15s; border-radius: 0; }
+.coach-subtab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.coach-subtab:hover:not(.active) { color: var(--text); }
 .plantilla-card-wrap {
   background: var(--glass);
   backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
@@ -631,7 +641,6 @@ body.admin-ro .admin-edit { display:none!important; }
     <button class="pill" id="nav-stats" onclick="switchTab('stats')">Stats</button>
     <button class="pill" id="nav-clientes" onclick="switchTab('clientes')">Alumnos</button>
     <button class="pill" id="nav-admin" onclick="switchTab('admin')">Admin</button>
-    <button class="pill" id="nav-calendario" onclick="switchTab('calendario')">Calendario</button>
     <button class="pill" id="nav-usuarios" onclick="switchTab('usuarios')" style="display:none">Usuarios</button>
   </div>
   <div class="topnav-right">
@@ -653,7 +662,6 @@ body.admin-ro .admin-edit { display:none!important; }
   <button class="pill" id="mnav-stats" onclick="switchTab('stats');closeMobDrawer()">Stats</button>
   <button class="pill" id="mnav-clientes" onclick="switchTab('clientes');closeMobDrawer()">Alumnos</button>
   <button class="pill" id="mnav-admin" onclick="switchTab('admin');closeMobDrawer()">Admin</button>
-  <button class="pill" id="mnav-calendario" onclick="switchTab('calendario');closeMobDrawer()">Calendario</button>
   <button class="pill" id="mnav-usuarios" onclick="switchTab('usuarios');closeMobDrawer()" style="display:none">Usuarios</button>
   <div class="mob-drawer-mes"><select id="header-mes-sel-mob" onchange="syncMes('mob')"><option value="all">Todos los meses</option></select></div>
 </div>
@@ -749,28 +757,47 @@ body.admin-ro .admin-edit { display:none!important; }
 
     <!-- PLANTILLAS -->
     <section class="section" id="sec-plantillas">
-      <!-- GRID VIEW -->
-      <div id="plant-grid-view">
-        <div class="section-header">
-          <div class="section-title">Plantillas de cursos</div>
-          <button class="btn btn-accent" onclick="abrirNuevaPlantilla()">+ Nueva plantilla</button>
-        </div>
-        <div class="plantillas-header">
-          <input class="plantillas-search" id="plant-search" placeholder="Buscar curso..." oninput="renderPlantillas()">
-        </div>
-        <div class="cat-tabs" id="cat-tabs">
-          <button class="cat-tab active" data-cat="todos" onclick="setPlantillaCat(this)">Todos</button>
-          <button class="cat-tab" data-cat="diplomado" onclick="setPlantillaCat(this)">Diplomado</button>
-          <button class="cat-tab" data-cat="premium" onclick="setPlantillaCat(this)">Premium</button>
-          <button class="cat-tab" data-cat="esencial" onclick="setPlantillaCat(this)">Esencial</button>
-          <button class="cat-tab" data-cat="masterclass" onclick="setPlantillaCat(this)">Masterclass</button>
-          <button class="cat-tab" data-cat="express" onclick="setPlantillaCat(this)">Express</button>
-        </div>
-        <div class="plant-count" id="plant-count"></div>
-        <div class="plant-grid" id="plant-lista"></div>
+      <!-- COACH SUB-NAV -->
+      <div class="coach-subnav">
+        <button class="coach-subtab active" id="cst-plantillas" onclick="switchCoachTab('plantillas')">Plantillas</button>
+        <button class="coach-subtab" id="cst-calendario" onclick="switchCoachTab('calendario')">Calendario</button>
       </div>
-      <!-- DETALLE VIEW -->
-      <div id="plant-detalle-view" style="display:none"></div>
+      <!-- PLANTILLAS PANEL -->
+      <div id="coach-panel-plantillas">
+        <!-- GRID VIEW -->
+        <div id="plant-grid-view">
+          <div class="section-header">
+            <div class="section-title">Plantillas de cursos</div>
+            <button class="btn btn-accent" onclick="abrirNuevaPlantilla()">+ Nueva plantilla</button>
+          </div>
+          <div class="plantillas-header">
+            <input class="plantillas-search" id="plant-search" placeholder="Buscar curso..." oninput="renderPlantillas()">
+          </div>
+          <div class="cat-tabs" id="cat-tabs">
+            <button class="cat-tab active" data-cat="todos" onclick="setPlantillaCat(this)">Todos</button>
+            <button class="cat-tab" data-cat="diplomado" onclick="setPlantillaCat(this)">Diplomado</button>
+            <button class="cat-tab" data-cat="premium" onclick="setPlantillaCat(this)">Premium</button>
+            <button class="cat-tab" data-cat="esencial" onclick="setPlantillaCat(this)">Esencial</button>
+            <button class="cat-tab" data-cat="masterclass" onclick="setPlantillaCat(this)">Masterclass</button>
+            <button class="cat-tab" data-cat="express" onclick="setPlantillaCat(this)">Express</button>
+          </div>
+          <div class="plant-count" id="plant-count"></div>
+          <div class="plant-grid" id="plant-lista"></div>
+        </div>
+        <!-- DETALLE VIEW -->
+        <div id="plant-detalle-view" style="display:none"></div>
+      </div>
+      <!-- CALENDARIO PANEL -->
+      <div id="coach-panel-calendario" style="display:none">
+        <div class="section-header">
+          <div class="section-title">Calendario</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <a id="btn-cal-open" href="https://calendar.google.com" target="_blank" class="btn btn-ghost" style="font-size:12px;text-decoration:none;display:none">↗ Abrir en Google Calendar</a>
+            <button class="btn btn-ghost" id="btn-cal-config" onclick="abrirConfigCalendario()" style="font-size:12px;display:none">⚙ Configurar</button>
+          </div>
+        </div>
+        <div id="calendario-body"></div>
+      </div>
     </section>
 
 
@@ -985,17 +1012,6 @@ body.admin-ro .admin-edit { display:none!important; }
       <div id="myf-body"></div>
     </section>
 
-    <!-- CALENDARIO -->
-    <section class="section" id="sec-calendario">
-      <div class="section-header">
-        <div class="section-title">Calendario</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <a id="btn-cal-open" href="https://calendar.google.com" target="_blank" class="btn btn-ghost" style="font-size:12px;text-decoration:none;display:none">↗ Abrir en Google Calendar</a>
-          <button class="btn btn-ghost" id="btn-cal-config" onclick="abrirConfigCalendario()" style="font-size:12px;display:none">⚙ Configurar</button>
-        </div>
-      </div>
-      <div id="calendario-body"></div>
-    </section>
 
   </div>
 </div>
@@ -1133,8 +1149,19 @@ function closeSidebar() {
 }
 
 // ── NAVIGATION ──
-const TABS = ['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Coach', stats:'Estadísticas', admin:'Administración', clientes:'Alumnos', myf:'Coach Sales', calendario:'Calendario', cargar:'Cargar venta', usuarios:'Gestión de Usuarios' };
+const TABS = ['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'];
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Coach', stats:'Estadísticas', admin:'Administración', clientes:'Alumnos', myf:'Coach Sales', cargar:'Cargar venta', usuarios:'Gestión de Usuarios' };
+
+var coachSubTab = 'plantillas';
+function switchCoachTab(sub) {
+  coachSubTab = sub;
+  document.getElementById('coach-panel-plantillas').style.display = sub === 'plantillas' ? '' : 'none';
+  document.getElementById('coach-panel-calendario').style.display = sub === 'calendario' ? '' : 'none';
+  document.getElementById('cst-plantillas').classList.toggle('active', sub === 'plantillas');
+  document.getElementById('cst-calendario').classList.toggle('active', sub === 'calendario');
+  if (sub === 'calendario') renderCalendario();
+  if (sub === 'plantillas') renderPlantillas();
+}
 
 function switchTab(t) {
   // Redirigir si el usuario no tiene acceso a esta sección
@@ -1163,7 +1190,7 @@ function switchTab(t) {
   }
   if (t === 'inicio') { renderResumen(); renderInicioDashboard(); }
   if (t === 'stats') renderStats();
-  if (t === 'plantillas') renderPlantillas();
+  if (t === 'plantillas') switchCoachTab(coachSubTab || 'plantillas');
   if (t === 'admin') {
     fillMesOptions('admin-fil-mes');
     var _mv = getMesVal();
@@ -1174,7 +1201,6 @@ function switchTab(t) {
   }
   if (t === 'clientes') { clienteDetalle = null; fillClientesFilters(); var cf=document.getElementById('clientes-filters'); if(cf) cf.style.display=''; renderClientes(); }
   if (t === 'myf') { renderMYF(); }
-  if (t === 'calendario') { renderCalendario(); }
   if (t === 'cargar') { actualizarCompletitud(); }
   if (t === 'usuarios') { renderUsuarios(); }
 
@@ -3873,7 +3899,7 @@ function logout() {
   const btnNV = document.getElementById('btn-nueva-venta-nav');
   if (btnNV) btnNV.style.display = 'none';
   // Ocultar todas las secciones del nav
-  ['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'].forEach(tab => {
+  ['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'].forEach(tab => {
     const el = document.getElementById('nav-'+tab);
     if (el) el.style.display = 'none';
     const mel = document.getElementById('mnav-'+tab);
@@ -3889,7 +3915,7 @@ function aplicarPermisos() {
   const u = USUARIOS_CONFIG[usuarioActual];
 
   // Mostrar/ocultar nav items según secciones del usuario
-  const todasSecs = ['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'];
+  const todasSecs = ['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'];
   todasSecs.forEach(tab => {
     const visible = (u.secciones || []).includes(tab);
     const el = document.getElementById('nav-'+tab); if (el) el.style.display = visible ? '' : 'none';
@@ -4121,16 +4147,15 @@ async function guardarConfigCalendario() {
 
 // ── GESTIÓN DE USUARIOS ───────────────────────────────────────────────────────
 const ALL_SECS = [
-  { id:'inicio',    label:'Inicio'       },
-  { id:'ventas',    label:'Ventas'       },
-  { id:'cargar',    label:'Nueva venta'  },
-  { id:'plantillas',label:'Plantillas'   },
-  { id:'stats',     label:'Stats'        },
-  { id:'admin',     label:'Admin'        },
-  { id:'clientes',  label:'Alumnos'      },
-  { id:'myf',       label:'Coach Sales'  },
-  { id:'calendario',label:'Calendario'   },
-  { id:'usuarios',  label:'Usuarios'     },
+  { id:'inicio',    label:'Inicio'                      },
+  { id:'ventas',    label:'Ventas'                      },
+  { id:'cargar',    label:'Nueva venta'                 },
+  { id:'plantillas',label:'Coach (Plantillas + Cal.)'   },
+  { id:'stats',     label:'Stats'                       },
+  { id:'admin',     label:'Admin'                       },
+  { id:'clientes',  label:'Alumnos'                     },
+  { id:'myf',       label:'Coach Sales'                 },
+  { id:'usuarios',  label:'Usuarios'                    },
 ];
 
 var _editandoUsuario = undefined; // undefined = sin editor abierto, null = nuevo, string = nombre
