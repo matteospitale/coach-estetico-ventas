@@ -625,12 +625,12 @@ body.admin-ro .admin-edit { display:none!important; }
   </div>
   <div class="topnav-pills">
     <button class="pill active" id="nav-inicio" onclick="switchTab('inicio')">Inicio</button>
+    <button class="pill" id="nav-plantillas" onclick="switchTab('plantillas')">Coach</button>
     <button class="pill" id="nav-ventas" onclick="switchTab('ventas')">Ventas</button>
-    <button class="pill" id="nav-plantillas" onclick="switchTab('plantillas')">Plantillas</button>
-    <button class="pill" id="nav-stats" onclick="switchTab('stats')">Stats</button>
-    <button class="pill" id="nav-admin" onclick="switchTab('admin')">Admin</button>
-    <button class="pill" id="nav-clientes" onclick="switchTab('clientes')">Alumnos</button>
     <button class="pill" id="nav-myf" onclick="switchTab('myf')">Coach Sales</button>
+    <button class="pill" id="nav-stats" onclick="switchTab('stats')">Stats</button>
+    <button class="pill" id="nav-clientes" onclick="switchTab('clientes')">Alumnos</button>
+    <button class="pill" id="nav-admin" onclick="switchTab('admin')">Admin</button>
     <button class="pill" id="nav-calendario" onclick="switchTab('calendario')">Calendario</button>
     <button class="pill" id="nav-usuarios" onclick="switchTab('usuarios')" style="display:none">Usuarios</button>
   </div>
@@ -647,12 +647,12 @@ body.admin-ro .admin-edit { display:none!important; }
 <!-- MOBILE DRAWER -->
 <div class="mob-drawer" id="mob-drawer">
   <button class="pill active" id="mnav-inicio" onclick="switchTab('inicio');closeMobDrawer()">Inicio</button>
+  <button class="pill" id="mnav-plantillas" onclick="switchTab('plantillas');closeMobDrawer()">Coach</button>
   <button class="pill" id="mnav-ventas" onclick="switchTab('ventas');closeMobDrawer()">Ventas</button>
-  <button class="pill" id="mnav-plantillas" onclick="switchTab('plantillas');closeMobDrawer()">Plantillas</button>
-  <button class="pill" id="mnav-stats" onclick="switchTab('stats');closeMobDrawer()">Stats</button>
-  <button class="pill" id="mnav-admin" onclick="switchTab('admin');closeMobDrawer()">Admin</button>
-  <button class="pill" id="mnav-clientes" onclick="switchTab('clientes');closeMobDrawer()">Alumnos</button>
   <button class="pill" id="mnav-myf" onclick="switchTab('myf');closeMobDrawer()">Coach Sales</button>
+  <button class="pill" id="mnav-stats" onclick="switchTab('stats');closeMobDrawer()">Stats</button>
+  <button class="pill" id="mnav-clientes" onclick="switchTab('clientes');closeMobDrawer()">Alumnos</button>
+  <button class="pill" id="mnav-admin" onclick="switchTab('admin');closeMobDrawer()">Admin</button>
   <button class="pill" id="mnav-calendario" onclick="switchTab('calendario');closeMobDrawer()">Calendario</button>
   <button class="pill" id="mnav-usuarios" onclick="switchTab('usuarios');closeMobDrawer()" style="display:none">Usuarios</button>
   <div class="mob-drawer-mes"><select id="header-mes-sel-mob" onchange="syncMes('mob')"><option value="all">Todos los meses</option></select></div>
@@ -1095,6 +1095,9 @@ async function init() {
     await cargarUsuariosConfig();
     if (!checkSession()) {
       renderLoginUsuarios();
+    } else {
+      const overlay = document.getElementById('login-overlay');
+      if (overlay) overlay.style.display = 'none';
     }
     await loadVentas();
     await loadCierres();
@@ -1131,7 +1134,7 @@ function closeSidebar() {
 
 // ── NAVIGATION ──
 const TABS = ['inicio','ventas','plantillas','stats','admin','clientes','myf','calendario','cargar','usuarios'];
-const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Plantillas', stats:'Estadísticas', admin:'Administración', clientes:'Alumnos', myf:'Coach Sales', calendario:'Calendario', cargar:'Cargar venta', usuarios:'Gestión de Usuarios' };
+const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Coach', stats:'Estadísticas', admin:'Administración', clientes:'Alumnos', myf:'Coach Sales', calendario:'Calendario', cargar:'Cargar venta', usuarios:'Gestión de Usuarios' };
 
 function switchTab(t) {
   // Redirigir si el usuario no tiene acceso a esta sección
