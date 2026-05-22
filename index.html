@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.27</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.29</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -4794,17 +4794,29 @@ function _normTelefono(tel) {
 function _normPago(pago) {
   var p = (pago || '').trim();
   var l = p.toLowerCase().replace(/\s+/g, ' ');
-  if (l === 'mp ars' || l.includes('mercado pago') || l === 'mp') return 'Link Mercado Pago Argentina';
-  if (l.includes('transfer') && l.includes('arg'))                 return 'Transferencia Argentina';
-  if (l.includes('bolivar') || l === 'bs' || l === 'bsd')          return 'Bolívares';
-  if (l.includes('hotmart'))                                        return 'Hotmart';
-  if (l.includes('zelle'))                                          return 'Zelle';
-  if (l.includes('paypal'))                                         return 'PayPal';
-  if (l.includes('chil'))                                           return 'Pesos Chilenos';
-  if (l.includes('colom'))                                          return 'Pesos Colombianos';
-  if (l.includes('peru') || l.includes('perú'))                    return 'Pesos Peruanos';
-  if (l.includes('domin'))                                          return 'Pesos Dominicanos';
-  return p;
+  if (l.includes('hotmart'))   return 'Hotmart';
+  if (l.includes('zelle'))     return 'Zelle';
+  if (l.includes('paypal'))    return 'PayPal';
+  // Bolívares: "Pago Movil", "Pago Móvil", "Bs", "Bolivares"
+  if (l.includes('pago movil') || l.includes('pago móvil') || l.includes('pagomovil') ||
+      l.includes('bolivar') || l === 'bs' || l === 'bsd') return 'Bolívares';
+  // Link Mercado Pago Argentina: "Link MP ARG", "LInk MP ARG", "MP ARS", "MP"
+  if (l.includes('mercado pago')) return 'Link Mercado Pago Argentina';
+  if ((l.includes('link') || l.includes('mp')) && l.includes('arg')) return 'Link Mercado Pago Argentina';
+  if (l === 'mp ars' || l === 'mp') return 'Link Mercado Pago Argentina';
+  // Pesos Chilenos: "Link MP CHILE", "Transfe CHILE"
+  if (l.includes('chil')) return 'Pesos Chilenos';
+  // Transferencias y sinónimos: acepta "transfe", "transfer"
+  if (l.includes('transf') && l.includes('arg'))                          return 'Transferencia Argentina';
+  if (l.includes('transf') && (l.includes('cop') || l.includes('colom'))) return 'Pesos Colombianos';
+  if (l.includes('transf') && (l.includes('peru') || l.includes('perú'))) return 'Pesos Peruanos';
+  if (l.includes('transf') && l.includes('domin'))                        return 'Pesos Dominicanos';
+  // Pesos Dominicanos: "Israelinda RD", "RD"
+  if (l.includes('israelinda') || l === 'rd' || (l.includes('domin')))    return 'Pesos Dominicanos';
+  // Resto por país
+  if (l.includes('colom') || l.includes('cop')) return 'Pesos Colombianos';
+  if (l.includes('peru') || l.includes('perú')) return 'Pesos Peruanos';
+  return p; // no reconocido → queda en rojo para selección manual
 }
 
 // Si ya hay un preview cargado y se agrega el Kommo después, lo aplica sin rehacer todo
