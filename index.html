@@ -990,6 +990,7 @@ body.admin-ro .admin-edit { display:none!important; }
       <div class="section-header">
         <div class="section-title">Calendario</div>
         <div style="display:flex;align-items:center;gap:8px">
+          <a id="btn-cal-open" href="https://calendar.google.com" target="_blank" class="btn btn-ghost" style="font-size:12px;text-decoration:none;display:none">↗ Abrir en Google Calendar</a>
           <button class="btn btn-ghost" id="btn-cal-config" onclick="abrirConfigCalendario()" style="font-size:12px;display:none">⚙ Configurar</button>
         </div>
       </div>
@@ -4001,6 +4002,16 @@ function renderCalendario() {
   // Configurar button: only Dianela can edit the calendar URL
   var btnCfg = document.getElementById('btn-cal-config');
   if (btnCfg) btnCfg.style.display = (usuarioActual === 'Dianela') ? '' : 'none';
+  // Abrir en Google Calendar: visible for everyone when calendar is configured
+  var btnOpen = document.getElementById('btn-cal-open');
+  if (btnOpen) {
+    if (_calendarioConfig && _calendarioConfig.embedUrl) {
+      var _calSrc = _calendarioConfig.embedUrl.trim();
+      if (_calSrc.indexOf('<iframe') !== -1) { var _cm = _calSrc.match(/src=["']([^"']+)["']/); if (_cm) _calSrc = _cm[1]; }
+      btnOpen.href = _calSrc.replace('calendar.google.com/calendar/embed', 'calendar.google.com/calendar/r') || 'https://calendar.google.com';
+      btnOpen.style.display = '';
+    } else { btnOpen.style.display = 'none'; }
+  }
   if (!_calendarioConfig || !_calendarioConfig.embedUrl) {
     el.innerHTML =
       '<div style="text-align:center;padding:60px 20px">' +
