@@ -25,18 +25,6 @@ module.exports = async function handler(req, res) {
            ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Extraer texto del campo value_after de un evento de mensaje
-  function extractText(ev) {
-    if (!ev.value_after || !ev.value_after.length) return '';
-    var va = ev.value_after[0];
-    // Prueba todos los formatos posibles de Kommo
-    return (va.message && (va.message.text || va.message.body || va.message.content)) ||
-           va.text || va.body || va.content ||
-           (va.attachment && va.attachment.name ? '[Archivo: ' + va.attachment.name + ']' : '') ||
-           '';
-  }
-
-  // Canal a partir del origin del talk
   function canalFromOrigin(origin) {
     if (!origin) return { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' };
     if (origin.includes('wa') || origin.includes('whatsapp'))
@@ -64,70 +52,66 @@ module.exports = async function handler(req, res) {
     var contacts = (lead._embedded && lead._embedded.contacts) || [];
     var contactIds = contacts.map(function(c) { return c.id; }).filter(Boolean);
 
-    // ── Mapa de talk_id → canal (origin) ──
-    var talkCanal = {};
-    for (var ci0 = 0; ci0 < contactIds.length; ci0++) {
-      var tResp = await kfetch('/talks?filter[contact_id][]=' + contactIds[ci0] + '&limit=50');
-      var tList = (tResp && tResp._embedded && tResp._embedded.talks) || [];
-      tList.forEach(function(t) {
-        if (t.talk_id) talkCanal[t.talk_id] = canalFromOrigin(t.origin);
-      });
-    }
-
-    var items = [];
-    var seenEventIds = new Set();
-    var debug = { leadId: lead.id, contactIds: contactIds, talkCanalMap: talkCanal, rawMsgSample: [] };
-
     var MSG_TYPES = '&filter[type][]=incoming_chat_message&filter[type][]=outgoing_chat_message&filter[type][]=entity_direct_message';
 
-    // ── Eventos de mensajes del LEAD ──
+    // ── Recolectar todos los eventos de mensajes (lead + contactos) ──
+    var allMsgEvents = [];
+    var seenEvIds = new Set();
+
+    // Lead events
     var evLead = await kfetch('/events?filter[lead_id]=' + lead.id + MSG_TYPES + '&limit=250');
     var leadEvs = (evLead && evLead._embedded && evLead._embedded.events) || [];
-    debug.leadMsgCount = leadEvs.length;
+    leadEvs.forEach(function(ev) { if (!seenEvIds.has(ev.id)) { seenEvIds.add(ev.id); allMsgEvents.push(ev); } });
 
-    // Guardar muestra cruda para debug
-    debug.rawMsgSample = leadEvs.slice(0, 3).map(function(ev) {
-      return { type: ev.type, created_at: ev.created_at, value_after: ev.value_after, value_before: ev.value_before };
-    });
-
-    leadEvs.forEach(function(ev) {
-      if (seenEventIds.has(ev.id)) return;
-      seenEventIds.add(ev.id);
-      var texto = extractText(ev);
-      if (!texto || !texto.trim()) return;
-      var canal = (ev.value_after && ev.value_after[0] && ev.value_after[0].talk_id && talkCanal[ev.value_after[0].talk_id]) ||
-                  canalFromOrigin('');
-      items.push({
-        ts: ev.created_at || 0, fecha: formatFecha(ev.created_at),
-        tipo: ev.type === 'incoming_chat_message' ? 'entrante' : 'saliente',
-        texto: String(texto).substring(0, 1000),
-        canal: canal,
-        fuente: 'evento'
-      });
-    });
-
-    // ── Eventos de mensajes por CONTACTO (captura mensajes no ligados al lead) ──
+    // Contact events
     for (var ci = 0; ci < contactIds.length; ci++) {
       var evCon = await kfetch('/events?filter[contact_id]=' + contactIds[ci] + MSG_TYPES + '&limit=250');
       var conEvs = (evCon && evCon._embedded && evCon._embedded.events) || [];
-      conEvs.forEach(function(ev) {
-        if (seenEventIds.has(ev.id)) return;
-        seenEventIds.add(ev.id);
-        var texto = extractText(ev);
-        if (!texto || !texto.trim()) return;
-        var canal = (ev.value_after && ev.value_after[0] && ev.value_after[0].talk_id && talkCanal[ev.value_after[0].talk_id]) ||
-                    canalFromOrigin('');
-        items.push({
-          ts: ev.created_at || 0, fecha: formatFecha(ev.created_at),
-          tipo: ev.type === 'incoming_chat_message' ? 'entrante' : 'saliente',
-          texto: String(texto).substring(0, 1000),
-          canal: canal,
-          fuente: 'evento'
-        });
+      conEvs.forEach(function(ev) { if (!seenEvIds.has(ev.id)) { seenEvIds.add(ev.id); allMsgEvents.push(ev); } });
+    }
+
+    // ── Extraer referencias a mensajes de los eventos ──
+    var msgRefs = [];
+    allMsgEvents.forEach(function(ev) {
+      var va = ev.value_after && ev.value_after[0];
+      if (!va || !va.message || !va.message.id) return;
+      msgRefs.push({
+        evId: ev.id,
+        msgUuid: va.message.id,
+        origin: va.message.origin || '',
+        talk_id: va.message.talk_id,
+        evType: ev.type,
+        evTs: ev.created_at
+      });
+    });
+
+    var debug = { contactIds: contactIds, totalMsgEvents: allMsgEvents.length, msgRefs: msgRefs };
+
+    // ── PROBE: ¿Se puede fetchear un mensaje por UUID? ──
+    // Intentamos con el primer mensaje disponible
+    var probeResults = [];
+    var sample = msgRefs.slice(0, 3);
+
+    for (var mi = 0; mi < sample.length; mi++) {
+      var ref = sample[mi];
+      // Intento 1: GET /messages/{uuid}
+      var r1 = await kfetch('/messages/' + ref.msgUuid);
+      // Intento 2: GET /messages?filter[id][]={uuid}
+      var r2 = await kfetch('/messages?filter[id][]=' + ref.msgUuid);
+      var r2list = (r2 && r2._embedded && r2._embedded.messages) || [];
+
+      probeResults.push({
+        msgUuid: ref.msgUuid,
+        origin: ref.origin,
+        byUuid: { status: r1._status, keys: r1 && !r1._empty && !r1._raw ? Object.keys(r1).filter(function(k){return k!=='_links';}) : [], raw: r1._raw || null },
+        byFilter: { status: r2._status, count: r2list.length, sample: r2list.slice(0,1) }
       });
     }
 
-    // ── Notas manuales ──
+    debug.probeResults = probeResults;
+
+    // ── Notas manuales (siempre) ──
+    var items = [];
     var notesData = await kfetch('/leads/' + lead.id + '/notes?limit=250&order[id]=asc');
     var notesList = (notesData && notesData._embedded && notesData._embedded.notes) || [];
     notesList.forEach(function(n) {
