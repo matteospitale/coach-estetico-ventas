@@ -1052,7 +1052,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.13</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.15</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1180,14 +1180,10 @@ async function init() {
       const overlay = document.getElementById('login-overlay');
       if (overlay) overlay.style.display = 'none';
     }
-    await loadVentas();
-    await loadCierres();
-    await loadCalendarioConfig();
+    await Promise.all([loadVentas(), loadCierres(), loadCalendarioConfig()]);
     document.getElementById('loading-state').style.display = 'none';
     renderAll();
-    await loadPlantillas();
-    await loadNotificaciones();
-    await loadGeminiKey();
+    await Promise.all([loadPlantillas(), loadNotificaciones(), loadGeminiKey()]);
     if (usuarioActual) {
       aplicarPermisos();
     }
@@ -4835,7 +4831,7 @@ init();
       <defs><linearGradient id="gcg" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4285F4"/><stop offset="100%" stop-color="#9C57FF"/></linearGradient></defs>
       <path d="M14 28C14 20.104 7.896 14 0 14C7.896 14 14 7.896 14 0C14 7.896 20.104 14 28 14C20.104 14 14 20.104 14 28Z" fill="url(#gcg)"/>
     </svg>
-    <div id="gchat-title">Gemini &middot; Coach Hub</div>
+    <div id="gchat-title">Coach IA <span style="font-size:10px;font-weight:500;opacity:0.7;-webkit-text-fill-color:inherit">Powered by Gemini</span></div>
     <button id="gchat-close" onclick="toggleGeminiChat()">&#x2715;</button>
   </div>
   <div id="gchat-msgs">
