@@ -4,7 +4,7 @@ module.exports = async function handler(req, res) {
   const token = process.env.KOMMO_TOKEN;
   if (!token) return res.status(500).json({ error: 'Kommo token no configurado en Vercel' });
 
-  const { q } = req.query;
+  const { q, debug_raw } = req.query;
   if (!q) return res.status(400).json({ error: 'Parámetro q requerido' });
 
   const BASE = 'https://coachestetico.kommo.com/api/v4';
@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
     var t = await r.text();
     if (!t || !t.trim()) return { _status: r.status, _empty: true };
     try { var j = JSON.parse(t); j._status = r.status; return j; }
-    catch(e) { return { _status: r.status, _raw: t.substring(0, 300) }; }
+    catch(e) { return { _status: r.status, _raw: t.substring(0, 500) }; }
   }
 
   function formatFecha(ts) {
@@ -25,35 +25,8 @@ module.exports = async function handler(req, res) {
            ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  function detectarCanal(talk) {
-    var src = (talk._embedded && talk._embedded.source) || {};
-    var tipo = (src.type || src.code || talk.source_code || talk.channel_type || talk.type || '').toLowerCase();
-    var nombre = src.name || src.origin || talk.source_name || talk.name || '';
-    var nb = nombre.toLowerCase();
-
-    if (tipo.includes('instagram') || nb.includes('instagram'))
-      return { id: 'instagram', label: 'Instagram', color: '#C13584', bg: 'rgba(193,53,132,0.10)' };
-    if (tipo.includes('facebook') || nb.includes('facebook') || nb.includes('fb messenger'))
-      return { id: 'facebook', label: 'Facebook', color: '#1877F2', bg: 'rgba(24,119,242,0.10)' };
-    if (tipo.includes('telegram') || nb.includes('telegram'))
-      return { id: 'telegram', label: 'Telegram', color: '#229ED9', bg: 'rgba(34,158,217,0.10)' };
-    if (tipo.includes('whatsapp') || tipo.includes('waba') || nb.includes('whatsapp') || nb.includes('wapp')) {
-      var num = nombre.replace(/[^0-9+]/g, '').trim();
-      return { id: 'whatsapp', label: 'WhatsApp' + (num ? ' ' + num : ''), color: '#25D366', bg: 'rgba(37,211,102,0.10)' };
-    }
-    return { id: 'chat', label: nombre || 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' };
-  }
-
-  function textoMsg(content) {
-    if (!content) return '';
-    var t = content.text || content.body || '';
-    if (t) return t;
-    var map = { image: '🖼 Imagen', video: '🎥 Video', voice: '🎤 Audio', file: '📎 Archivo', sticker: '🖼 Sticker' };
-    return map[content.type] || (content.type ? '[' + content.type + ']' : '');
-  }
-
   try {
-    // ── 1. Buscar lead ──
+    // ── Buscar lead con contactos ──
     var lead = null;
     if (/^\d+$/.test(q.trim())) {
       var d = await kfetch('/leads/' + q.trim() + '?with=contacts');
@@ -65,111 +38,124 @@ module.exports = async function handler(req, res) {
     }
     if (!lead) return res.status(404).json({ error: 'Lead "' + q + '" no encontrado' });
 
-    var debug = { leadId: lead.id, contactIds: [], talksFound: 0, talksErrors: [], msgsFound: 0 };
-    var items = [];
+    var contacts = (lead._embedded && lead._embedded.contacts) || [];
+    var contactIds = contacts.map(function(c) { return c.id; }).filter(Boolean);
 
-    // ── 2. Contactos del lead ──
-    var contactIds = [];
-    var embedded = lead._embedded || {};
-    var contacts = embedded.contacts || [];
-    contacts.forEach(function(c) { if (c.id) contactIds.push(c.id); });
-    debug.contactIds = contactIds;
+    // ── Recolectar todos los talks por contacto ──
+    var allTalks = [];
+    var talkDebug = [];
 
-    // ── 3. Talks: buscar por contacto Y por lead (ambos métodos) ──
-    var talks = [];
-
-    // Método A: por lead entity
-    try {
-      var tA = await kfetch('/talks?filter[entity_id][]=' + lead.id + '&filter[entity_type][]=leads&limit=50');
-      var tAlks = (tA && tA._embedded && tA._embedded.talks) || [];
-      talks = talks.concat(tAlks);
-      debug.talksErrors.push({ metodoA: tA._status || 'ok', count: tAlks.length });
-    } catch(e) { debug.talksErrors.push({ metodoA: 'error', msg: e.message }); }
-
-    // Método B: por contacto
     for (var ci = 0; ci < contactIds.length; ci++) {
-      try {
-        var tB = await kfetch('/talks?filter[contact_id][]=' + contactIds[ci] + '&limit=50');
-        var tBlks = (tB && tB._embedded && tB._embedded.talks) || [];
-        debug.talksErrors.push({ metodoB_contact: contactIds[ci], status: tB._status, count: tBlks.length });
-        // Agregar solo talks no duplicados
-        tBlks.forEach(function(tb) {
-          if (!talks.find(function(t) { return t.id === tb.id; })) talks.push(tb);
-        });
-      } catch(e) { debug.talksErrors.push({ metodoB: 'error', contactId: contactIds[ci], msg: e.message }); }
+      var tResp = await kfetch('/talks?filter[contact_id][]=' + contactIds[ci] + '&limit=50');
+      var tList = (tResp && tResp._embedded && tResp._embedded.talks) || [];
+      talkDebug.push({ contactId: contactIds[ci], status: tResp._status, count: tList.length });
+      allTalks = allTalks.concat(tList);
     }
 
-    debug.talksFound = talks.length;
-
-    // ── 4. Mensajes de cada talk ──
-    var talkPromises = talks.slice(0, 15).map(async function(talk) {
-      var canal = detectarCanal(talk);
-      var msgsData = await kfetch('/messages?filter[talk_id][]=' + talk.id + '&limit=250');
-      var msgs = (msgsData && msgsData._embedded && msgsData._embedded.messages) || [];
-      debug.msgsFound += msgs.length;
-      return msgs.map(function(m) {
-        var texto = textoMsg(m.content);
-        if (!texto) return null;
-        var authorType = (m.author && m.author.type) || 'user';
-        return {
-          ts:    m.created_at || 0,
-          fecha: formatFecha(m.created_at),
-          tipo:  authorType === 'contact' ? 'entrante' : 'saliente',
-          texto: String(texto).substring(0, 1000),
-          canal: canal,
-          fuente:'chat'
-        };
-      }).filter(Boolean);
+    // Deduplicar por cualquier campo ID posible
+    var seenIds = new Set();
+    var uniqueTalks = [];
+    allTalks.forEach(function(t) {
+      // Kommo puede usar id, uuid, talk_id, o uid
+      var tid = t.id || t.uuid || t.talk_id || t.uid || JSON.stringify(t).substring(0, 50);
+      if (!seenIds.has(tid)) { seenIds.add(tid); uniqueTalks.push(t); }
     });
 
-    var talkResults = await Promise.all(talkPromises);
-    talkResults.forEach(function(msgs) { items = items.concat(msgs); });
+    // ── DEBUG RAW: estructura de los primeros 3 talks ──
+    var rawTalkSample = uniqueTalks.slice(0, 3).map(function(t) {
+      return { keys: Object.keys(t), id: t.id, uuid: t.uuid, talk_id: t.talk_id, uid: t.uid,
+               _embedded_keys: t._embedded ? Object.keys(t._embedded) : [], source: t.source || t._embedded && t._embedded.source };
+    });
 
-    // ── 5. Notas manuales ──
-    try {
-      var notesData = await kfetch('/leads/' + lead.id + '/notes?limit=250&order[id]=asc');
-      var notesList = (notesData && notesData._embedded && notesData._embedded.notes) || [];
-      notesList.forEach(function(n) {
-        var texto = '';
-        if (n.params) texto = n.params.text || n.params.service || n.params.body || n.params.message || '';
-        if (!texto && n.text) texto = n.text;
-        if (!texto || texto.trim().length < 2) return;
-        var icono = n.note_type === 25 ? '📞 Llamada ent. · ' : n.note_type === 26 ? '📞 Llamada sal. · ' : n.note_type === 12 ? '📎 · ' : '';
-        items.push({
-          ts:    n.created_at || 0,
-          fecha: formatFecha(n.created_at),
-          tipo:  (n.created_by || 0) === 0 ? 'entrante' : 'saliente',
-          texto: icono + String(texto).substring(0, 1000),
-          canal: { id: 'nota', label: 'Nota', color: '#9a8f87', bg: 'rgba(154,143,135,0.10)' },
-          fuente:'nota'
-        });
-      });
-    } catch(e) {}
+    // ── Buscar mensajes: probar varios endpoints por cada talk ──
+    var msgDebug = [];
+    var items = [];
 
-    // ── 6. Ordenar todo cronológicamente ──
-    items.sort(function(a, b) { return a.ts - b.ts; });
+    for (var ti = 0; ti < Math.min(uniqueTalks.length, 15); ti++) {
+      var talk = uniqueTalks[ti];
+      var tId = talk.id || talk.uuid || talk.talk_id || talk.uid;
+      var dbg = { talkId: tId, keys: Object.keys(talk), attempts: [] };
 
-    var cf = lead.custom_fields_values || [];
-    function getField(name) {
-      var f = cf.find(function(x) { return (x.field_name || '').toLowerCase() === name.toLowerCase(); });
-      return f ? (f.values && f.values[0] && f.values[0].value || '') : '';
+      // Intento 1: /messages?filter[talk_id][]=
+      var m1 = await kfetch('/messages?filter[talk_id][]=' + tId + '&limit=250');
+      var msgs1 = (m1 && m1._embedded && m1._embedded.messages) || [];
+      dbg.attempts.push({ url: '/messages?filter[talk_id][]=' + tId, status: m1._status, msgCount: msgs1.length,
+                          embeddedKeys: m1._embedded ? Object.keys(m1._embedded) : [], sample: msgs1.slice(0,1) });
+
+      if (msgs1.length === 0) {
+        // Intento 2: /talks/{id}/messages
+        var m2 = await kfetch('/talks/' + tId + '/messages?limit=250');
+        var msgs2 = (m2 && m2._embedded && m2._embedded.messages) || [];
+        dbg.attempts.push({ url: '/talks/' + tId + '/messages', status: m2._status, msgCount: msgs2.length,
+                            embeddedKeys: m2._embedded ? Object.keys(m2._embedded) : [], sample: msgs2.slice(0,1) });
+
+        if (msgs2.length === 0) {
+          // Intento 3: ver si el talk tiene embedded messages ya
+          var embMsgs = talk._embedded && (talk._embedded.messages || talk._embedded.chats || talk._embedded.items);
+          dbg.attempts.push({ url: 'embedded_in_talk', msgs: embMsgs ? embMsgs.slice(0,2) : null });
+        }
+
+        if (msgs2.length > 0) {
+          dbg.source = 'intento2';
+          msgs2.forEach(function(m) { items.push(buildItem(m, talk, tId)); });
+        }
+      } else {
+        dbg.source = 'intento1';
+        msgs1.forEach(function(m) { items.push(buildItem(m, talk, tId)); });
+      }
+
+      msgDebug.push(dbg);
     }
 
+    function buildItem(m, talk, tId) {
+      var texto = '';
+      if (m.content) texto = m.content.text || m.content.body || '';
+      if (!texto && m.text) texto = m.text;
+      if (!texto && m.content && m.content.type) texto = '[' + m.content.type + ']';
+      var authorType = (m.author && m.author.type) || (m.created_by ? 'user' : 'contact');
+      return {
+        ts: m.created_at || m.timestamp || 0,
+        fecha: formatFecha(m.created_at || m.timestamp),
+        tipo: authorType === 'contact' ? 'entrante' : 'saliente',
+        texto: String(texto).substring(0, 1000),
+        canal: { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' },
+        fuente: 'chat'
+      };
+    }
+
+    // ── Notas manuales ──
+    var notesData = await kfetch('/leads/' + lead.id + '/notes?limit=250&order[id]=asc');
+    var notesList = (notesData && notesData._embedded && notesData._embedded.notes) || [];
+    notesList.forEach(function(n) {
+      var texto = '';
+      if (n.params) texto = n.params.text || n.params.service || n.params.body || '';
+      if (!texto && n.text) texto = n.text;
+      if (!texto || texto.trim().length < 2) return;
+      var icono = n.note_type === 25 ? '📞 Llamada ent. · ' : n.note_type === 26 ? '📞 Llamada sal. · ' : '';
+      items.push({
+        ts: n.created_at || 0, fecha: formatFecha(n.created_at),
+        tipo: (n.created_by || 0) === 0 ? 'entrante' : 'saliente',
+        texto: icono + String(texto).substring(0, 1000),
+        canal: { id: 'nota', label: 'Nota', color: '#9a8f87', bg: 'rgba(154,143,135,0.10)' },
+        fuente: 'nota'
+      });
+    });
+
+    items.sort(function(a, b) { return a.ts - b.ts; });
+
     return res.status(200).json({
-      lead: {
-        id: lead.id, nombre: lead.name || 'Sin nombre',
-        etapa: String(lead.status_id || '—'),
-        interes: getField('Interes') || getField('Interés') || '',
-        tags: (lead.tags || []).map(function(t) { return t.name; }).join(', '),
-        dias_sin_actividad: lead.updated_at ? Math.floor((Math.floor(Date.now()/1000) - lead.updated_at) / 86400) : 0,
-        presupuesto: lead.price || 0
+      debug: {
+        contactIds: contactIds,
+        talkDebug: talkDebug,
+        uniqueTalksCount: uniqueTalks.length,
+        rawTalkSample: rawTalkSample,
+        msgDebug: msgDebug
       },
-      debug: debug,   // ← temporal para diagnóstico
       total: items.length,
       notas: items
     });
 
   } catch(e) {
-    return res.status(500).json({ error: 'Error Kommo: ' + e.message });
+    return res.status(500).json({ error: 'Error Kommo: ' + e.message, stack: e.stack });
   }
 };
