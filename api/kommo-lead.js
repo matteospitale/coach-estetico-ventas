@@ -25,6 +25,29 @@ module.exports = async function handler(req, res) {
            ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   }
 
+  // Extraer texto del campo value_after de un evento de mensaje
+  function extractText(ev) {
+    if (!ev.value_after || !ev.value_after.length) return '';
+    var va = ev.value_after[0];
+    // Prueba todos los formatos posibles de Kommo
+    return (va.message && (va.message.text || va.message.body || va.message.content)) ||
+           va.text || va.body || va.content ||
+           (va.attachment && va.attachment.name ? '[Archivo: ' + va.attachment.name + ']' : '') ||
+           '';
+  }
+
+  // Canal a partir del origin del talk
+  function canalFromOrigin(origin) {
+    if (!origin) return { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' };
+    if (origin.includes('wa') || origin.includes('whatsapp'))
+      return { id: 'whatsapp', label: 'WhatsApp', color: '#25D366', bg: 'rgba(37,211,102,0.10)' };
+    if (origin.includes('instagram'))
+      return { id: 'instagram', label: 'Instagram', color: '#E1306C', bg: 'rgba(225,48,108,0.09)' };
+    if (origin.includes('facebook') || origin.includes('fb'))
+      return { id: 'facebook', label: 'Facebook', color: '#1877F2', bg: 'rgba(24,119,242,0.09)' };
+    return { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' };
+  }
+
   try {
     // ── Buscar lead ──
     var lead = null;
@@ -41,88 +64,70 @@ module.exports = async function handler(req, res) {
     var contacts = (lead._embedded && lead._embedded.contacts) || [];
     var contactIds = contacts.map(function(c) { return c.id; }).filter(Boolean);
 
+    // ── Mapa de talk_id → canal (origin) ──
+    var talkCanal = {};
+    for (var ci0 = 0; ci0 < contactIds.length; ci0++) {
+      var tResp = await kfetch('/talks?filter[contact_id][]=' + contactIds[ci0] + '&limit=50');
+      var tList = (tResp && tResp._embedded && tResp._embedded.talks) || [];
+      tList.forEach(function(t) {
+        if (t.talk_id) talkCanal[t.talk_id] = canalFromOrigin(t.origin);
+      });
+    }
+
     var items = [];
-    var debug = { contactIds: contactIds, probes: [] };
+    var seenEventIds = new Set();
+    var debug = { leadId: lead.id, contactIds: contactIds, talkCanalMap: talkCanal, rawMsgSample: [] };
 
-    // ── PROBE 1: Events sin filtro de entidad (¿funciona el endpoint?) ──
-    var evNoFilter = await kfetch('/events?limit=10');
-    var evNoFilterList = (evNoFilter && evNoFilter._embedded && evNoFilter._embedded.events) || [];
-    debug.probes.push({
-      name: 'events_no_filter',
-      status: evNoFilter._status,
-      count: evNoFilterList.length,
-      types: evNoFilterList.map(function(e) { return e.type; }),
-      raw: evNoFilter._raw || null
+    var MSG_TYPES = '&filter[type][]=incoming_chat_message&filter[type][]=outgoing_chat_message&filter[type][]=entity_direct_message';
+
+    // ── Eventos de mensajes del LEAD ──
+    var evLead = await kfetch('/events?filter[lead_id]=' + lead.id + MSG_TYPES + '&limit=250');
+    var leadEvs = (evLead && evLead._embedded && evLead._embedded.events) || [];
+    debug.leadMsgCount = leadEvs.length;
+
+    // Guardar muestra cruda para debug
+    debug.rawMsgSample = leadEvs.slice(0, 3).map(function(ev) {
+      return { type: ev.type, created_at: ev.created_at, value_after: ev.value_after, value_before: ev.value_before };
     });
 
-    // ── PROBE 2: Events filtrado por lead_id (sintaxis alternativa) ──
-    var evAlt = await kfetch('/events?filter[lead_id]=' + lead.id + '&limit=100');
-    var evAltList = (evAlt && evAlt._embedded && evAlt._embedded.events) || [];
-    var evAltTypes = evAltList.reduce(function(acc, e) { acc[e.type] = (acc[e.type]||0)+1; return acc; }, {});
-    debug.probes.push({
-      name: 'events_by_lead_id',
-      status: evAlt._status,
-      count: evAltList.length,
-      types: evAltTypes,
-      raw: evAlt._raw || null
-    });
-
-    // Extract chat messages from events (if any)
-    evAltList.forEach(function(ev) {
-      var tipo = (ev.type || '');
-      if (!tipo.includes('chat') && !tipo.includes('message')) return;
-      var va = ev.value_after && ev.value_after[0];
-      var texto = (va && va.message && (va.message.text || va.message.body)) || (va && va.text) || JSON.stringify(va||{}).substring(0,200);
+    leadEvs.forEach(function(ev) {
+      if (seenEventIds.has(ev.id)) return;
+      seenEventIds.add(ev.id);
+      var texto = extractText(ev);
+      if (!texto || !texto.trim()) return;
+      var canal = (ev.value_after && ev.value_after[0] && ev.value_after[0].talk_id && talkCanal[ev.value_after[0].talk_id]) ||
+                  canalFromOrigin('');
       items.push({
         ts: ev.created_at || 0, fecha: formatFecha(ev.created_at),
-        tipo: tipo.includes('incoming') ? 'entrante' : 'saliente',
+        tipo: ev.type === 'incoming_chat_message' ? 'entrante' : 'saliente',
         texto: String(texto).substring(0, 1000),
-        canal: { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' },
+        canal: canal,
         fuente: 'evento'
       });
     });
 
-    // ── PROBE 3: /inbox endpoints ──
-    var inboxResp = await kfetch('/inbox?limit=5');
-    debug.probes.push({
-      name: 'inbox_root',
-      status: inboxResp._status,
-      embeddedKeys: inboxResp._embedded ? Object.keys(inboxResp._embedded) : [],
-      raw: inboxResp._raw || null
-    });
+    // ── Eventos de mensajes por CONTACTO (captura mensajes no ligados al lead) ──
+    for (var ci = 0; ci < contactIds.length; ci++) {
+      var evCon = await kfetch('/events?filter[contact_id]=' + contactIds[ci] + MSG_TYPES + '&limit=250');
+      var conEvs = (evCon && evCon._embedded && evCon._embedded.events) || [];
+      conEvs.forEach(function(ev) {
+        if (seenEventIds.has(ev.id)) return;
+        seenEventIds.add(ev.id);
+        var texto = extractText(ev);
+        if (!texto || !texto.trim()) return;
+        var canal = (ev.value_after && ev.value_after[0] && ev.value_after[0].talk_id && talkCanal[ev.value_after[0].talk_id]) ||
+                    canalFromOrigin('');
+        items.push({
+          ts: ev.created_at || 0, fecha: formatFecha(ev.created_at),
+          tipo: ev.type === 'incoming_chat_message' ? 'entrante' : 'saliente',
+          texto: String(texto).substring(0, 1000),
+          canal: canal,
+          fuente: 'evento'
+        });
+      });
+    }
 
-    // ── PROBE 4: Talk individual con chat_id ──
-    var talkDetail = await kfetch('/talks/229776');
-    debug.probes.push({
-      name: 'talk_229776_direct',
-      status: talkDetail._status,
-      keys: talkDetail ? Object.keys(talkDetail).filter(function(k){return k!=='_links';}) : [],
-      chat_id: talkDetail.chat_id,
-      origin: talkDetail.origin,
-      source_id: talkDetail.source_id
-    });
-
-    // ── PROBE 5: /sources para ver qué canales hay ──
-    var sources = await kfetch('/sources?limit=50');
-    var srcList = (sources && sources._embedded && sources._embedded.sources) || [];
-    debug.probes.push({
-      name: 'sources',
-      status: sources._status,
-      count: srcList.length,
-      list: srcList.map(function(s) { return { id: s.id, name: s.name, type: s.type }; })
-    });
-
-    // ── PROBE 6: /calls (llamadas) ──
-    var callsResp = await kfetch('/calls?filter[lead_id]=' + lead.id + '&limit=20');
-    var callsList = (callsResp && callsResp._embedded && callsResp._embedded.calls) || [];
-    debug.probes.push({
-      name: 'calls',
-      status: callsResp._status,
-      count: callsList.length,
-      sample: callsList.slice(0, 2)
-    });
-
-    // ── Notas (siempre funciona) ──
+    // ── Notas manuales ──
     var notesData = await kfetch('/leads/' + lead.id + '/notes?limit=250&order[id]=asc');
     var notesList = (notesData && notesData._embedded && notesData._embedded.notes) || [];
     notesList.forEach(function(n) {
