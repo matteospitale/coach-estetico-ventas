@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.20</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.21</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -4727,6 +4727,8 @@ function abrirImportExcel() {
   document.getElementById('imp-preview-wrap').innerHTML = '';
   document.getElementById('imp-legend').style.display = 'none';
   document.getElementById('btn-importar-excel').style.display = 'none';
+  document.getElementById('imp-ventas-sheet-wrap').style.display = 'none';
+  document.getElementById('imp-kommo-sheet-wrap').style.display = 'none';
 }
 
 function cerrarImportExcel() {
@@ -4776,8 +4778,37 @@ function _splitNombre(fullName) {
 
 function _parseNum(val) {
   if (typeof val === 'number') return val;
-  // Remove thousands separators (commas), keep decimal point and minus
   return parseFloat(String(val || '').replace(/,/g, '').replace(/[^0-9.-]/g, '')) || 0;
+}
+
+// Lee las hojas de un archivo Excel y llena el selector
+function impLeerHojas(input, wrapId, selectId) {
+  var wrap = document.getElementById(wrapId);
+  var sel  = document.getElementById(selectId);
+  wrap.style.display = 'none';
+  sel.innerHTML = '';
+  document.getElementById('imp-preview-wrap').style.display = 'none';
+  document.getElementById('btn-importar-excel').style.display = 'none';
+  document.getElementById('imp-status').textContent = '';
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = XLSX.read(e.target.result, { type: 'binary', bookSheets: true });
+      var names = wb.SheetNames;
+      names.forEach(function(n, i) {
+        var opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = (i + 1) + '. ' + n;
+        sel.appendChild(opt);
+      });
+      // Si solo hay una hoja, no hace falta mostrar el selector
+      wrap.style.display = names.length > 1 ? '' : 'none';
+    } catch(e) {
+      document.getElementById('imp-status').textContent = '❌ No se pudo leer el archivo';
+    }
+  };
+  reader.readAsBinaryString(input.files[0]);
 }
 
 function _leerExcelBinario(file) {
@@ -4810,8 +4841,10 @@ async function procesarImportFiles() {
     _importKommoMap = {};
     if (kommoFile) {
       statusEl.textContent = 'Leyendo Kommo leads...';
-      var kommoWb = await _leerExcelBinario(kommoFile);
-      var kommoWs = kommoWb.Sheets[kommoWb.SheetNames[0]];
+      var kommoWb  = await _leerExcelBinario(kommoFile);
+      var kommoSel = document.getElementById('imp-kommo-sheet');
+      var kommoSheet = (kommoSel && kommoSel.value) ? kommoSel.value : kommoWb.SheetNames[0];
+      var kommoWs  = kommoWb.Sheets[kommoSheet];
       var kommoRows = XLSX.utils.sheet_to_json(kommoWs, { raw: false, defval: '' });
       kommoRows.forEach(function(row) {
         var id = _rowGet(row, ['ID','id','Id']);
@@ -4831,8 +4864,10 @@ async function procesarImportFiles() {
     }
 
     // ── Leer archivo de ventas ──
-    var ventasWb = await _leerExcelBinario(ventasFile);
-    var ventasWs = ventasWb.Sheets[ventasWb.SheetNames[0]];
+    var ventasWb  = await _leerExcelBinario(ventasFile);
+    var ventasSel = document.getElementById('imp-ventas-sheet');
+    var ventasSheet = (ventasSel && ventasSel.value) ? ventasSel.value : ventasWb.SheetNames[0];
+    var ventasWs  = ventasWb.Sheets[ventasSheet];
     var ventasRows = XLSX.utils.sheet_to_json(ventasWs, { raw: true, defval: '' });
 
     if (!ventasRows.length) { statusEl.textContent = '⚠️ El archivo de ventas está vacío'; return; }
@@ -5074,12 +5109,20 @@ init();
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">📋 Archivo de ventas *</label>
           <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Formato Matteo (col. Monto + Real) o Facundo (col. Monto USD) — .xlsx</div>
-          <input type="file" id="imp-ventas-file" accept=".xlsx,.xls" class="form-input" style="font-size:12px;padding:8px;cursor:pointer">
+          <input type="file" id="imp-ventas-file" accept=".xlsx,.xls" class="form-input" style="font-size:12px;padding:8px;cursor:pointer" onchange="impLeerHojas(this,'imp-ventas-sheet-wrap','imp-ventas-sheet')">
+          <div id="imp-ventas-sheet-wrap" style="display:none;margin-top:8px">
+            <label class="form-label" style="font-size:11px">Hoja a importar</label>
+            <select class="form-select" id="imp-ventas-sheet" style="font-size:12px;margin-top:3px"></select>
+          </div>
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">🔗 Export de Kommo leads <span style="font-weight:400;color:var(--text3)">(opcional)</span></label>
           <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Completa nombre, apellido, país y canal automáticamente</div>
-          <input type="file" id="imp-kommo-file" accept=".xlsx,.xls" class="form-input" style="font-size:12px;padding:8px;cursor:pointer">
+          <input type="file" id="imp-kommo-file" accept=".xlsx,.xls" class="form-input" style="font-size:12px;padding:8px;cursor:pointer" onchange="impLeerHojas(this,'imp-kommo-sheet-wrap','imp-kommo-sheet')">
+          <div id="imp-kommo-sheet-wrap" style="display:none;margin-top:8px">
+            <label class="form-label" style="font-size:11px">Hoja a usar</label>
+            <select class="form-select" id="imp-kommo-sheet" style="font-size:12px;margin-top:3px"></select>
+          </div>
         </div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap">
