@@ -42,32 +42,37 @@ module.exports = async function handler(req, res) {
     var contactIds = contacts.map(function(c) { return c.id; }).filter(Boolean);
 
     var items = [];
-    var debug = { contactIds: contactIds, approaches: [] };
+    var debug = { contactIds: contactIds, probes: [] };
 
-    // ── APPROACH 1: Events API (lead) ──
-    var evLead = await kfetch('/events?filter[entity][id][]=' + lead.id + '&filter[entity][type][]=lead&limit=250');
-    var leadEvents = (evLead && evLead._embedded && evLead._embedded.events) || [];
-    var leadEventTypes = leadEvents.reduce(function(acc, e) {
-      acc[e.type] = (acc[e.type] || 0) + 1; return acc;
-    }, {});
-    debug.approaches.push({
-      name: 'events_lead',
-      status: evLead._status,
-      total: leadEvents.length,
-      types: leadEventTypes,
-      sample: leadEvents.slice(0, 2)
+    // ── PROBE 1: Events sin filtro de entidad (¿funciona el endpoint?) ──
+    var evNoFilter = await kfetch('/events?limit=10');
+    var evNoFilterList = (evNoFilter && evNoFilter._embedded && evNoFilter._embedded.events) || [];
+    debug.probes.push({
+      name: 'events_no_filter',
+      status: evNoFilter._status,
+      count: evNoFilterList.length,
+      types: evNoFilterList.map(function(e) { return e.type; }),
+      raw: evNoFilter._raw || null
     });
 
-    // Extract chat messages from lead events
-    leadEvents.forEach(function(ev) {
-      var tipo = ev.type || '';
-      if (!tipo.includes('chat') && !tipo.includes('message') && !tipo.includes('msg')) return;
-      var texto = '';
-      if (ev.value_after && ev.value_after[0]) {
-        var va = ev.value_after[0];
-        texto = (va.message && (va.message.text || va.message.body)) ||
-                (va.text) || JSON.stringify(va).substring(0, 300);
-      }
+    // ── PROBE 2: Events filtrado por lead_id (sintaxis alternativa) ──
+    var evAlt = await kfetch('/events?filter[lead_id]=' + lead.id + '&limit=100');
+    var evAltList = (evAlt && evAlt._embedded && evAlt._embedded.events) || [];
+    var evAltTypes = evAltList.reduce(function(acc, e) { acc[e.type] = (acc[e.type]||0)+1; return acc; }, {});
+    debug.probes.push({
+      name: 'events_by_lead_id',
+      status: evAlt._status,
+      count: evAltList.length,
+      types: evAltTypes,
+      raw: evAlt._raw || null
+    });
+
+    // Extract chat messages from events (if any)
+    evAltList.forEach(function(ev) {
+      var tipo = (ev.type || '');
+      if (!tipo.includes('chat') && !tipo.includes('message')) return;
+      var va = ev.value_after && ev.value_after[0];
+      var texto = (va && va.message && (va.message.text || va.message.body)) || (va && va.text) || JSON.stringify(va||{}).substring(0,200);
       items.push({
         ts: ev.created_at || 0, fecha: formatFecha(ev.created_at),
         tipo: tipo.includes('incoming') ? 'entrante' : 'saliente',
@@ -77,93 +82,45 @@ module.exports = async function handler(req, res) {
       });
     });
 
-    // ── APPROACH 2: Events API (contacts) ──
-    for (var ci = 0; ci < Math.min(contactIds.length, 3); ci++) {
-      var evCon = await kfetch('/events?filter[entity][id][]=' + contactIds[ci] + '&filter[entity][type][]=contact&limit=100');
-      var conEvents = (evCon && evCon._embedded && evCon._embedded.events) || [];
-      var conTypes = conEvents.reduce(function(acc, e) {
-        acc[e.type] = (acc[e.type] || 0) + 1; return acc;
-      }, {});
-      debug.approaches.push({
-        name: 'events_contact_' + contactIds[ci],
-        status: evCon._status,
-        total: conEvents.length,
-        types: conTypes,
-        sample: conEvents.slice(0, 2)
-      });
-
-      conEvents.forEach(function(ev) {
-        var tipo = ev.type || '';
-        if (!tipo.includes('chat') && !tipo.includes('message') && !tipo.includes('msg')) return;
-        var texto = '';
-        if (ev.value_after && ev.value_after[0]) {
-          var va = ev.value_after[0];
-          texto = (va.message && (va.message.text || va.message.body)) ||
-                  (va.text) || JSON.stringify(va).substring(0, 300);
-        }
-        items.push({
-          ts: ev.created_at || 0, fecha: formatFecha(ev.created_at),
-          tipo: tipo.includes('incoming') ? 'entrante' : 'saliente',
-          texto: String(texto).substring(0, 1000),
-          canal: { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' },
-          fuente: 'evento'
-        });
-      });
-    }
-
-    // ── APPROACH 3: /chats endpoint ──
-    for (var ci2 = 0; ci2 < Math.min(contactIds.length, 2); ci2++) {
-      var chatResp = await kfetch('/chats?filter[contact_id][]=' + contactIds[ci2] + '&limit=20');
-      var embKeys = chatResp && chatResp._embedded ? Object.keys(chatResp._embedded) : [];
-      debug.approaches.push({
-        name: 'chats_contact_' + contactIds[ci2],
-        status: chatResp._status,
-        embeddedKeys: embKeys,
-        sample: chatResp._embedded ? JSON.stringify(chatResp._embedded).substring(0, 300) : null
-      });
-    }
-
-    // ── APPROACH 4: Talks with ?with=messages ──
-    var talkSample = await kfetch('/talks?filter[contact_id][]=' + contactIds[0] + '&limit=1&with=messages');
-    var talkSampleList = (talkSample && talkSample._embedded && talkSample._embedded.talks) || [];
-    debug.approaches.push({
-      name: 'talks_with_messages',
-      status: talkSample._status,
-      count: talkSampleList.length,
-      sample: talkSampleList.slice(0, 1).map(function(t) {
-        return { keys: Object.keys(t), embedded_keys: t._embedded ? Object.keys(t._embedded) : [], talk_id: t.talk_id };
-      })
+    // ── PROBE 3: /inbox endpoints ──
+    var inboxResp = await kfetch('/inbox?limit=5');
+    debug.probes.push({
+      name: 'inbox_root',
+      status: inboxResp._status,
+      embeddedKeys: inboxResp._embedded ? Object.keys(inboxResp._embedded) : [],
+      raw: inboxResp._raw || null
     });
 
-    // If messages embedded in talk response
-    talkSampleList.forEach(function(talk) {
-      var msgs = talk._embedded && (talk._embedded.messages || talk._embedded.chats);
-      if (!msgs) return;
-      msgs.forEach(function(m) {
-        var texto = (m.content && (m.content.text || m.content.body)) || m.text || '';
-        items.push({
-          ts: m.created_at || m.timestamp || 0, fecha: formatFecha(m.created_at || m.timestamp),
-          tipo: (m.author && m.author.type === 'contact') ? 'entrante' : 'saliente',
-          texto: String(texto).substring(0, 1000),
-          canal: { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' },
-          fuente: 'talk_embedded'
-        });
-      });
+    // ── PROBE 4: Talk individual con chat_id ──
+    var talkDetail = await kfetch('/talks/229776');
+    debug.probes.push({
+      name: 'talk_229776_direct',
+      status: talkDetail._status,
+      keys: talkDetail ? Object.keys(talkDetail).filter(function(k){return k!=='_links';}) : [],
+      chat_id: talkDetail.chat_id,
+      origin: talkDetail.origin,
+      source_id: talkDetail.source_id
     });
 
-    // ── APPROACH 5: /chats/{chat_id}/messages via talk's chat_id ──
-    if (talkSampleList.length && talkSampleList[0].chat_id) {
-      var chatId = talkSampleList[0].chat_id;
-      var chatMsgs = await kfetch('/chats/' + chatId + '/messages?limit=50');
-      var chatMsgList = (chatMsgs && chatMsgs._embedded && chatMsgs._embedded.messages) || [];
-      debug.approaches.push({
-        name: 'chat_id_messages_' + chatId,
-        status: chatMsgs._status,
-        count: chatMsgList.length,
-        embeddedKeys: chatMsgs._embedded ? Object.keys(chatMsgs._embedded) : [],
-        sample: chatMsgList.slice(0, 1)
-      });
-    }
+    // ── PROBE 5: /sources para ver qué canales hay ──
+    var sources = await kfetch('/sources?limit=50');
+    var srcList = (sources && sources._embedded && sources._embedded.sources) || [];
+    debug.probes.push({
+      name: 'sources',
+      status: sources._status,
+      count: srcList.length,
+      list: srcList.map(function(s) { return { id: s.id, name: s.name, type: s.type }; })
+    });
+
+    // ── PROBE 6: /calls (llamadas) ──
+    var callsResp = await kfetch('/calls?filter[lead_id]=' + lead.id + '&limit=20');
+    var callsList = (callsResp && callsResp._embedded && callsResp._embedded.calls) || [];
+    debug.probes.push({
+      name: 'calls',
+      status: callsResp._status,
+      count: callsList.length,
+      sample: callsList.slice(0, 2)
+    });
 
     // ── Notas (siempre funciona) ──
     var notesData = await kfetch('/leads/' + lead.id + '/notes?limit=250&order[id]=asc');
