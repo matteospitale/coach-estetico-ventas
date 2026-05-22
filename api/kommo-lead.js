@@ -4,7 +4,7 @@ module.exports = async function handler(req, res) {
   const token = process.env.KOMMO_TOKEN;
   if (!token) return res.status(500).json({ error: 'Kommo token no configurado en Vercel' });
 
-  const { q, debug_raw } = req.query;
+  const { q } = req.query;
   if (!q) return res.status(400).json({ error: 'Parámetro q requerido' });
 
   const BASE = 'https://coachestetico.kommo.com/api/v4';
@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
     var t = await r.text();
     if (!t || !t.trim()) return { _status: r.status, _empty: true };
     try { var j = JSON.parse(t); j._status = r.status; return j; }
-    catch(e) { return { _status: r.status, _raw: t.substring(0, 500) }; }
+    catch(e) { return { _status: r.status, _raw: t.substring(0, 300) }; }
   }
 
   function formatFecha(ts) {
@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // ── Buscar lead con contactos ──
+    // ── Buscar lead ──
     var lead = null;
     if (/^\d+$/.test(q.trim())) {
       var d = await kfetch('/leads/' + q.trim() + '?with=contacts');
@@ -41,89 +41,131 @@ module.exports = async function handler(req, res) {
     var contacts = (lead._embedded && lead._embedded.contacts) || [];
     var contactIds = contacts.map(function(c) { return c.id; }).filter(Boolean);
 
-    // ── Recolectar todos los talks por contacto ──
-    var allTalks = [];
-    var talkDebug = [];
-
-    for (var ci = 0; ci < contactIds.length; ci++) {
-      var tResp = await kfetch('/talks?filter[contact_id][]=' + contactIds[ci] + '&limit=50');
-      var tList = (tResp && tResp._embedded && tResp._embedded.talks) || [];
-      talkDebug.push({ contactId: contactIds[ci], status: tResp._status, count: tList.length });
-      allTalks = allTalks.concat(tList);
-    }
-
-    // Deduplicar por cualquier campo ID posible
-    var seenIds = new Set();
-    var uniqueTalks = [];
-    allTalks.forEach(function(t) {
-      // Kommo puede usar id, uuid, talk_id, o uid
-      var tid = t.id || t.uuid || t.talk_id || t.uid || JSON.stringify(t).substring(0, 50);
-      if (!seenIds.has(tid)) { seenIds.add(tid); uniqueTalks.push(t); }
-    });
-
-    // ── DEBUG RAW: estructura de los primeros 3 talks ──
-    var rawTalkSample = uniqueTalks.slice(0, 3).map(function(t) {
-      return { keys: Object.keys(t), id: t.id, uuid: t.uuid, talk_id: t.talk_id, uid: t.uid,
-               _embedded_keys: t._embedded ? Object.keys(t._embedded) : [], source: t.source || t._embedded && t._embedded.source };
-    });
-
-    // ── Buscar mensajes: probar varios endpoints por cada talk ──
-    var msgDebug = [];
     var items = [];
+    var debug = { contactIds: contactIds, approaches: [] };
 
-    for (var ti = 0; ti < Math.min(uniqueTalks.length, 15); ti++) {
-      var talk = uniqueTalks[ti];
-      var tId = talk.id || talk.uuid || talk.talk_id || talk.uid;
-      var dbg = { talkId: tId, keys: Object.keys(talk), attempts: [] };
+    // ── APPROACH 1: Events API (lead) ──
+    var evLead = await kfetch('/events?filter[entity][id][]=' + lead.id + '&filter[entity][type][]=lead&limit=250');
+    var leadEvents = (evLead && evLead._embedded && evLead._embedded.events) || [];
+    var leadEventTypes = leadEvents.reduce(function(acc, e) {
+      acc[e.type] = (acc[e.type] || 0) + 1; return acc;
+    }, {});
+    debug.approaches.push({
+      name: 'events_lead',
+      status: evLead._status,
+      total: leadEvents.length,
+      types: leadEventTypes,
+      sample: leadEvents.slice(0, 2)
+    });
 
-      // Intento 1: /messages?filter[talk_id][]=
-      var m1 = await kfetch('/messages?filter[talk_id][]=' + tId + '&limit=250');
-      var msgs1 = (m1 && m1._embedded && m1._embedded.messages) || [];
-      dbg.attempts.push({ url: '/messages?filter[talk_id][]=' + tId, status: m1._status, msgCount: msgs1.length,
-                          embeddedKeys: m1._embedded ? Object.keys(m1._embedded) : [], sample: msgs1.slice(0,1) });
-
-      if (msgs1.length === 0) {
-        // Intento 2: /talks/{id}/messages
-        var m2 = await kfetch('/talks/' + tId + '/messages?limit=250');
-        var msgs2 = (m2 && m2._embedded && m2._embedded.messages) || [];
-        dbg.attempts.push({ url: '/talks/' + tId + '/messages', status: m2._status, msgCount: msgs2.length,
-                            embeddedKeys: m2._embedded ? Object.keys(m2._embedded) : [], sample: msgs2.slice(0,1) });
-
-        if (msgs2.length === 0) {
-          // Intento 3: ver si el talk tiene embedded messages ya
-          var embMsgs = talk._embedded && (talk._embedded.messages || talk._embedded.chats || talk._embedded.items);
-          dbg.attempts.push({ url: 'embedded_in_talk', msgs: embMsgs ? embMsgs.slice(0,2) : null });
-        }
-
-        if (msgs2.length > 0) {
-          dbg.source = 'intento2';
-          msgs2.forEach(function(m) { items.push(buildItem(m, talk, tId)); });
-        }
-      } else {
-        dbg.source = 'intento1';
-        msgs1.forEach(function(m) { items.push(buildItem(m, talk, tId)); });
-      }
-
-      msgDebug.push(dbg);
-    }
-
-    function buildItem(m, talk, tId) {
+    // Extract chat messages from lead events
+    leadEvents.forEach(function(ev) {
+      var tipo = ev.type || '';
+      if (!tipo.includes('chat') && !tipo.includes('message') && !tipo.includes('msg')) return;
       var texto = '';
-      if (m.content) texto = m.content.text || m.content.body || '';
-      if (!texto && m.text) texto = m.text;
-      if (!texto && m.content && m.content.type) texto = '[' + m.content.type + ']';
-      var authorType = (m.author && m.author.type) || (m.created_by ? 'user' : 'contact');
-      return {
-        ts: m.created_at || m.timestamp || 0,
-        fecha: formatFecha(m.created_at || m.timestamp),
-        tipo: authorType === 'contact' ? 'entrante' : 'saliente',
+      if (ev.value_after && ev.value_after[0]) {
+        var va = ev.value_after[0];
+        texto = (va.message && (va.message.text || va.message.body)) ||
+                (va.text) || JSON.stringify(va).substring(0, 300);
+      }
+      items.push({
+        ts: ev.created_at || 0, fecha: formatFecha(ev.created_at),
+        tipo: tipo.includes('incoming') ? 'entrante' : 'saliente',
         texto: String(texto).substring(0, 1000),
         canal: { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' },
-        fuente: 'chat'
-      };
+        fuente: 'evento'
+      });
+    });
+
+    // ── APPROACH 2: Events API (contacts) ──
+    for (var ci = 0; ci < Math.min(contactIds.length, 3); ci++) {
+      var evCon = await kfetch('/events?filter[entity][id][]=' + contactIds[ci] + '&filter[entity][type][]=contact&limit=100');
+      var conEvents = (evCon && evCon._embedded && evCon._embedded.events) || [];
+      var conTypes = conEvents.reduce(function(acc, e) {
+        acc[e.type] = (acc[e.type] || 0) + 1; return acc;
+      }, {});
+      debug.approaches.push({
+        name: 'events_contact_' + contactIds[ci],
+        status: evCon._status,
+        total: conEvents.length,
+        types: conTypes,
+        sample: conEvents.slice(0, 2)
+      });
+
+      conEvents.forEach(function(ev) {
+        var tipo = ev.type || '';
+        if (!tipo.includes('chat') && !tipo.includes('message') && !tipo.includes('msg')) return;
+        var texto = '';
+        if (ev.value_after && ev.value_after[0]) {
+          var va = ev.value_after[0];
+          texto = (va.message && (va.message.text || va.message.body)) ||
+                  (va.text) || JSON.stringify(va).substring(0, 300);
+        }
+        items.push({
+          ts: ev.created_at || 0, fecha: formatFecha(ev.created_at),
+          tipo: tipo.includes('incoming') ? 'entrante' : 'saliente',
+          texto: String(texto).substring(0, 1000),
+          canal: { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' },
+          fuente: 'evento'
+        });
+      });
     }
 
-    // ── Notas manuales ──
+    // ── APPROACH 3: /chats endpoint ──
+    for (var ci2 = 0; ci2 < Math.min(contactIds.length, 2); ci2++) {
+      var chatResp = await kfetch('/chats?filter[contact_id][]=' + contactIds[ci2] + '&limit=20');
+      var embKeys = chatResp && chatResp._embedded ? Object.keys(chatResp._embedded) : [];
+      debug.approaches.push({
+        name: 'chats_contact_' + contactIds[ci2],
+        status: chatResp._status,
+        embeddedKeys: embKeys,
+        sample: chatResp._embedded ? JSON.stringify(chatResp._embedded).substring(0, 300) : null
+      });
+    }
+
+    // ── APPROACH 4: Talks with ?with=messages ──
+    var talkSample = await kfetch('/talks?filter[contact_id][]=' + contactIds[0] + '&limit=1&with=messages');
+    var talkSampleList = (talkSample && talkSample._embedded && talkSample._embedded.talks) || [];
+    debug.approaches.push({
+      name: 'talks_with_messages',
+      status: talkSample._status,
+      count: talkSampleList.length,
+      sample: talkSampleList.slice(0, 1).map(function(t) {
+        return { keys: Object.keys(t), embedded_keys: t._embedded ? Object.keys(t._embedded) : [], talk_id: t.talk_id };
+      })
+    });
+
+    // If messages embedded in talk response
+    talkSampleList.forEach(function(talk) {
+      var msgs = talk._embedded && (talk._embedded.messages || talk._embedded.chats);
+      if (!msgs) return;
+      msgs.forEach(function(m) {
+        var texto = (m.content && (m.content.text || m.content.body)) || m.text || '';
+        items.push({
+          ts: m.created_at || m.timestamp || 0, fecha: formatFecha(m.created_at || m.timestamp),
+          tipo: (m.author && m.author.type === 'contact') ? 'entrante' : 'saliente',
+          texto: String(texto).substring(0, 1000),
+          canal: { id: 'chat', label: 'Chat', color: '#5a504a', bg: 'rgba(90,80,74,0.09)' },
+          fuente: 'talk_embedded'
+        });
+      });
+    });
+
+    // ── APPROACH 5: /chats/{chat_id}/messages via talk's chat_id ──
+    if (talkSampleList.length && talkSampleList[0].chat_id) {
+      var chatId = talkSampleList[0].chat_id;
+      var chatMsgs = await kfetch('/chats/' + chatId + '/messages?limit=50');
+      var chatMsgList = (chatMsgs && chatMsgs._embedded && chatMsgs._embedded.messages) || [];
+      debug.approaches.push({
+        name: 'chat_id_messages_' + chatId,
+        status: chatMsgs._status,
+        count: chatMsgList.length,
+        embeddedKeys: chatMsgs._embedded ? Object.keys(chatMsgs._embedded) : [],
+        sample: chatMsgList.slice(0, 1)
+      });
+    }
+
+    // ── Notas (siempre funciona) ──
     var notesData = await kfetch('/leads/' + lead.id + '/notes?limit=250&order[id]=asc');
     var notesList = (notesData && notesData._embedded && notesData._embedded.notes) || [];
     notesList.forEach(function(n) {
@@ -143,19 +185,9 @@ module.exports = async function handler(req, res) {
 
     items.sort(function(a, b) { return a.ts - b.ts; });
 
-    return res.status(200).json({
-      debug: {
-        contactIds: contactIds,
-        talkDebug: talkDebug,
-        uniqueTalksCount: uniqueTalks.length,
-        rawTalkSample: rawTalkSample,
-        msgDebug: msgDebug
-      },
-      total: items.length,
-      notas: items
-    });
+    return res.status(200).json({ debug: debug, total: items.length, notas: items });
 
   } catch(e) {
-    return res.status(500).json({ error: 'Error Kommo: ' + e.message, stack: e.stack });
+    return res.status(500).json({ error: 'Error: ' + e.message, stack: e.stack });
   }
 };
