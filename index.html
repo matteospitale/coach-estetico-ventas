@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.29</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.30</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -4858,10 +4858,9 @@ async function impAplicarKommoSiHayPreview() {
         if (!v.email)    v.email    = k.email;
         if (!v.telefono) v.telefono = k.telefono;
       });
-      var conKommo = _importRows.filter(function(v){ return v.nombre; }).length;
-      statusEl.textContent = '✅ Kommo aplicado · ' + Object.keys(_importKommoMap).length + ' leads · ' + conKommo + ' de ' + _importRows.length + ' ventas con nombre completo';
       document.getElementById('imp-legend').style.display = '';
       _renderImportPreview();
+      _renderImportStatus('', true);
     } catch(err) {
       statusEl.textContent = '❌ Error al leer Kommo: ' + err.message;
     }
@@ -5036,9 +5035,7 @@ async function procesarImportFiles() {
 
     // Render preview
     _renderImportPreview();
-    var conKommo = _importRows.filter(function(v){ return v.nombre; }).length;
-    statusEl.textContent = '✅ Formato ' + formato + ' · ' + _importRows.length + ' ventas' +
-      (kommoFile ? ' · ' + conKommo + ' con datos de Kommo' : ' · Sin Kommo (nombre/país vacíos)');
+    _renderImportStatus(formato, !!kommoFile);
     document.getElementById('imp-legend').style.display = kommoFile ? '' : 'none';
     document.getElementById('btn-importar-excel').style.display = '';
     document.getElementById('btn-importar-excel').textContent = '⬆ Importar ' + _importRows.length + ' ventas';
@@ -5047,6 +5044,38 @@ async function procesarImportFiles() {
     statusEl.textContent = '❌ Error: ' + err.message;
     console.error('Import error:', err);
   }
+}
+
+function _renderImportStatus(formato, tieneKommo) {
+  var statusEl = document.getElementById('imp-status');
+  var total    = _importRows.length;
+  var sinMatch = _importRows.filter(function(v){ return !v.nombre; });
+  var conMatch = total - sinMatch.length;
+
+  var html = '<span style="color:var(--facundo);font-weight:600">✅ Formato ' + formato + '</span>';
+  html += ' &nbsp;·&nbsp; <strong>' + total + '</strong> ventas';
+
+  if (tieneKommo) {
+    html += ' &nbsp;·&nbsp; <strong>' + conMatch + '</strong> con datos de Kommo';
+    if (sinMatch.length > 0) {
+      html += ' &nbsp;·&nbsp; <span style="color:var(--danger);font-weight:600">' + sinMatch.length + ' sin match:</span> ';
+      html += sinMatch.map(function(v) {
+        var falta = [];
+        if (!v.nombre)   falta.push('nombre');
+        if (!v.pais)     falta.push('país');
+        if (!v.email)    falta.push('email');
+        if (!v.telefono) falta.push('tel');
+        return '<span style="font-family:monospace;font-size:11px">Lead&nbsp;' + v.lead +
+          '</span> <span style="color:var(--text3);font-size:11px">(' + falta.join(', ') + ')</span>';
+      }).join(' &nbsp;|&nbsp; ');
+    } else {
+      html += ' &nbsp;·&nbsp; <span style="color:var(--facundo)">todos completos ✓</span>';
+    }
+  } else {
+    html += ' &nbsp;·&nbsp; <span style="color:var(--text3)">sin Kommo — nombre/país vacíos</span>';
+  }
+
+  statusEl.innerHTML = html;
 }
 
 function _renderImportPreview() {
