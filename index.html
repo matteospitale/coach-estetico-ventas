@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.38</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.40</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3667,47 +3667,31 @@ function _renderClienteDetalle(cl, body) {
 }
 
 // ── CONVERSACIÓN KOMMO ──
-// Llama al proxy serverless de Vercel (/api/kommo) para evitar CORS.
-// El proxy (api/kommo.js) hace la llamada a Kommo server-to-server.
-async function _kommoFetch(path) {
-  var resp = await fetch('/api/kommo?path=' + encodeURIComponent(path));
-  if (!resp.ok) {
-    var err = {}; try { err = await resp.json(); } catch(e) {}
-    throw new Error('HTTP ' + resp.status + (err.error ? ': ' + err.error : ''));
-  }
-  return await resp.json();
-}
-
+// Usa /api/kommo-lead (Vercel serverless, mismo dominio → sin CORS).
 async function cargarConversacionKommo(leadId, container, nombreAlumna) {
   try {
-    var data = await _kommoFetch('/api/v4/leads/' + leadId + '/notes?limit=250&order[id]=asc');
-    var notes = (data._embedded && data._embedded.notes) || [];
-    var total = data._total_items || notes.length;
+    var resp = await fetch('/api/kommo-lead?q=' + encodeURIComponent(leadId));
+    if (!resp.ok) {
+      var err = {}; try { err = await resp.json(); } catch(e) {}
+      throw new Error((err.error || 'HTTP ' + resp.status));
+    }
+    var data = await resp.json();
+    var notas = data.notas || [];
 
-    if (!notes.length) {
+    if (!notas.length) {
       container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Sin mensajes ni notas registradas</div>';
       return;
     }
 
     var html = '';
-    notes.forEach(function(note) {
-      var ts = new Date((note.created_at || 0) * 1000);
-      var dateStr = ts.toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + ts.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-      var type = note.note_type || 4;
-      var createdBy = note.created_by || 0;
-      var text = note.text || '';
-      if (!text && type !== 12) return;
-
-      // created_by === 0 → sistema/entrante (de la alumna); > 0 → equipo
-      var isIncoming = (createdBy === 0);
+    notas.forEach(function(n) {
+      var isIncoming = n.tipo === 'entrante';
       var align = isIncoming ? 'flex-start' : 'flex-end';
-
       var label = '';
       var icon = '';
-      if (type === 25)      { icon = '📞 '; label = 'Llamada entrante'; }
-      else if (type === 26) { icon = '📞 '; label = 'Llamada saliente'; }
-      else if (type === 12) { icon = '📎 '; label = 'Archivo adjunto'; text = text || 'Archivo'; }
-      else if (type !== 4)  { icon = '📋 '; }
+      if (n.icono === 'call_in')  { icon = '📞 '; label = 'Llamada entrante'; }
+      else if (n.icono === 'call_out') { icon = '📞 '; label = 'Llamada saliente'; }
+      else if (n.icono === 'file')     { icon = '📎 '; label = 'Archivo adjunto'; }
 
       var authorLabel = isIncoming
         ? '<span style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:3px;display:block;padding-left:4px">' + escAdm(nombreAlumna) + '</span>'
@@ -3717,35 +3701,23 @@ async function cargarConversacionKommo(leadId, container, nombreAlumna) {
         authorLabel +
         '<div style="max-width:76%;min-width:60px;background:' + (isIncoming ? 'rgba(255,255,255,0.95)' : 'rgba(182,31,58,0.09)') + ';border:1px solid ' + (isIncoming ? 'var(--border)' : 'rgba(182,31,58,0.22)') + ';border-radius:' + (isIncoming ? '3px 14px 14px 14px' : '14px 3px 14px 14px') + ';padding:9px 13px">' +
           (label ? '<div style="font-size:10px;color:var(--text3);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em">' + icon + label + '</div>' : '') +
-          '<div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word">' + escAdm(text) + '</div>' +
-          '<div style="font-size:10px;color:var(--text3);margin-top:5px;text-align:right">' + dateStr + '</div>' +
+          '<div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word">' + escAdm(n.texto) + '</div>' +
+          '<div style="font-size:10px;color:var(--text3);margin-top:5px;text-align:right">' + escAdm(n.fecha) + '</div>' +
         '</div>' +
       '</div>';
     });
 
-    if (!html) {
-      container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Sin mensajes de texto registrados</div>';
-      return;
-    }
-
-    container.innerHTML = html;
-    if (total > 250) {
-      container.insertAdjacentHTML('beforeend',
-        '<div style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">Mostrando los primeros 250 de ' + total + ' registros totales</div>');
-    }
+    container.innerHTML = html || '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Sin mensajes de texto registrados</div>';
     container.scrollTop = container.scrollHeight;
 
   } catch(e) {
-    var msg = e.message || 'Error desconocido';
-    // Guardar el leadId en el wrapper para el link de fallback
     var kommoLink = 'https://coachestetico.kommo.com/leads/detail/' + leadId;
     container.innerHTML =
       '<div style="text-align:center;padding:28px 16px">' +
-        '<div style="font-size:28px;margin-bottom:10px">🔒</div>' +
-        '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">No se puede cargar desde el navegador</div>' +
-        '<div style="font-size:12px;color:var(--text3);margin-bottom:18px;max-width:340px;margin-left:auto;margin-right:auto;line-height:1.5">El navegador bloquea las peticiones directas a la API de Kommo.<br>Podés ver la conversación completa abriendo el lead en Kommo.</div>' +
-        '<a href="' + kommoLink + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;text-decoration:none;border-radius:var(--radius);padding:10px 22px;font-size:13px;font-weight:600;letter-spacing:0.01em">Ver conversación en Kommo ↗</a>' +
-        '<div style="font-size:10px;color:var(--text3);margin-top:14px">Lead ' + leadId + ' · <span style="font-style:italic">' + escAdm(msg) + '</span></div>' +
+        '<div style="font-size:28px;margin-bottom:10px">⚠️</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">No se pudo cargar la conversación</div>' +
+        '<div style="font-size:12px;color:var(--text3);margin-bottom:18px">' + escAdm(e.message) + '</div>' +
+        '<a href="' + kommoLink + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;text-decoration:none;border-radius:var(--radius);padding:10px 22px;font-size:13px;font-weight:600">Ver en Kommo ↗</a>' +
       '</div>';
   }
 }
