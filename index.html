@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -339,6 +339,28 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 .coach-subtab { padding: 8px 22px; border: none; background: none; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: all 0.15s; border-radius: 0; }
 .coach-subtab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .coach-subtab:hover:not(.active) { color: var(--text); }
+/* ── GEMINI CHAT ── */
+#gemini-fab { position:fixed;bottom:52px;right:16px;width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;z-index:9000;display:none;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(66,133,244,0.45);transition:all 0.2s;background:linear-gradient(135deg,#4285F4 0%,#9C57FF 100%); }
+#gemini-fab:hover { transform:scale(1.08);box-shadow:0 6px 28px rgba(66,133,244,0.6); }
+#gemini-chat-panel { position:fixed;bottom:112px;right:16px;width:360px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 140px);background:var(--surface);border-radius:20px;border:1.5px solid var(--border);box-shadow:0 12px 40px rgba(0,0,0,0.15);display:none;flex-direction:column;z-index:8999;overflow:hidden; }
+#gemini-chat-panel.open { display:flex; }
+#gchat-header { display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(66,133,244,0.06),rgba(156,87,255,0.06)); }
+#gchat-title { font-size:14px;font-weight:700;flex:1;background:linear-gradient(90deg,#4285F4,#9C57FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+#gchat-close { background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:2px 6px;line-height:1; }
+#gchat-msgs { flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px; }
+.gcmsg { max-width:86%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.6;word-break:break-word;white-space:pre-wrap; }
+.gcmsg-user { background:linear-gradient(135deg,#4285F4,#9C57FF);color:#fff;align-self:flex-end;border-bottom-right-radius:4px; }
+.gcmsg-ai { background:var(--glass);border:1px solid var(--border);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px; }
+.gcmsg-err { background:rgba(182,31,58,0.08);border:1px solid rgba(182,31,58,0.2);color:var(--danger);align-self:flex-start;border-bottom-left-radius:4px; }
+.gctyping { display:flex;gap:5px;align-items:center;padding:10px 14px; }
+.gcdot { width:7px;height:7px;border-radius:50%;background:var(--text3);animation:gcdot-b 1.2s infinite; }
+.gcdot:nth-child(2){animation-delay:0.2s} .gcdot:nth-child(3){animation-delay:0.4s}
+@keyframes gcdot-b { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+#gchat-foot { display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border);align-items:flex-end; }
+#gchat-input { flex:1;border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;font-size:13px;font-family:inherit;background:var(--glass);color:var(--text);outline:none;resize:none;max-height:100px;line-height:1.4;transition:border-color 0.15s; }
+#gchat-input:focus { border-color:#4285F4; }
+#gchat-send { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#4285F4,#9C57FF);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s; }
+#gchat-send:hover { transform:scale(1.08); }
 .plantilla-card-wrap {
   background: var(--glass);
   backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
@@ -1030,7 +1052,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.3</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.6</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1122,6 +1144,7 @@ async function init() {
     renderAll();
     await loadPlantillas();
     await loadNotificaciones();
+    await loadGeminiKey();
     if (usuarioActual) {
       aplicarPermisos();
     }
@@ -3892,6 +3915,8 @@ function logout() {
   localStorage.removeItem(SESSION_KEY);
   usuarioActual = null; loginPinBuffer = ''; loginNombreSel = '';
   document.body.classList.remove('admin-ro');
+  var fab = document.getElementById('gemini-fab');
+  if (fab) { fab.style.display = 'none'; geminiOpen = false; var p = document.getElementById('gemini-chat-panel'); if (p) p.classList.remove('open'); }
   const greetEl = document.getElementById('nav-hola-nombre');
   if (greetEl) { greetEl.style.display = 'none'; greetEl.textContent = ''; }
   const btnLogout = document.getElementById('btn-logout');
@@ -3937,6 +3962,10 @@ function aplicarPermisos() {
   // Botón logout
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) btnLogout.style.display = '';
+
+  // Gemini FAB
+  var fab = document.getElementById('gemini-fab');
+  if (fab) fab.style.display = 'flex';
 
   // Cerrar overlay con fade
   const overlay = document.getElementById('login-overlay');
@@ -4191,6 +4220,17 @@ function renderUsuarios() {
   html += '</div>';
   html += '<div id="usuario-editor" style="margin-top:20px"></div>';
   html += '<div style="margin-top:18px"><button class="btn btn-accent" onclick="abrirEditorUsuario(null)">+ Nuevo usuario</button></div>';
+  html += '<div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">';
+  html += '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px">';
+  html += '<svg width="16" height="16" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gcg2" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4285F4"/><stop offset="100%" stop-color="#9C57FF"/></linearGradient></defs><path d="M14 28C14 20.104 7.896 14 0 14C7.896 14 14 7.896 14 0C14 7.896 20.104 14 28 14C20.104 14 14 20.104 14 28Z" fill="url(#gcg2)"/></svg>';
+  html += 'Gemini AI &mdash; API Key</div>';
+  html += '<div style="font-size:12px;color:var(--text3);margin-bottom:10px">Obtene tu API key gratuita en <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">Google AI Studio</a>. Crea una cuenta Google nueva para el hub.</div>';
+  html += '<div style="display:flex;gap:8px;align-items:center">';
+  html += '<input type="password" id="gemini-key-input" class="form-input" style="flex:1;font-size:13px" placeholder="Pega tu API key aqui (AIza...)" value="' + (geminiApiKey ? geminiApiKey : '') + '">';
+  html += '<button class="btn btn-accent" style="font-size:13px;white-space:nowrap" onclick="guardarGeminiKey()">Guardar</button>';
+  html += '</div>';
+  html += '<div style="margin-top:8px;font-size:12px;color:var(--text3)">' + (geminiApiKey ? '&#x2705; API key configurada &mdash; el chat de Gemini esta activo' : '&#x274C; Sin API key &mdash; el chat de Gemini no esta disponible') + '</div>';
+  html += '</div>';
   el.innerHTML = html;
   if (_editandoUsuario !== undefined) {
     abrirEditorUsuario(_editandoUsuario);
@@ -4298,6 +4338,318 @@ async function eliminarUsuario(nombre) {
   } catch(e) { showToast('Error: ' + e.message); }
 }
 
+// ── GEMINI CHAT ──────────────────────────────────────────────────────────────
+var geminiApiKey = '';
+var geminiOpen = false;
+var geminiHistory = {}; // historial por usuario { 'Matteo': [{role,parts}, ...], ... }
+
+async function loadGeminiKey() {
+  try { var k = await dbGet('/config/gemini_key'); if (k && typeof k === 'string' && k.length > 10) geminiApiKey = k; } catch(e) {}
+}
+
+function gchatGetHistory() {
+  if (!usuarioActual) return [];
+  if (!geminiHistory[usuarioActual]) geminiHistory[usuarioActual] = [];
+  return geminiHistory[usuarioActual];
+}
+
+function gchatRenderMessages() {
+  var msgsEl = document.getElementById('gchat-msgs');
+  if (!msgsEl) return;
+  var hist = gchatGetHistory();
+  if (hist.length === 0) {
+    msgsEl.innerHTML = '<div class="gcmsg gcmsg-ai">Hola ' + (usuarioActual||'') + '! Puedo consultarte ventas, plantillas, alumnos, stats y datos del equipo. En que te ayudo?</div>';
+    return;
+  }
+  msgsEl.innerHTML = '';
+  hist.forEach(function(m) {
+    var div = document.createElement('div');
+    div.className = m.role === 'user' ? 'gcmsg gcmsg-user' : (m.isErr ? 'gcmsg gcmsg-err' : 'gcmsg gcmsg-ai');
+    div.textContent = m.parts[0].text;
+    msgsEl.appendChild(div);
+  });
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+function toggleGeminiChat() {
+  geminiOpen = !geminiOpen;
+  var panel = document.getElementById('gemini-chat-panel');
+  if (geminiOpen) {
+    panel.classList.add('open');
+    if (!geminiApiKey) {
+      var canConfig = usuarioActual && (USUARIOS_CONFIG[usuarioActual]||{secciones:[]}).secciones.includes('usuarios');
+      document.getElementById('gchat-msgs').innerHTML =
+        '<div class="gcmsg gcmsg-ai">&#x1F511; Falta la API key de Gemini.<br><br>' +
+        (canConfig ? 'Configurala en <strong>Usuarios &rarr; Gemini AI</strong>.' : 'Pedile a Matteo o Dianela que configuren la API key.') +
+        '</div>';
+    } else {
+      gchatRenderMessages();
+    }
+    setTimeout(function(){ var i=document.getElementById('gchat-input'); if(i) i.focus(); }, 100);
+  } else {
+    panel.classList.remove('open');
+  }
+}
+
+function gchatKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendGeminiMsg(); }
+}
+
+function buildGeminiContext() {
+  var lines = [];
+  var hoy = new Date();
+  var mesKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
+  var diasMes = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0).getDate();
+  var diaActual = hoy.getDate();
+  var diasRestantes = diasMes - diaActual + 1;
+
+  lines.push('=== FECHA Y HORA ===');
+  lines.push(hoy.toLocaleString('es-AR') + ' | Mes actual: ' + mesKey);
+  lines.push('Usuario consultando: ' + (usuarioActual || '?'));
+  lines.push('');
+
+  // ── EQUIPO ──
+  lines.push('=== EQUIPO ===');
+  Object.keys(USUARIOS_CONFIG).forEach(function(nombre) {
+    var u = USUARIOS_CONFIG[nombre];
+    lines.push(nombre + ' | Rol: ' + (u.rol||'?') + ' | Acceso: ' + (u.secciones||[]).join(', '));
+  });
+  lines.push('');
+
+  // ── SISTEMA DE COMISIONES (Coach Sales) ──
+  lines.push('=== SISTEMA DE COMISIONES (Coach Sales) ===');
+  lines.push('Nivel 1: $7,500 USD neto → comision 10%');
+  lines.push('Nivel 2: $9,000 USD neto → comision 12%');
+  lines.push('Nivel 3: $11,120 USD neto → comision 14%');
+  lines.push('Neto = bruto x 0.85 (se descuenta 15%). TC ARS estimado: ' + (typeof TC_ARS !== 'undefined' ? TC_ARS : 1430));
+  lines.push('');
+
+  // ── COACH SALES POR ASESOR (mes actual) ──
+  var niveles = typeof NIVELES !== 'undefined' ? NIVELES : [{usd:7500,pct:10,label:'Nivel 1'},{usd:9000,pct:12,label:'Nivel 2'},{usd:11120,pct:14,label:'Nivel 3'}];
+  var tcArs = typeof TC_ARS !== 'undefined' ? TC_ARS : 1430;
+  ['Matteo','Facundo'].forEach(function(asesor) {
+    var mv = ventas.filter(function(v){
+      return (v.asesor||'')===asesor && (v.estado||'Pendiente')!=='Rechazada' && (v.fecha||'').startsWith(mesKey);
+    });
+    var bruto = mv.reduce(function(s,v){return s+parseFloat(v.monto||0);},0);
+    var neto = bruto * 0.85;
+    var nivelAct = niveles.filter(function(n){return neto>=n.usd;}).pop()||null;
+    var sigNivel = niveles.find(function(n){return neto<n.usd;})||null;
+    var comision = nivelAct ? neto*nivelAct.pct/100 : 0;
+    var falta = sigNivel ? Math.max(0,sigNivel.usd-neto) : 0;
+    var porDia = sigNivel && diasRestantes>0 ? falta/diasRestantes : 0;
+    lines.push('=== COACH SALES — '+asesor.toUpperCase()+' ('+mesKey+') ===');
+    lines.push('Ventas del mes: '+mv.length);
+    lines.push('Total bruto: $'+bruto.toFixed(2)+' USD');
+    lines.push('Total neto (-15%): $'+neto.toFixed(2)+' USD');
+    lines.push('Nivel actual: '+(nivelAct ? nivelAct.label+' ('+nivelAct.pct+'%)' : 'Sin nivel aun'));
+    lines.push('Comision actual: $'+comision.toFixed(2)+' USD | $'+(comision*tcArs).toLocaleString('es-AR',{maximumFractionDigits:0})+' ARS (estimado tc '+tcArs+')');
+    if (sigNivel) {
+      lines.push('Siguiente nivel: '+sigNivel.label+' (requiere $'+sigNivel.usd+' USD neto) | Falta: $'+falta.toFixed(2)+' USD neto');
+      lines.push('Dias restantes en el mes: '+diasRestantes+' | Necesario por dia: $'+porDia.toFixed(2)+' USD neto/dia');
+    } else {
+      lines.push('Nivel maximo alcanzado!');
+    }
+    if (mv.length > 0) {
+      lines.push('Ventas del mes:');
+      mv.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(v){
+        lines.push('  '+(v.fecha||'?')+'|'+(v.nombre||'?')+' '+(v.apellido||'')+'|'+(v.curso||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|'+(v.pais||'?'));
+      });
+    }
+    lines.push('');
+  });
+
+  // ── VENTAS COMPLETAS ──
+  lines.push('=== VENTAS COMPLETAS ('+ventas.length+' registros) ===');
+  lines.push('Fecha|Asesor|Nombre|Apellido|Pais|Curso|Monto_USD|Estado|Pago|Canal|Email|Telefono|Lead|MontoLocal|TC|MontoARS');
+  ventas.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(v){
+    lines.push([
+      v.fecha||'?', v.asesor||'?', v.nombre||'?', v.apellido||'',
+      v.pais||'?', v.curso||'?', '$'+parseFloat(v.monto||0).toFixed(2),
+      v.estado||'Pendiente', v.pago||'?', v.canal||'?',
+      v.email||'', v.telefono||'', v.lead||'',
+      v.montoLocal||'', v.adminTC||'', v.montoFinalARS||''
+    ].join('|'));
+  });
+  lines.push('');
+
+  // ── RESUMEN POR ASESOR — HISTORICO ──
+  lines.push('=== RESUMEN POR ASESOR — HISTORICO (ventas no rechazadas) ===');
+  var byAHist = {};
+  ventas.filter(function(v){return (v.estado||'Pendiente')!=='Rechazada';}).forEach(function(v){
+    var a=v.asesor||'?'; if(!byAHist[a]) byAHist[a]={n:0,total:0,aprobadas:0};
+    byAHist[a].n++; byAHist[a].total+=parseFloat(v.monto||0);
+    if((v.estado||'Pendiente')==='Aprobado') byAHist[a].aprobadas++;
+  });
+  Object.keys(byAHist).sort(function(a,b){return byAHist[b].total-byAHist[a].total;}).forEach(function(a){
+    lines.push(a+': '+byAHist[a].n+' ventas | $'+byAHist[a].total.toFixed(2)+' USD | '+byAHist[a].aprobadas+' aprobadas');
+  });
+  lines.push('');
+
+  // ── VENTAS POR ASESOR Y MES ──
+  lines.push('=== VENTAS POR ASESOR Y MES (no rechazadas) ===');
+  var byAMes = {};
+  ventas.filter(function(v){return (v.estado||'Pendiente')!=='Rechazada';}).forEach(function(v){
+    var a=v.asesor||'?'; var m=(v.fecha||'').substring(0,7)||'?';
+    var k=m+'_'+a; if(!byAMes[k]) byAMes[k]={mes:m,asesor:a,n:0,total:0};
+    byAMes[k].n++; byAMes[k].total+=parseFloat(v.monto||0);
+  });
+  Object.values(byAMes).sort(function(a,b){
+    return b.mes.localeCompare(a.mes)||b.total-a.total;
+  }).forEach(function(r){
+    lines.push(r.mes+' | '+r.asesor+': '+r.n+' ventas | $'+r.total.toFixed(2)+' USD');
+  });
+  lines.push('');
+
+  // ── ESTADISTICAS ──
+  lines.push('=== ESTADISTICAS GENERALES (todas las ventas) ===');
+  var byCanal={}, byCursoS={}, byPago={}, byMesS={};
+  ventas.forEach(function(v){
+    var can=v.canal||'Sin canal'; if(!byCanal[can]) byCanal[can]={n:0,usd:0}; byCanal[can].n++; byCanal[can].usd+=parseFloat(v.monto||0);
+    var cur=v.curso||'Sin curso'; if(!byCursoS[cur]) byCursoS[cur]={n:0,usd:0}; byCursoS[cur].n++; byCursoS[cur].usd+=parseFloat(v.monto||0);
+    var pag=v.pago||'Sin pago'; if(!byPago[pag]) byPago[pag]={n:0,usd:0}; byPago[pag].n++; byPago[pag].usd+=parseFloat(v.monto||0);
+    var mes=(v.fecha||'').substring(0,7); if(mes){if(!byMesS[mes]) byMesS[mes]={n:0,usd:0}; byMesS[mes].n++; byMesS[mes].usd+=parseFloat(v.monto||0);}
+  });
+  lines.push('Por canal:');
+  Object.entries(byCanal).sort(function(a,b){return b[1].usd-a[1].usd;}).forEach(function(e){lines.push('  '+e[0]+': '+e[1].n+' ventas | $'+e[1].usd.toFixed(2)+' USD');});
+  lines.push('Por curso (con ticket promedio):');
+  Object.entries(byCursoS).sort(function(a,b){return b[1].usd-a[1].usd;}).forEach(function(e){lines.push('  '+e[0]+': '+e[1].n+' ventas | $'+e[1].usd.toFixed(2)+' USD | ticket avg $'+(e[1].usd/e[1].n).toFixed(2));});
+  lines.push('Por forma de pago:');
+  Object.entries(byPago).sort(function(a,b){return b[1].usd-a[1].usd;}).forEach(function(e){lines.push('  '+e[0]+': '+e[1].n+' ventas | $'+e[1].usd.toFixed(2)+' USD');});
+  lines.push('Por mes (evolucion):');
+  Object.entries(byMesS).sort(function(a,b){return a[0].localeCompare(b[0]);}).forEach(function(e){lines.push('  '+e[0]+': '+e[1].n+' ventas | $'+e[1].usd.toFixed(2)+' USD');});
+  lines.push('');
+
+  // ── CIERRES ──
+  lines.push('=== CIERRES DE MES ===');
+  var cierresArr = Object.entries(cierres).sort(function(a,b){return b[0].localeCompare(a[0]);});
+  if (cierresArr.length > 0) {
+    cierresArr.forEach(function(kv){
+      var k=kv[0], c=kv[1];
+      lines.push(k+' | Cartera USD: $'+(c.carteraUSD||0).toLocaleString('en-US')+' | Cartera ARS: $'+(c.carteraARS||0).toLocaleString('en-US')+' | Ventas aprobadas: '+(c.ventasCount||0)+' | Cerrado por: '+(c.cerradoPor||'?'));
+    });
+  } else {
+    lines.push('No hay cierres registrados.');
+  }
+  lines.push('');
+
+  // ── ALUMNOS COMPLETOS ──
+  var cMap2 = _buildClienteMap();
+  var cArr2 = Object.values(cMap2);
+  lines.push('=== ALUMNOS / CLIENTES ('+cArr2.length+' unicos) ===');
+  cArr2.sort(function(a,b){
+    var tA=a.ventas.reduce(function(s,v){return s+parseFloat(v.monto||0);},0);
+    var tB=b.ventas.reduce(function(s,v){return s+parseFloat(v.monto||0);},0);
+    return tB-tA;
+  }).forEach(function(cl){
+    var total=cl.ventas.reduce(function(s,v){return s+parseFloat(v.monto||0);},0);
+    var aprobadas=cl.ventas.filter(function(v){return (v.estado||'Pendiente')==='Aprobado';}).length;
+    lines.push('--- '+(cl.nombre||'?')+' '+(cl.apellido||'')+' ('+( cl.pais||'?')+') ---');
+    lines.push('  Email: '+(cl.email||'—')+' | Tel: '+(cl.telefono||'—')+' | Lead: '+(cl.lead||'—'));
+    lines.push('  Asesor: '+(cl.asesor||'?')+' | Compras: '+cl.ventas.length+' ('+aprobadas+' aprobadas) | Total gastado: $'+total.toFixed(2)+' USD');
+    cl.ventas.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(v){
+      lines.push('    '+(v.fecha||'?')+'|'+(v.curso||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|asesor:'+(v.asesor||'?'));
+    });
+  });
+  lines.push('');
+
+  // ── PLANTILLAS DE CURSOS ──
+  lines.push('=== PLANTILLAS DE CURSOS ('+plantillas.length+') ===');
+  plantillas.forEach(function(p){
+    lines.push('-- '+(p.titulo||'Sin titulo')+' [categoria: '+(p.categoria||'?')+'] --');
+    lines.push(p.texto||'(sin texto)');
+    if (p.adjuntos) {
+      if (p.adjuntos.landing) lines.push('[Landing: '+p.adjuntos.landing+']');
+      if (p.adjuntos.imagenes && p.adjuntos.imagenes.length) lines.push('[Imagenes adjuntas: '+p.adjuntos.imagenes.length+']');
+    }
+    lines.push('');
+  });
+
+  // ── CALENDARIO ──
+  lines.push('=== CALENDARIO ===');
+  if (_calendarioConfig && _calendarioConfig.embedUrl) {
+    lines.push('Google Calendar configurado y activo. Nota: los eventos no pueden leerse por API, solo el embed de Google Calendar esta disponible en la app.');
+  } else {
+    lines.push('Calendario no configurado aun.');
+  }
+
+  return lines.join('\n');
+}
+
+async function sendGeminiMsg() {
+  if (!geminiApiKey) { toggleGeminiChat(); return; }
+  var input = document.getElementById('gchat-input');
+  var msg = (input.value||'').trim();
+  if (!msg) return;
+  input.value = ''; input.style.height = 'auto';
+
+  var hist = gchatGetHistory();
+  var msgsEl = document.getElementById('gchat-msgs');
+
+  // Mostrar mensaje del usuario
+  var uDiv = document.createElement('div');
+  uDiv.className = 'gcmsg gcmsg-user'; uDiv.textContent = msg; msgsEl.appendChild(uDiv);
+
+  // Typing indicator
+  var typDiv = document.createElement('div');
+  typDiv.className = 'gcmsg gcmsg-ai gctyping';
+  typDiv.innerHTML = '<div class="gcdot"></div><div class="gcdot"></div><div class="gcdot"></div>';
+  msgsEl.appendChild(typDiv); msgsEl.scrollTop = msgsEl.scrollHeight;
+
+  try {
+    var sys = 'Sos un asistente de negocios para Coach Estetico. Responde siempre en espanol argentino. Se preciso con numeros y fechas. No inventes datos — si algo no esta en el contexto, decilo claramente. Para montos usa $X,XXX. Cuando hagas listas usa formato legible. Datos actuales del sistema:\n\n' + buildGeminiContext();
+
+    // Armar historial para la API (solo roles user/model, sin errores)
+    var apiContents = hist
+      .filter(function(m){ return !m.isErr; })
+      .map(function(m){ return { role: m.role, parts: m.parts }; });
+    apiContents.push({ role: 'user', parts: [{ text: msg }] });
+
+    var resp = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiApiKey,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: sys }] },
+          contents: apiContents,
+          generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+        })
+      }
+    );
+    typDiv.remove();
+    if (resp.status === 429) throw new Error('RATE');
+    if (!resp.ok) throw new Error('ERR' + resp.status);
+    var data = await resp.json();
+    var answer = (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) || 'Sin respuesta.';
+
+    // Guardar en historial
+    hist.push({ role: 'user', parts: [{ text: msg }] });
+    hist.push({ role: 'model', parts: [{ text: answer }] });
+
+    var aDiv = document.createElement('div');
+    aDiv.className = 'gcmsg gcmsg-ai'; aDiv.textContent = answer; msgsEl.appendChild(aDiv);
+  } catch(e) {
+    typDiv.remove();
+    var errTxt = e.message === 'RATE'
+      ? 'Limite de consultas alcanzado (15/min del free tier). Espera un minuto e intenta de nuevo.'
+      : 'Error al conectar con Gemini. Verifica la API key en Usuarios.';
+    var eDiv = document.createElement('div');
+    eDiv.className = 'gcmsg gcmsg-err'; eDiv.textContent = errTxt; msgsEl.appendChild(eDiv);
+    hist.push({ role: 'user', parts: [{ text: msg }], isErr: true });
+    hist.push({ role: 'model', parts: [{ text: errTxt }], isErr: true });
+  }
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+async function guardarGeminiKey() {
+  var inp = document.getElementById('gemini-key-input');
+  var k = inp ? inp.value.trim() : '';
+  if (!k) { showToast('Ingresa una API key valida'); return; }
+  await dbSet('/config/gemini_key', k);
+  geminiApiKey = k;
+  showToast('API key de Gemini guardada ✓');
+  renderUsuarios();
+}
+
 // Init
 document.getElementById('f-fecha').valueAsDate = new Date();
 init();
@@ -4403,6 +4755,36 @@ init();
       </div>
       <div id="login-error"></div>
     </div>
+  </div>
+</div>
+
+<!-- GEMINI FAB -->
+<button id="gemini-fab" onclick="toggleGeminiChat()" title="Preguntarle a Gemini">
+  <svg width="26" height="26" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 28C14 20.104 7.896 14 0 14C7.896 14 14 7.896 14 0C14 7.896 20.104 14 28 14C20.104 14 14 20.104 14 28Z" fill="white"/>
+  </svg>
+</button>
+
+<!-- GEMINI CHAT PANEL -->
+<div id="gemini-chat-panel">
+  <div id="gchat-header">
+    <svg width="20" height="20" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="gcg" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4285F4"/><stop offset="100%" stop-color="#9C57FF"/></linearGradient></defs>
+      <path d="M14 28C14 20.104 7.896 14 0 14C7.896 14 14 7.896 14 0C14 7.896 20.104 14 28 14C20.104 14 14 20.104 14 28Z" fill="url(#gcg)"/>
+    </svg>
+    <div id="gchat-title">Gemini &middot; Coach Hub</div>
+    <button id="gchat-close" onclick="toggleGeminiChat()">&#x2715;</button>
+  </div>
+  <div id="gchat-msgs">
+    <div class="gcmsg gcmsg-ai">Hola! Puedo consultarte ventas, plantillas, alumnos y datos del equipo. En que te ayudo?</div>
+  </div>
+  <div id="gchat-foot">
+    <textarea id="gchat-input" placeholder="Cuantas ventas hizo Matteo este mes?" rows="1"
+      onkeydown="gchatKeyDown(event)"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+    <button id="gchat-send" onclick="sendGeminiMsg()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="white"/></svg>
+    </button>
   </div>
 </div>
 
