@@ -683,6 +683,32 @@ body.admin-ro .admin-edit { display:none!important; }
 /* ── ALUMNO IDEAL ── */
 .alumno-ideal-area { width:100%; font-size:12px; line-height:1.6; font-family:inherit; background:rgba(255,255,255,0.5); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; color:var(--text); resize:none; outline:none; min-height:56px; box-sizing:border-box; }
 .alumno-ideal-area:focus { border-color:var(--accent); }
+/* ── POST-VENTA ── */
+.pv-card { background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border:1px solid var(--glass-border); border-radius:var(--radius-lg); padding:18px 20px; box-shadow:var(--glass-shadow); display:flex; flex-direction:column; gap:10px; transition:transform 0.15s; }
+.pv-card:hover { transform:translateY(-2px); }
+.pv-card-header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.pv-card-title { font-size:14px; font-weight:700; color:var(--text); line-height:1.3; flex:1; }
+.pv-tipo-badge { font-size:10px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+.pv-tipo-texto { background:#e8f5e9; color:#2e7d32; }
+.pv-tipo-imagen { background:#e3f2fd; color:#1565c0; }
+.pv-tipo-video { background:#fce4ec; color:#c62828; }
+.pv-tipo-link { background:#fff8e1; color:#e65100; }
+.pv-desc { font-size:12px; color:var(--text3); line-height:1.5; font-style:italic; }
+.pv-preview { font-size:12px; color:var(--text2); background:rgba(0,0,0,0.04); border-radius:var(--radius); padding:8px 10px; line-height:1.6; white-space:pre-wrap; max-height:80px; overflow:hidden; position:relative; }
+.pv-preview::after { content:''; position:absolute; bottom:0; left:0; right:0; height:24px; background:linear-gradient(transparent,rgba(255,255,255,0.6)); border-radius:0 0 var(--radius) var(--radius); }
+.pv-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.pv-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.pv-empty { text-align:center; padding:48px 20px; color:var(--text3); font-size:14px; }
+/* Post-Venta modal */
+.pv-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+.pv-modal { background:#fff; border-radius:var(--radius-lg); padding:28px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+.pv-modal-title { font-size:18px; font-weight:800; color:var(--text); margin-bottom:20px; }
+.pv-field { margin-bottom:16px; }
+.pv-field label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3); margin-bottom:6px; }
+.pv-field input, .pv-field select, .pv-field textarea { width:100%; font-size:13px; font-family:inherit; border:1px solid var(--border); border-radius:var(--radius); padding:9px 12px; outline:none; background:rgba(255,255,255,0.8); color:var(--text); box-sizing:border-box; transition:border-color 0.15s; }
+.pv-field input:focus, .pv-field select:focus, .pv-field textarea:focus { border-color:var(--accent); }
+.pv-field textarea { min-height:120px; resize:vertical; line-height:1.6; }
+.pv-modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
 
 /* ── ADMIN TABLE INLINE INPUT ── */
 .admin-inline-input { padding: 3px 7px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.65); font-family: inherit; color: var(--text); }
@@ -822,20 +848,21 @@ body.admin-ro .admin-edit { display:none!important; }
       </div>
     </section>
 
-    <!-- PLANTILLAS -->
+    <!-- FORMACIONES / COACH -->
     <section class="section" id="sec-plantillas">
       <!-- COACH SUB-NAV -->
       <div class="coach-subnav">
-        <button class="coach-subtab active" id="cst-plantillas" onclick="switchCoachTab('plantillas')">Plantillas</button>
+        <button class="coach-subtab active" id="cst-plantillas" onclick="switchCoachTab('plantillas')">Formaciones</button>
+        <button class="coach-subtab" id="cst-postventa" onclick="switchCoachTab('postventa')">Post-Venta</button>
         <button class="coach-subtab" id="cst-calendario" onclick="switchCoachTab('calendario')">Calendario</button>
       </div>
-      <!-- PLANTILLAS PANEL -->
+      <!-- FORMACIONES PANEL -->
       <div id="coach-panel-plantillas">
         <!-- GRID VIEW -->
         <div id="plant-grid-view">
           <div class="section-header">
-            <div class="section-title">Plantillas de cursos</div>
-            <button class="btn btn-accent" onclick="abrirNuevaPlantilla()">+ Nueva plantilla</button>
+            <div class="section-title">Formaciones</div>
+            <button class="btn btn-accent" onclick="abrirNuevaPlantilla()">+ Nueva formación</button>
           </div>
           <div class="plantillas-header">
             <input class="plantillas-search" id="plant-search" placeholder="Buscar curso..." oninput="renderPlantillas()">
@@ -853,6 +880,15 @@ body.admin-ro .admin-edit { display:none!important; }
         </div>
         <!-- DETALLE VIEW -->
         <div id="plant-detalle-view" style="display:none"></div>
+      </div>
+      <!-- POST-VENTA PANEL -->
+      <div id="coach-panel-postventa" style="display:none">
+        <div class="section-header">
+          <div class="section-title">Post-Venta</div>
+          <button class="btn btn-accent" id="btn-nueva-pv" onclick="abrirNuevoPostVenta()" style="display:none">+ Agregar mensaje</button>
+        </div>
+        <div class="cat-tabs" id="pv-cat-tabs" style="margin-bottom:18px"></div>
+        <div id="pv-grid"></div>
       </div>
       <!-- CALENDARIO PANEL -->
       <div id="coach-panel-calendario" style="display:none">
@@ -1098,7 +1134,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.56</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.64</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1226,14 +1262,14 @@ async function init() {
     } else {
       const overlay = document.getElementById('login-overlay');
       if (overlay) overlay.style.display = 'none';
+      // Apply UI permissions immediately so greeting/nav/FAB show at once
+      if (usuarioActual) aplicarPermisos(false);
     }
     await Promise.all([loadVentas(), loadCierres(), loadCalendarioConfig()]);
     document.getElementById('loading-state').style.display = 'none';
     renderAll();
-    await Promise.all([loadPlantillas(), loadNotificaciones(), loadGeminiKey()]);
-    if (usuarioActual) {
-      aplicarPermisos();
-    }
+    await Promise.all([loadPlantillas(), loadPostVentaData(), loadNotificaciones(), loadGeminiKey()]);
+    // Don't re-apply permisos here — would redirect user away from current tab
     setInterval(refreshData, 15000);
     setInterval(refreshPlantillas, 30000);
     setInterval(loadNotificaciones, 60000);
@@ -1264,12 +1300,15 @@ const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Coach', stats:'Es
 var coachSubTab = 'plantillas';
 function switchCoachTab(sub) {
   coachSubTab = sub;
-  document.getElementById('coach-panel-plantillas').style.display = sub === 'plantillas' ? '' : 'none';
-  document.getElementById('coach-panel-calendario').style.display = sub === 'calendario' ? '' : 'none';
-  document.getElementById('cst-plantillas').classList.toggle('active', sub === 'plantillas');
-  document.getElementById('cst-calendario').classList.toggle('active', sub === 'calendario');
+  ['plantillas','postventa','calendario'].forEach(function(p) {
+    var el = document.getElementById('coach-panel-'+p);
+    if (el) el.style.display = p === sub ? '' : 'none';
+    var tab = document.getElementById('cst-'+p);
+    if (tab) tab.classList.toggle('active', p === sub);
+  });
   if (sub === 'calendario') renderCalendario();
   if (sub === 'plantillas') renderPlantillas();
+  if (sub === 'postventa') renderPostVenta();
 }
 
 function switchTab(t) {
@@ -2270,7 +2309,10 @@ function buildDetalleHTML(p) {
             (l.descripcion ? '<div class="landing-link-desc">' + escHtml(l.descripcion) + '</div>' : '') +
             (l.url ? '<div style="font-size:11px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(l.url) + '</div>' : '') +
           '</div>' +
-          (l.url ? '<a href="' + escAttr(l.url) + '" target="_blank" class="btn btn-accent" style="padding:5px 12px;font-size:12px;flex-shrink:0;text-decoration:none">Ir ↗</a>' : '') +
+          '<div style="display:flex;gap:4px;flex-shrink:0">' +
+            (l.url ? '<a href="' + escAttr(l.url) + '" target="_blank" class="btn btn-ghost" style="padding:5px 10px;font-size:12px;text-decoration:none">↗ Abrir</a>' : '') +
+            (l.url ? '<button class="icon-btn" onclick="copiarAlPortapapeles(\'' + escAttr(l.url) + '\')">Copiar</button>' : '') +
+          '</div>' +
           '<button class="icon-btn" onclick="editLandingLink(\'' + key + '\',\'' + l._key + '\')">✎</button>' +
           '<button class="icon-btn danger" onclick="deleteLandingLink(\'' + key + '\',\'' + l._key + '\')">✕</button>' +
         '</div>';
@@ -2288,8 +2330,9 @@ function buildDetalleHTML(p) {
             '<div class="precio-item-label">' + escHtml(pr.label||'Precio') + '</div>' +
             '<div class="precio-item-monto">' + escHtml(pr.monto||'—') + '</div>' +
           '</div>' +
-          (pr.link ? '<a href="' + escAttr(pr.link) + '" target="_blank" style="font-size:12px;color:var(--accent);text-decoration:none;flex-shrink:0">💳 Pagar</a>' : '') +
-          '<div style="display:flex;gap:4px;flex-shrink:0">' +
+          '<div style="display:flex;gap:4px;flex-shrink:0;align-items:center">' +
+            (pr.link ? '<a href="' + escAttr(pr.link) + '" target="_blank" class="btn btn-ghost" style="padding:5px 10px;font-size:12px;text-decoration:none">↗ Abrir</a>' : '') +
+            (pr.link ? '<button class="icon-btn" onclick="copiarAlPortapapeles(\'' + escAttr(pr.link) + '\')">Copiar</button>' : '') +
             '<button class="icon-btn" onclick="editPrecioItem(\'' + key + '\',\'' + pr._key + '\')">✎</button>' +
             '<button class="icon-btn danger" onclick="deletePrecioItem(\'' + key + '\',\'' + pr._key + '\')">✕</button>' +
           '</div>' +
@@ -2298,11 +2341,35 @@ function buildDetalleHTML(p) {
       '<button class="section-add-btn" onclick="addPrecioItem(\'' + key + '\')">+ Agregar precio</button>' +
     '</div>';
 
+  // Bonos
+  const bonosHtml =
+    '<div class="plant-section-card">' +
+      '<div class="plant-section-label">Bonos incluidos</div>' +
+      '<textarea style="width:100%;font-size:13px;line-height:1.7;font-family:inherit;background:rgba(255,255,255,0.6);border:1px solid var(--border);border-radius:var(--radius);padding:12px;color:var(--text);min-height:90px;resize:vertical;outline:none;box-sizing:border-box" ' +
+        'placeholder="Ej: Acceso al grupo privado, PDF descargable, certificado..." ' +
+        'onchange="saveBonosField(\'' + key + '\',this.value)">' + escHtml(p.bonos||'') + '</textarea>' +
+    '</div>';
+
+  // Ficha técnica
+  const fichaTexto = p.ficha_tecnica || '';
+  const fichaCharCount = fichaTexto.length;
+  const fichaHtml =
+    '<div class="plant-section-card">' +
+      '<div class="plant-section-label" style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span>Ficha técnica</span>' +
+        (fichaTexto ? '<span style="font-size:10px;font-weight:400;color:var(--text3)">' + fichaCharCount.toLocaleString() + ' chars · Gemini la usa como contexto ✓</span>' : '') +
+      '</div>' +
+      '<textarea id="ficha-ta-' + key + '" style="width:100%;font-size:12px;line-height:1.6;font-family:inherit;background:rgba(255,255,255,0.5);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);resize:vertical;outline:none;min-height:140px;box-sizing:border-box" ' +
+        'placeholder="Pegá acá el contenido de la ficha técnica de este curso. Gemini lo usará como contexto cuando estés en esta pantalla." ' +
+        'onblur="saveFichaTecnica(\'' + key + '\',this.value)">' + escHtml(fichaTexto) + '</textarea>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:6px">Guardado automáticamente al hacer clic afuera del campo.</div>' +
+    '</div>';
+
   return headerHtml +
     alumnoIdealHtml +
     '<div class="plant-detail-grid">' +
-      '<div>' + sliderHtml + '</div>' +
-      '<div>' + visualesHtml + landingHtml + preciosHtml + '</div>' +
+      '<div>' + sliderHtml + bonosHtml + '</div>' +
+      '<div>' + visualesHtml + landingHtml + preciosHtml + fichaHtml + '</div>' +
     '</div>';
 }
 
@@ -2351,6 +2418,208 @@ function closePlantillaDetalle() {
   plantillaDetalleKey = null;
   document.getElementById('plant-grid-view').style.display = '';
   document.getElementById('plant-detalle-view').style.display = 'none';
+}
+
+// ── UTILS ──
+function copiarAlPortapapeles(texto) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function(){ showToast('Copiado ✓'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = texto; ta.style.position='fixed'; ta.style.left='-9999px';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); showToast('Copiado ✓'); } catch(e){}
+    document.body.removeChild(ta);
+  }
+}
+async function saveBonosField(key, value) {
+  await dbSet('/plantillas/'+key+'/bonos', value);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) p.bonos = value;
+}
+async function saveFichaTecnica(key, value) {
+  await dbSet('/plantillas/'+key+'/ficha_tecnica', value);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) p.ficha_tecnica = value;
+  // Update char count display without full re-render
+  var ta = document.getElementById('ficha-ta-'+key);
+  var label = ta && ta.closest('.plant-section-card') && ta.closest('.plant-section-card').querySelector('.plant-section-label span:last-child');
+  if (label) label.textContent = value.length ? value.length.toLocaleString()+' chars · Gemini la usa como contexto ✓' : '';
+  showToast('Ficha guardada');
+}
+
+// ── POST-VENTA ──
+var postVentaData = [];
+var pvCatActual = 'todos';
+const PV_CATS = ['Bienvenida','Objeciones','Pagos','Seguimiento','Técnico','General'];
+
+async function loadPostVentaData() {
+  var data = await dbGet('/post_venta');
+  postVentaData = [];
+  if (data) Object.entries(data).forEach(function(e){ postVentaData.push(Object.assign({_key:e[0]},e[1])); });
+}
+
+function renderPostVenta() {
+  var tabsEl = document.getElementById('pv-cat-tabs');
+  var gridEl = document.getElementById('pv-grid');
+  if (!tabsEl || !gridEl) return;
+
+  var cats = ['todos'].concat(PV_CATS);
+  tabsEl.innerHTML = cats.map(function(c){
+    var count = c==='todos' ? postVentaData.length : postVentaData.filter(function(x){return x.categoria===c;}).length;
+    return '<button class="cat-tab' + (pvCatActual===c?' active':'') + '" onclick="setPvCat(\'' + escAttr(c) + '\')">' +
+      escHtml(c==='todos'?'Todos':c) + (count?' <span style="font-size:10px;opacity:0.7">('+count+')</span>':'') +
+    '</button>';
+  }).join('');
+
+  var filtered = pvCatActual==='todos' ? postVentaData : postVentaData.filter(function(x){return x.categoria===pvCatActual;});
+
+  if (!filtered.length) {
+    gridEl.innerHTML = '<div class="pv-empty">No hay mensajes en esta categoría.<br>El equipo de Post-Venta puede agregar uno.</div>';
+    return;
+  }
+
+  var tipoClass = {texto:'pv-tipo-texto',imagen:'pv-tipo-imagen',video:'pv-tipo-video',link:'pv-tipo-link'};
+  var tipoLabel = {texto:'Texto','imagen':'Imagen',video:'Video',link:'Link'};
+
+  gridEl.innerHTML = '<div class="pv-grid">' + filtered.map(function(item){
+    var tipo = item.tipo || 'texto';
+    var acciones = '';
+    if (tipo==='texto') {
+      acciones = '<button class="p-btn p-btn-copy" onclick="pvCopiar(\'' + item._key + '\')">Copiar mensaje</button>';
+    } else if (tipo==='imagen') {
+      acciones = '<button class="p-btn p-btn-copy" onclick="pvVerImagen(\'' + item._key + '\')">Ver imagen</button>' +
+        (item.contenido ? '<a href="' + escAttr(item.contenido) + '" download class="p-btn p-btn-edit" style="text-decoration:none">Descargar</a>' : '');
+    } else if (tipo==='video' || tipo==='link') {
+      acciones = (item.contenido ? '<a href="' + escAttr(item.contenido) + '" target="_blank" class="p-btn p-btn-copy" style="text-decoration:none">↗ Abrir</a>' : '') +
+        (item.contenido ? '<button class="p-btn p-btn-edit" onclick="copiarAlPortapapeles(\'' + escAttr(item.contenido) + '\')">Copiar link</button>' : '');
+    }
+    var canEdit = usuarioActual && USUARIOS_CONFIG[usuarioActual] && !USUARIOS_CONFIG[usuarioActual].adminRO;
+    var editBtns = canEdit ?
+      ' <button class="icon-btn" style="margin-left:auto" onclick="pvEditar(\'' + item._key + '\')">✎</button>' +
+      '<button class="icon-btn danger" onclick="pvEliminar(\'' + item._key + '\')">✕</button>' : '';
+    return '<div class="pv-card">' +
+      '<div class="pv-card-header">' +
+        '<div class="pv-card-title">' + escHtml(item.titulo||'Sin título') + '</div>' +
+        '<span class="pv-tipo-badge ' + (tipoClass[tipo]||'') + '">' + (tipoLabel[tipo]||tipo) + '</span>' +
+      '</div>' +
+      (item.descripcion ? '<div class="pv-desc">' + escHtml(item.descripcion) + '</div>' : '') +
+      (tipo==='texto' && item.contenido ? '<div class="pv-preview">' + escHtml(item.contenido) + '</div>' : '') +
+      (tipo==='imagen' && item.contenido ? '<img src="' + escAttr(item.contenido) + '" style="width:100%;border-radius:var(--radius);object-fit:cover;max-height:120px">' : '') +
+      '<div class="pv-actions">' + acciones + editBtns + '</div>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+function setPvCat(cat) {
+  pvCatActual = cat;
+  renderPostVenta();
+}
+
+function pvCopiar(key) {
+  var item = postVentaData.find(function(x){return x._key===key;});
+  if (item) copiarAlPortapapeles(item.contenido||'');
+}
+
+function pvVerImagen(key) {
+  var item = postVentaData.find(function(x){return x._key===key;});
+  if (!item || !item.contenido) return;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px';
+  overlay.onclick = function(){ document.body.removeChild(overlay); };
+  var img = document.createElement('img');
+  img.src = item.contenido;
+  img.style.cssText = 'max-width:100%;max-height:90vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5)';
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+}
+
+var _pvEditKey = null;
+function abrirNuevoPostVenta() { _pvEditKey = null; abrirPvModal({}); }
+function pvEditar(key) {
+  var item = postVentaData.find(function(x){return x._key===key;});
+  if (!item) return;
+  _pvEditKey = key;
+  abrirPvModal(item);
+}
+function abrirPvModal(item) {
+  var existing = document.getElementById('pv-modal-overlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'pv-modal-overlay';
+  overlay.className = 'pv-modal-overlay';
+  overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+  overlay.innerHTML =
+    '<div class="pv-modal">' +
+      '<div class="pv-modal-title">' + (_pvEditKey ? 'Editar mensaje' : 'Nuevo mensaje de Post-Venta') + '</div>' +
+      '<div class="pv-field"><label>Categoría</label><select id="pv-f-cat">' +
+        PV_CATS.map(function(c){ return '<option' + (item.categoria===c?' selected':'') + '>' + escHtml(c) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="pv-field"><label>Título</label><input id="pv-f-titulo" value="' + escAttr(item.titulo||'') + '" placeholder="Ej: Bienvenida al programa"></div>' +
+      '<div class="pv-field"><label>Situación / Cuándo usarlo</label><textarea id="pv-f-desc" style="min-height:60px" placeholder="Ej: Enviar apenas el alumno confirma el pago">' + escHtml(item.descripcion||'') + '</textarea></div>' +
+      '<div class="pv-field"><label>Tipo de contenido</label><select id="pv-f-tipo" onchange="pvTipoChange()">' +
+        ['texto','imagen','video','link'].map(function(t){ return '<option value="' + t + '"' + (item.tipo===t?' selected':'') + '>' + {texto:'Texto',imagen:'Imagen',video:'Video / Reel',link:'Link'}[t] + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="pv-field" id="pv-contenido-field"><label id="pv-contenido-label">Mensaje</label>' +
+        '<textarea id="pv-f-contenido" style="min-height:140px" placeholder="Escribí el mensaje aquí...">' + escHtml(item.contenido||'') + '</textarea>' +
+      '</div>' +
+      '<div class="pv-field" id="pv-img-field" style="display:none"><label>Subir imagen</label>' +
+        '<input type="file" id="pv-f-img" accept="image/*" style="font-size:13px">' +
+      '</div>' +
+      '<div class="pv-modal-footer">' +
+        '<button class="btn btn-ghost" onclick="document.getElementById(\'pv-modal-overlay\').remove()">Cancelar</button>' +
+        '<button class="btn btn-accent" onclick="pvGuardar()">Guardar</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  pvTipoChange();
+}
+function pvTipoChange() {
+  var tipo = (document.getElementById('pv-f-tipo')||{}).value || 'texto';
+  var labels = {texto:'Mensaje de texto', imagen:'Imagen (URL o subir)', video:'URL del video/reel', link:'URL del link'};
+  var labelEl = document.getElementById('pv-contenido-label');
+  if (labelEl) labelEl.textContent = labels[tipo] || 'Contenido';
+  var imgField = document.getElementById('pv-img-field');
+  var contField = document.getElementById('pv-contenido-field');
+  if (imgField) imgField.style.display = tipo==='imagen' ? '' : 'none';
+  if (contField) contField.style.display = tipo==='imagen' ? 'none' : '';
+}
+async function pvGuardar() {
+  var cat = (document.getElementById('pv-f-cat')||{}).value || 'General';
+  var titulo = ((document.getElementById('pv-f-titulo')||{}).value||'').trim();
+  var desc = ((document.getElementById('pv-f-desc')||{}).value||'').trim();
+  var tipo = (document.getElementById('pv-f-tipo')||{}).value || 'texto';
+  var contenido = ((document.getElementById('pv-f-contenido')||{}).value||'').trim();
+  if (!titulo) { showToast('El título es obligatorio'); return; }
+  if (tipo==='imagen') {
+    var fileInput = document.getElementById('pv-f-img');
+    if (fileInput && fileInput.files[0]) {
+      await new Promise(function(resolve){
+        var reader = new FileReader();
+        reader.onload = function(e){ contenido = e.target.result; resolve(); };
+        reader.readAsDataURL(fileInput.files[0]);
+      });
+    }
+  }
+  var obj = {categoria:cat, titulo:titulo, descripcion:desc, tipo:tipo, contenido:contenido, created:new Date().toISOString()};
+  if (_pvEditKey) {
+    await dbSet('/post_venta/'+_pvEditKey, obj);
+    var idx = postVentaData.findIndex(function(x){return x._key===_pvEditKey;});
+    if (idx>=0) postVentaData[idx] = Object.assign({_key:_pvEditKey}, obj);
+  } else {
+    var res = await dbPush('/post_venta', obj);
+    if (res) postVentaData.push(Object.assign({_key:res.name}, obj));
+  }
+  document.getElementById('pv-modal-overlay').remove();
+  renderPostVenta();
+  showToast('Guardado');
+}
+async function pvEliminar(key) {
+  if (!confirm('¿Eliminar este mensaje?')) return;
+  await dbDelete('/post_venta/'+key);
+  postVentaData = postVentaData.filter(function(x){return x._key!==key;});
+  renderPostVenta();
+  showToast('Eliminado');
 }
 
 // ── DIFICULTAD / ALUMNO IDEAL ──
@@ -4161,7 +4430,8 @@ function logout() {
   if (overlay) { overlay.style.display = 'flex'; overlay.style.opacity = '1'; overlay.classList.remove('fade-out'); }
 }
 
-function aplicarPermisos() {
+function aplicarPermisos(navigate) {
+  if (navigate === undefined) navigate = true;
   if (!usuarioActual || !USUARIOS_CONFIG[usuarioActual]) return;
   const u = USUARIOS_CONFIG[usuarioActual];
 
@@ -4200,10 +4470,16 @@ function aplicarPermisos() {
     setTimeout(() => { overlay.style.display = 'none'; overlay.classList.remove('fade-out'); }, 380);
   }
 
-  // Ir a la primera sección accesible del usuario
-  const secs = u.secciones || [];
-  const firstTab = secs.find(t => todasSecs.includes(t)) || 'inicio';
-  switchTab(firstTab);
+  // Solo navegar al primer tab en login, no en recargas de fondo
+  if (navigate) {
+    const secs = u.secciones || [];
+    const firstTab = secs.find(t => todasSecs.includes(t)) || 'inicio';
+    switchTab(firstTab);
+  }
+
+  // Mostrar btn Nueva formación en Post-Venta si tiene permiso de admin
+  var btnPV = document.getElementById('btn-nueva-pv');
+  if (btnPV) btnPV.style.display = u.adminRO ? 'none' : '';
 }
 
 // ── LOGIN UI ─────────────────────────────────────────────────────────────────
@@ -4780,15 +5056,57 @@ function buildGeminiContext() {
   });
   lines.push('');
 
-  // ── PLANTILLAS DE CURSOS ──
-  lines.push('=== PLANTILLAS DE CURSOS ('+plantillas.length+') ===');
-  plantillas.forEach(function(p){
-    lines.push('-- '+(p.titulo||'Sin titulo')+' [categoria: '+(p.categoria||'?')+'] --');
-    lines.push(p.texto||'(sin texto)');
-    if (p.adjuntos) {
-      if (p.adjuntos.landing) lines.push('[Landing: '+p.adjuntos.landing+']');
-      if (p.adjuntos.imagenes && p.adjuntos.imagenes.length) lines.push('[Imagenes adjuntas: '+p.adjuntos.imagenes.length+']');
+  // ── CURSO ACTUALMENTE ABIERTO (contexto prioritario) ──
+  if (plantillaDetalleKey) {
+    var curP = plantillas.find(function(x){ return x._key === plantillaDetalleKey; });
+    if (curP) {
+      lines.push('=== CURSO ACTUALMENTE ABIERTO EN PANTALLA ===');
+      lines.push('Titulo: '+(curP.titulo||'?')+' | Categoria: '+(curP.categoria||'?')+' | Nivel: '+(curP.dificultad||'no definido'));
+      if (curP.alumno_ideal) lines.push('Alumno ideal: '+curP.alumno_ideal);
+      if (curP.bonos) lines.push('Bonos: '+curP.bonos);
+      // Plantillas de venta (slider)
+      var textosObj = curP.textos || {};
+      var textosArr = Object.values(textosObj);
+      if (textosArr.length) {
+        lines.push('Plantillas de venta ('+textosArr.length+'):');
+        textosArr.forEach(function(t,i){ lines.push('  ['+(i+1)+'] '+(t.titulo||'Plantilla')+':\n'+t.texto); });
+      } else if (curP.texto) {
+        lines.push('Plantilla de venta:\n'+curP.texto);
+      }
+      // Precios
+      var preciosObj = curP.precios_list || {};
+      var preciosArr = Object.values(preciosObj);
+      if (preciosArr.length) {
+        lines.push('Precios:');
+        preciosArr.forEach(function(pr){ lines.push('  '+pr.label+': '+pr.monto+(pr.link?' | Link: '+pr.link:'')); });
+      }
+      // Landing links
+      var landingObj = curP.landing_links || {};
+      var landingArr = Object.values(landingObj);
+      if (landingArr.length) {
+        lines.push('Landing pages:');
+        landingArr.forEach(function(l){ lines.push('  '+(l.nombre||'?')+': '+l.url+(l.descripcion?' ('+l.descripcion+')':'')); });
+      }
+      // FICHA TÉCNICA COMPLETA
+      if (curP.ficha_tecnica && curP.ficha_tecnica.trim()) {
+        lines.push('--- FICHA TÉCNICA COMPLETA DEL CURSO ---');
+        lines.push(curP.ficha_tecnica);
+        lines.push('--- FIN FICHA TÉCNICA ---');
+      }
+      lines.push('');
     }
+  }
+
+  // ── FORMACIONES / PLANTILLAS DE CURSOS ──
+  lines.push('=== FORMACIONES ('+plantillas.length+' cursos) ===');
+  plantillas.forEach(function(p){
+    lines.push('-- '+(p.titulo||'Sin titulo')+' ['+( p.categoria||'?')+'] nivel: '+(p.dificultad||'?')+' --');
+    var textosObjG = p.textos || {};
+    var firstTexto = Object.values(textosObjG)[0];
+    if (firstTexto) lines.push(firstTexto.texto||'');
+    else if (p.texto) lines.push(p.texto);
+    var preciosG = Object.values(p.precios_list||{});
+    if (preciosG.length) lines.push('Precios: '+preciosG.map(function(pr){return pr.label+' '+pr.monto;}).join(' | '));
     lines.push('');
   });
 
