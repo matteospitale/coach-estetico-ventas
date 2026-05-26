@@ -2647,6 +2647,8 @@ async function bonosGuardar(key) {
   var p = plantillas.find(function(x){return x._key===key;});
   if (p) p.bonos = value;
   showPlantillaDetalle(key);
+}
+
 // ── MIGRACIÓN DATOS FORMACIONES ──
 function _normCurso(s) {
   var r = (s||'').toLowerCase();
