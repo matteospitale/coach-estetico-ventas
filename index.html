@@ -906,10 +906,10 @@ body::before {
         <button class="coach-subtab active" id="cst-plantillas" onclick="switchCoachTab('plantillas')">Formaciones</button>
         <button class="coach-subtab" id="cst-postventa" onclick="switchCoachTab('postventa')">Post-Venta</button>
         <button class="coach-subtab" id="cst-calendario" onclick="switchCoachTab('calendario')">Calendario</button>
+        <button class="coach-subtab" id="cst-aniversario" onclick="switchCoachTab('aniversario')">🎉 Aniversario</button>
       </div>
       <!-- FORMACIONES PANEL -->
       <div id="coach-panel-plantillas">
-        <button class="coach-subtab" id="cst-aniversario" onclick="switchCoachTab('aniversario')">🎉 Aniversario</button>
         <!-- GRID VIEW -->
         <div id="plant-grid-view">
           <div class="section-header">
@@ -953,8 +953,6 @@ body::before {
         </div>
         <div id="calendario-body"></div>
       </div>
-    </section>
-
       <!-- ANIVERSARIO PANEL -->
       <div id="coach-panel-aniversario" style="display:none">
         <div style="background:linear-gradient(135deg,#b61f3a 0%,#8a0020 100%);border-radius:16px;padding:20px 24px;margin-bottom:20px;color:#fff;position:relative;overflow:hidden">
@@ -997,6 +995,7 @@ body::before {
         </div>
         <div id="aniv-recursos-grid" style="display:flex;flex-direction:column;gap:10px"></div>
       </div>
+    </section>
 
     <!-- ESTADÍSTICAS -->
     <section class="section" id="sec-stats">
@@ -1258,7 +1257,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.84</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.86</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
