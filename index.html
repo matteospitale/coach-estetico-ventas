@@ -10,6 +10,7 @@
 <meta property="og:description" content="Hub interno de ventas, plantillas, estadísticas y calendario de Coach Estético. Acceso restringido por PIN.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="index.html">
+<link rel="icon" type="image/png" href="img/img_0.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1182,7 +1183,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.77</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.80</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1193,7 +1194,7 @@ const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
 const FB_WEB_API_KEY = 'AIzaSyBEnj64ibIYAv_8QWRoFzOwRmCJqxfqi54';
 
 let ventas = [], plantillas = [], pendiente = null, cierres = {};
-let inicioFiltro = null, modoEdicion = false, seleccionados = new Set();
+let inicioFiltro = null, modoEdicion = false, seleccionados = new Set(), prevTab = 'inicio';
 let catActual = 'todos', plantillasInicializadas = false;
 let plantillaDetalleKey = null, plantillaTextosArr = [], plantillaTextosIdx = 0;
 
@@ -1371,6 +1372,10 @@ function switchTab(t) {
       t = secs[0] || 'inicio';
     }
   }
+  if (t === 'cargar') {
+    const cur = TABS.find(s => { const el = document.getElementById('sec-'+s); return el && el.classList.contains('active'); });
+    if (cur && cur !== 'cargar') prevTab = cur;
+  }
   window.scrollTo(0, 0);
   document.documentElement.scrollLeft = 0;
   document.body.scrollLeft = 0;
@@ -1473,7 +1478,7 @@ function filteredVentas(asesor, mes, pago, search, estado) {
       if (!(v.curso||'').toLowerCase().includes(q) && !(v.lead||'').includes(q)) return false;
     }
     return true;
-  });
+  }).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
 }
 function fillMesOptions(selId) {
   const sel = document.getElementById(selId);
@@ -3754,7 +3759,7 @@ async function guardarVenta() {
     fillMesOptions('admin-fil-mes');
     renderAdmin();
     renderAll();
-    switchTab('inicio');
+    switchTab(prevTab || 'inicio');
   } catch(e) {
     showToast('Error al guardar: ' + e.message);
   }
