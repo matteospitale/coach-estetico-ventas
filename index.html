@@ -1053,7 +1053,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.43</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.51</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3649,98 +3649,8 @@ function _renderClienteDetalle(cl, body) {
       '</div>' + // fin columna derecha
     '</div>'; // fin grid
 
-  // ── Conversación Kommo (carga asíncrona) ──
-  if (cl.lead) {
-    var convWrap = document.createElement('div');
-    convWrap.style.cssText = 'margin-top:16px;background:rgba(255,255,255,0.92);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow)';
-    convWrap.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">' +
-        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em">Conversación Kommo</div>' +
-        '<a href="https://coachestetico.kommo.com/leads/detail/' + cl.lead + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">Ver en Kommo ↗</a>' +
-      '</div>' +
-      '<div id="kommo-conv-body" style="display:flex;flex-direction:column;gap:6px;max-height:560px;overflow-y:auto;padding-right:6px">' +
-        '<div style="text-align:center;padding:30px 0;color:var(--text3);font-size:13px">⏳ Cargando mensajes...</div>' +
-      '</div>';
-    body.appendChild(convWrap);
-    cargarConversacionKommo(cl.lead, convWrap.querySelector('#kommo-conv-body'), cl.nombre || 'Alumna');
-  }
 }
 
-// ── CONVERSACIÓN KOMMO ──
-// Timeline unificado: WhatsApp + Instagram + Facebook + Notas, ordenado por fecha.
-async function cargarConversacionKommo(leadId, container, nombreAlumna) {
-  try {
-    var resp = await fetch('/api/kommo-lead?q=' + encodeURIComponent(leadId));
-    if (!resp.ok) {
-      var err = {}; try { err = await resp.json(); } catch(e) {}
-      throw new Error(err.error || 'HTTP ' + resp.status);
-    }
-    var data = await resp.json();
-    var items = data.notas || [];
-
-    if (!items.length) {
-      container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Sin mensajes ni notas registradas</div>';
-      return;
-    }
-
-    // Resumen de canales presentes
-    var canalesVistos = {};
-    items.forEach(function(n) { if (n.canal) canalesVistos[n.canal.id] = n.canal; });
-    var canalBadges = Object.values(canalesVistos).map(function(c) {
-      return '<span style="font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;background:' + c.bg + ';color:' + c.color + '">' + escAdm(c.label) + '</span>';
-    }).join(' ');
-    var headerHtml = '<div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:12px">' +
-      canalBadges +
-      '<span style="font-size:10px;color:var(--text3);margin-left:4px">· ' + items.length + ' registros</span>' +
-    '</div>';
-
-    var html = '';
-    var lastDate = '';
-    items.forEach(function(n) {
-      var isIncoming = n.tipo === 'entrante';
-      var align = isIncoming ? 'flex-start' : 'flex-end';
-      var canal = n.canal || { id: 'nota', label: 'Nota', color: '#9a8f87', bg: 'rgba(154,143,135,0.10)' };
-
-      // Separador de fecha
-      var diaStr = (n.fecha || '').substring(0, 8);
-      if (diaStr && diaStr !== lastDate) {
-        html += '<div style="text-align:center;margin:10px 0 6px"><span style="font-size:10px;color:var(--text3);background:var(--surface2);border-radius:20px;padding:2px 10px">' + diaStr + '</span></div>';
-        lastDate = diaStr;
-      }
-
-      var canalTag = '<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;background:' + canal.bg + ';color:' + canal.color + ';letter-spacing:0.03em">' + escAdm(canal.label) + '</span>';
-      var authorLabel = isIncoming
-        ? '<div style="font-size:10px;color:var(--text3);margin-bottom:3px;padding-left:4px;display:flex;align-items:center;gap:5px">' + escAdm(nombreAlumna) + ' ' + canalTag + '</div>'
-        : '<div style="font-size:10px;color:var(--text3);margin-bottom:3px;padding-right:4px;display:flex;align-items:center;justify-content:flex-end;gap:5px">' + canalTag + ' Equipo</div>';
-
-      var bubbleBg = isIncoming ? 'rgba(255,255,255,0.95)' : 'rgba(182,31,58,0.09)';
-      var bubbleBorder = isIncoming ? 'var(--border)' : 'rgba(182,31,58,0.22)';
-      var bubbleRadius = isIncoming ? '3px 14px 14px 14px' : '14px 3px 14px 14px';
-      if (n.fuente === 'nota') { bubbleBg = canal.bg; bubbleBorder = canal.color; }
-
-      html += '<div style="display:flex;flex-direction:column;align-items:' + align + ';max-width:100%;margin-bottom:6px">' +
-        authorLabel +
-        '<div style="max-width:76%;min-width:60px;background:' + bubbleBg + ';border:1px solid ' + bubbleBorder + ';border-radius:' + bubbleRadius + ';padding:9px 13px">' +
-          '<div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word">' + escAdm(n.texto) + '</div>' +
-          '<div style="font-size:10px;color:var(--text3);margin-top:5px;text-align:right">' + escAdm((n.fecha||'').substring(9)) + '</div>' +
-        '</div>' +
-      '</div>';
-    });
-
-    container.innerHTML = headerHtml + html;
-    container.scrollTop = container.scrollHeight;
-
-  } catch(e) {
-    var kommoLink = 'https://coachestetico.kommo.com/leads/detail/' + leadId;
-    container.innerHTML =
-      '<div style="text-align:center;padding:28px 16px">' +
-        '<div style="font-size:28px;margin-bottom:10px">⚠️</div>' +
-        '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">No se pudo cargar la conversación</div>' +
-        '<div style="font-size:12px;color:var(--text3);margin-bottom:18px">' + escAdm(e.message) + '</div>' +
-        '<a href="' + kommoLink + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;text-decoration:none;border-radius:var(--radius);padding:10px 22px;font-size:13px;font-weight:600">Ver en Kommo ↗</a>' +
-      '</div>';
-  }
-}
 
 // ── EDITAR ALUMNO ──
 function editarCliente(clKey) {
