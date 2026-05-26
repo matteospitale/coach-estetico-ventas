@@ -727,16 +727,11 @@ body.admin-ro .admin-edit { display:none!important; }
 
 /* ── VISUAL REDESIGN ── */
 :root {
-  --bg-from: #fdf5f0;
-  --bg-to: #701818;
-  --nav-bg: rgba(22,8,5,0.93);
-  --nav-pill: rgba(255,240,232,0.55);
-  --nav-pill-hover: rgba(255,240,232,0.12);
-  --nav-pill-active-bg: var(--accent);
-  --nav-text: rgba(255,240,232,0.9);
+  --bg-from: #fdf8f5;
+  --bg-to: #c83858;
 }
 body {
-  background: linear-gradient(140deg, var(--bg-from) 0%, #e0b8b0 35%, #a02828 68%, var(--bg-to) 100%);
+  background: linear-gradient(150deg, var(--bg-from) 0%, #fbd5cc 35%, #e0506a 70%, var(--bg-to) 100%);
   background-attachment: fixed;
 }
 body::before {
@@ -748,33 +743,11 @@ body::before {
   z-index: 0;
   opacity: 0.5;
 }
-/* Dark nav */
-.topnav {
-  background: var(--nav-bg) !important;
-  border-bottom: 1px solid rgba(182,31,58,0.35) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.28);
-}
-.topnav-logo-text { color: rgba(255,240,232,0.95) !important; }
-.topnav-logo-text small { color: rgba(255,200,180,0.65) !important; }
-#nav-hola-nombre { color: rgba(255,220,200,0.75) !important; }
-.pill { color: var(--nav-pill) !important; }
-.pill:hover { color: rgba(255,240,232,0.9) !important; background: var(--nav-pill-hover) !important; }
-.pill.active { background: var(--accent) !important; color: #fff !important; }
-.pill.active:hover { background: var(--accent-dark) !important; }
-.btn-logout { color: rgba(255,200,180,0.75) !important; border-color: rgba(182,31,58,0.35) !important; }
-.btn-logout:hover { background: rgba(182,31,58,0.15) !important; color: #fff !important; }
-.btn-nueva-venta { box-shadow: 0 2px 12px rgba(182,31,58,0.35); }
 /* Cards polish */
 .card, .plant-section-card, .venta-card, .pv-card {
   transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s;
 }
-/* Section title */
 .section-title { letter-spacing: -0.02em; }
-/* Dropdown stays light (it appears over light content) */
-.nav-dropdown-menu { background: rgba(22,8,5,0.96) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(182,31,58,0.2) !important; }
-.nav-dropdown-menu button { color: rgba(255,230,215,0.75) !important; }
-.nav-dropdown-menu button:hover { background: rgba(182,31,58,0.2) !important; color: #fff !important; }
-.ndd-header { color: rgba(182,31,58,0.55) !important; font-weight: 800 !important; }
 </style>
 </head>
 <body>
@@ -2345,15 +2318,13 @@ function buildDetalleHTML(p) {
   const headerHtml =
     '<div class="plant-detail-header">' +
       '<button class="plant-detail-back" onclick="closePlantillaDetalle()">← Volver</button>' +
-      '<div style="flex:1">' +
-        '<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-          '<span class="plantilla-cat-badge">' + escHtml(p.categoria||'') + '</span>' +
-          '<select class="dif-select" style="background:' + (difBgs[dif]||'#f0f0f0') + ';color:' + (difColors[dif]||'#888') + '" onchange="saveDificultad(\'' + key + '\',this)">' +
-            '<option value="">Nivel...</option>' +
-            difOpts.map(function(d){ return '<option value="' + d + '"' + (dif===d?' selected':'') + '>' + difLabels[d] + '</option>'; }).join('') +
-          '</select>' +
-        '</div>' +
-        '<div class="plant-detail-title">' + escHtml(limpiarTitulo(p.titulo||'')) + '</div>' +
+      '<div class="plant-detail-title" style="flex:1;min-width:0">' + escHtml(limpiarTitulo(p.titulo||'')) + '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' +
+        '<span class="plantilla-cat-badge">' + escHtml(p.categoria||'') + '</span>' +
+        '<select class="dif-select" style="background:' + (difBgs[dif]||'#f0f0f0') + ';color:' + (difColors[dif]||'#888') + '" onchange="saveDificultad(\'' + key + '\',this)">' +
+          '<option value="">Nivel...</option>' +
+          difOpts.map(function(d){ return '<option value="' + d + '"' + (dif===d?' selected':'') + '>' + difLabels[d] + '</option>'; }).join('') +
+        '</select>' +
       '</div>' +
     '</div>';
 
