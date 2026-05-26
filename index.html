@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -727,11 +727,11 @@ body.admin-ro .admin-edit { display:none!important; }
 
 /* ── VISUAL REDESIGN ── */
 :root {
-  --bg-from: #fdf8f5;
-  --bg-to: #c83858;
+  --bg-from: #fdf9f7;
+  --bg-to: #dea0b0;
 }
 body {
-  background: linear-gradient(150deg, var(--bg-from) 0%, #fbd5cc 35%, #e0506a 70%, var(--bg-to) 100%);
+  background: linear-gradient(150deg, var(--bg-from) 0%, #fce8e4 40%, #f2c4cc 72%, var(--bg-to) 100%);
   background-attachment: fixed;
 }
 body::before {
@@ -1179,7 +1179,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.74</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.75</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1891,6 +1891,7 @@ function filterStats(campo, valor) {
   const cardsEl = document.getElementById('stats-drill-cards');
   const tableEl = document.getElementById('stats-drill-table');
   document.getElementById('stats-drill').style.display = 'block';
+  document.getElementById('stats-drill').scrollIntoView({behavior:'smooth', block:'nearest'});
   document.querySelectorAll('.stat-bar-row').forEach(r=>r.classList.remove('stat-active'));
   document.querySelectorAll('.stat-bar-row[data-campo="'+campo+'"][data-valor="'+valor+'"]').forEach(r=>r.classList.add('stat-active'));
 
@@ -4515,7 +4516,7 @@ function renderMYF() {
   var hoy = new Date();
   var diasMes = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0).getDate();
   var diaActual = hoy.getDate();
-  var diasRestantes = diasMes - diaActual + 1;
+  var diasRestantes = diasMes - diaActual;
   var mesKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
 
   var mesVentas = ventas.filter(function(v) {
