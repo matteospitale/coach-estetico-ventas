@@ -67,8 +67,9 @@ body {
 .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
 .nav-dropdown-menu { opacity:0; pointer-events:none; position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-4px); background: rgba(253,248,245,0.97); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 0 0 1px rgba(182,31,58,0.15); min-width: 152px; z-index: 1000; padding: 5px; overflow: hidden; transition: opacity 0.18s, transform 0.18s; }
 .nav-dropdown-menu.nd-open { opacity:1; pointer-events:auto; transform: translateX(-50%) translateY(0); }
-.nav-dropdown-menu button { display: block; width: 100%; text-align: center; background: none; border: none; padding: 9px 16px; font-size: 13px; font-weight: 500; font-family: inherit; color: rgba(50,18,12,0.65); cursor: pointer; border-radius: 10px; white-space: nowrap; transition: all 0.15s; letter-spacing: -0.01em; }
+.nav-dropdown-menu button { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; background: none; border: none; padding: 9px 14px; font-size: 13px; font-weight: 500; font-family: inherit; color: rgba(50,18,12,0.65); cursor: pointer; border-radius: 10px; white-space: nowrap; transition: all 0.15s; letter-spacing: -0.01em; }
 .nav-dropdown-menu button:hover { background: rgba(182,31,58,0.08); color: var(--accent); }
+.ndd-header { padding: 5px 14px 3px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(182,31,58,0.5); pointer-events: none; }
 .btn-config { width:34px; height:34px; border-radius:50%; border:1.5px solid rgba(182,31,58,0.25); background:transparent; color:var(--text2); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.25s; padding:0; }
 .btn-config:hover { background:rgba(182,31,58,0.08); border-color:var(--accent); color:var(--accent); transform:rotate(45deg); }
 .pill {
@@ -343,10 +344,10 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 .cat-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .cat-tab { padding: 6px 16px; border-radius: 999px; border: 1px solid var(--border); font-size: 13px; cursor: pointer; background: var(--glass); color: var(--text2); font-family: inherit; font-weight: 500; transition: all 0.15s; backdrop-filter: blur(8px); }
 .cat-tab.active { background: var(--accent); color: #fff; border-color: var(--accent-dark); box-shadow: 0 2px 8px rgba(182,31,58,0.3); }
-.coach-subnav { display: flex; gap: 6px; margin-bottom: 24px; border-bottom: 1.5px solid var(--border); padding-bottom: 0; }
-.coach-subtab { padding: 8px 22px; border: none; background: none; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: all 0.15s; border-radius: 0; }
-.coach-subtab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.coach-subtab:hover:not(.active) { color: var(--text); }
+.coach-subnav { display: inline-flex; gap: 2px; margin-bottom: 24px; background: rgba(182,31,58,0.07); border-radius: 14px; padding: 4px; border: 1.5px solid rgba(182,31,58,0.12); }
+.coach-subtab { padding: 9px 22px; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; border-radius: 10px; transition: all 0.18s cubic-bezier(0.22,1,0.36,1); letter-spacing: -0.01em; }
+.coach-subtab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 10px rgba(182,31,58,0.35); }
+.coach-subtab:hover:not(.active) { background: rgba(182,31,58,0.1); color: var(--accent); }
 /* ── GEMINI CHAT ── */
 #gemini-fab { position:fixed;bottom:52px;right:16px;width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;z-index:9000;display:none;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(66,133,244,0.45);transition:all 0.2s;background:linear-gradient(135deg,#4285F4 0%,#9C57FF 100%); }
 #gemini-fab:hover { transform:scale(1.08);box-shadow:0 6px 28px rgba(66,133,244,0.6); }
@@ -727,7 +728,7 @@ body.admin-ro .admin-edit { display:none!important; }
 /* ── VISUAL REDESIGN ── */
 :root {
   --bg-from: #fdf5f0;
-  --bg-to: #b8432a;
+  --bg-to: #701818;
   --nav-bg: rgba(22,8,5,0.93);
   --nav-pill: rgba(255,240,232,0.55);
   --nav-pill-hover: rgba(255,240,232,0.12);
@@ -735,7 +736,7 @@ body.admin-ro .admin-edit { display:none!important; }
   --nav-text: rgba(255,240,232,0.9);
 }
 body {
-  background: linear-gradient(140deg, var(--bg-from) 0%, #edd5c0 38%, #c96444 72%, var(--bg-to) 100%);
+  background: linear-gradient(140deg, var(--bg-from) 0%, #e0b8b0 35%, #a02828 68%, var(--bg-to) 100%);
   background-attachment: fixed;
 }
 body::before {
@@ -771,8 +772,9 @@ body::before {
 .section-title { letter-spacing: -0.02em; }
 /* Dropdown stays light (it appears over light content) */
 .nav-dropdown-menu { background: rgba(22,8,5,0.96) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(182,31,58,0.2) !important; }
-.nav-dropdown-menu button { color: rgba(255,230,215,0.7) !important; }
-.nav-dropdown-menu button:hover { background: rgba(182,31,58,0.15) !important; color: #fff !important; }
+.nav-dropdown-menu button { color: rgba(255,230,215,0.75) !important; }
+.nav-dropdown-menu button:hover { background: rgba(182,31,58,0.2) !important; color: #fff !important; }
+.ndd-header { color: rgba(182,31,58,0.55) !important; font-weight: 800 !important; }
 </style>
 </head>
 <body>
@@ -789,9 +791,10 @@ body::before {
     <div class="nav-dropdown">
       <button class="pill" id="nav-plantillas" onclick="switchTab('plantillas')">Coach ▾</button>
       <div class="nav-dropdown-menu">
-        <button onclick="switchTab('plantillas');switchCoachTab('plantillas')">Formaciones</button>
-        <button onclick="switchTab('plantillas');switchCoachTab('postventa')">Post-Venta</button>
-        <button onclick="switchTab('plantillas');switchCoachTab('calendario')">Calendario</button>
+        <div class="ndd-header">Coach</div>
+        <button onclick="switchTab('plantillas');switchCoachTab('plantillas')"><span>📚</span>Formaciones</button>
+        <button onclick="switchTab('plantillas');switchCoachTab('postventa')"><span>💬</span>Post-Venta</button>
+        <button onclick="switchTab('plantillas');switchCoachTab('calendario')"><span>📅</span>Calendario</button>
       </div>
     </div>
     <button class="pill" id="nav-ventas" onclick="switchTab('ventas')">Ventas</button>
@@ -2357,8 +2360,16 @@ function buildDetalleHTML(p) {
   const alumnoIdealHtml =
     '<div class="plant-section-card" style="margin-bottom:18px">' +
       '<div class="plant-section-label">Alumno ideal</div>' +
-      '<textarea class="alumno-ideal-area" placeholder="Describí el perfil del alumno ideal para este curso..." ' +
-        'onchange="saveAlumnoIdeal(\'' + key + '\',this.value)">' + escHtml(p.alumno_ideal||'') + '</textarea>' +
+      '<div id="ai-disp-' + key + '" style="' + (p.alumno_ideal ? '' : 'display:none;') + 'font-size:13px;line-height:1.6;white-space:pre-wrap;background:rgba(0,0,0,0.04);border-radius:var(--radius);padding:10px 12px;color:var(--text);margin-bottom:10px">' + escHtml(p.alumno_ideal||'') + '</div>' +
+      '<div id="ai-empty-' + key + '" style="' + (p.alumno_ideal ? 'display:none;' : '') + 'font-size:13px;color:var(--text3);font-style:italic;padding:4px 0 10px">Sin alumno ideal definido.</div>' +
+      '<textarea id="ai-ta-' + key + '" class="alumno-ideal-area" style="display:none" placeholder="Describí el perfil del alumno ideal para este curso...">' + escHtml(p.alumno_ideal||'') + '</textarea>' +
+      '<div id="ai-view-btns-' + key + '" style="display:flex;gap:6px">' +
+        '<button class="p-btn p-btn-edit" onclick="aiEditar(\'' + key + '\')">✎ Editar</button>' +
+      '</div>' +
+      '<div id="ai-edit-btns-' + key + '" style="display:none;gap:6px">' +
+        '<button class="p-btn p-btn-save" style="display:inline-flex" onclick="aiGuardar(\'' + key + '\')">✓ Guardar</button>' +
+        '<button class="p-btn p-btn-cancel" style="display:inline-flex" onclick="aiCancelar(\'' + key + '\')">Cancelar</button>' +
+      '</div>' +
     '</div>';
 
   const sliderHtml = buildSliderHTML(key);
@@ -2430,11 +2441,18 @@ function buildDetalleHTML(p) {
   const bonosHtml =
     '<div class="plant-section-card">' +
       '<div class="plant-section-label">Bonos incluidos</div>' +
-      '<textarea style="width:100%;font-size:13px;line-height:1.7;font-family:inherit;background:rgba(255,255,255,0.6);border:1px solid var(--border);border-radius:var(--radius);padding:12px;color:var(--text);min-height:90px;resize:vertical;outline:none;box-sizing:border-box" ' +
-        'placeholder="Ej: Acceso al grupo privado, PDF descargable, certificado..." ' +
-        'onchange="saveBonosField(\'' + key + '\',this.value)">' + escHtml(p.bonos||'') + '</textarea>' +
-    '</div>';
+      '<div id="bonos-disp-' + key + '" style="' + (p.bonos ? '' : 'display:none;') + 'font-size:13px;line-height:1.6;white-space:pre-wrap;background:rgba(0,0,0,0.04);border-radius:var(--radius);padding:10px 12px;color:var(--text);margin-bottom:10px">' + escHtml(p.bonos||'') + '</div>' +
+      '<div id="bonos-empty-' + key + '" style="' + (p.bonos ? 'display:none;' : '') + 'font-size:13px;color:var(--text3);font-style:italic;padding:4px 0 10px">Sin bonos definidos.</div>' +
+      '<textarea id="bonos-ta-' + key + '" style="display:none;width:100%;font-size:13px;line-height:1.7;font-family:inherit;background:rgba(255,255,255,0.7);border:1.5px solid var(--accent);border-radius:var(--radius);padding:12px;color:var(--text);min-height:90px;resize:vertical;outline:none;box-sizing:border-box;margin-bottom:10px" placeholder="Ej: Acceso al grupo privado, PDF descargable, certificado...">' + escHtml(p.bonos||'') + '</textarea>' +
+      '<div id="bonos-view-btns-' + key + '" style="display:flex;gap:6px">' +
+        '<button class="p-btn p-btn-edit" onclick="bonosEditar(\'' + key + '\')">✎ Editar</button>' +
+      '</div>' +
+      '<div id="bonos-edit-btns-' + key + '" style="display:none;gap:6px">' +
+        '<button class="p-btn p-btn-save" style="display:inline-flex" onclick="bonosGuardar(\'' + key + '\')">✓ Guardar</button>' +
+        '<button class="p-btn p-btn-cancel" style="display:inline-flex" onclick="bonosCancelar(\'' + key + '\')">Cancelar</button>' +
 
+      '</div>' +
+    '</div>';
   // Ficha técnica
   const fichaTexto = p.ficha_tecnica || '';
   const fichaCharCount = fichaTexto.length;
@@ -2452,8 +2470,8 @@ function buildDetalleHTML(p) {
         (fichaTexto ? '<button class="p-btn p-btn-delete" onclick="fichaBorrar(\'' + key + '\')">✕ Borrar</button>' : '') +
       '</div>' +
       '<div id="ficha-edit-btns-' + key + '" style="display:none;gap:6px">' +
-        '<button class="p-btn p-btn-save" onclick="fichaGuardar(\'' + key + '\')">✓ Guardar</button>' +
-        '<button class="p-btn p-btn-cancel" onclick="fichaCancelar(\'' + key + '\')">Cancelar</button>' +
+        '<button class="p-btn p-btn-save" style="display:inline-flex" onclick="fichaGuardar(\'' + key + '\')">✓ Guardar</button>' +
+        '<button class="p-btn p-btn-cancel" style="display:inline-flex" onclick="fichaCancelar(\'' + key + '\')">Cancelar</button>' +
       '</div>' +
     '</div>';
 
@@ -2539,10 +2557,11 @@ function fichaEditar(key) {
   document.getElementById('ficha-disp-'+key).style.display = 'none';
   document.getElementById('ficha-empty-'+key).style.display = 'none';
   var ta = document.getElementById('ficha-ta-'+key);
-  ta.style.display = '';
-  ta.focus();
+  ta.style.display = ''; ta.focus();
   document.getElementById('ficha-view-btns-'+key).style.display = 'none';
-  document.getElementById('ficha-edit-btns-'+key).style.display = 'flex';
+  var eb = document.getElementById('ficha-edit-btns-'+key);
+  eb.style.display = 'flex';
+  [].forEach.call(eb.querySelectorAll('button'), function(b){ b.style.display = 'inline-flex'; });
 }
 function fichaCancelar(key) {
   var p = plantillas.find(function(x){return x._key===key;});
@@ -2568,6 +2587,66 @@ async function fichaBorrar(key) {
   showPlantillaDetalle(key);
 }
 
+function aiEditar(key) {
+  var disp = document.getElementById('ai-disp-'+key);
+  var empty = document.getElementById('ai-empty-'+key);
+  if (disp) disp.style.display = 'none';
+  if (empty) empty.style.display = 'none';
+  var ta = document.getElementById('ai-ta-'+key);
+  if (ta) { ta.style.display = ''; ta.focus(); }
+  document.getElementById('ai-view-btns-'+key).style.display = 'none';
+  var eb = document.getElementById('ai-edit-btns-'+key);
+  eb.style.display = 'flex'; [].forEach.call(eb.querySelectorAll('button'), function(b){ b.style.display = 'inline-flex'; });
+}
+function aiCancelar(key) {
+  var p = plantillas.find(function(x){return x._key===key;});
+  var txt = p ? (p.alumno_ideal||'') : '';
+  var ta = document.getElementById('ai-ta-'+key);
+  if (ta) { ta.value = txt; ta.style.display = 'none'; }
+  var disp = document.getElementById('ai-disp-'+key);
+  if (disp) { disp.textContent = txt; disp.style.display = txt ? '' : 'none'; }
+  var empty = document.getElementById('ai-empty-'+key);
+  if (empty) empty.style.display = txt ? 'none' : '';
+  document.getElementById('ai-view-btns-'+key).style.display = 'flex';
+  document.getElementById('ai-edit-btns-'+key).style.display = 'none';
+}
+async function aiGuardar(key) {
+  var ta = document.getElementById('ai-ta-'+key);
+  if (!ta) return;
+  await saveAlumnoIdeal(key, ta.value);
+  showPlantillaDetalle(key);
+}
+function bonosEditar(key) {
+  var disp = document.getElementById('bonos-disp-'+key);
+  var empty = document.getElementById('bonos-empty-'+key);
+  if (disp) disp.style.display = 'none';
+  if (empty) empty.style.display = 'none';
+  var ta = document.getElementById('bonos-ta-'+key);
+  if (ta) { ta.style.display = ''; ta.focus(); }
+  document.getElementById('bonos-view-btns-'+key).style.display = 'none';
+  var eb = document.getElementById('bonos-edit-btns-'+key);
+  eb.style.display = 'flex'; [].forEach.call(eb.querySelectorAll('button'), function(b){ b.style.display = 'inline-flex'; });
+}
+function bonosCancelar(key) {
+  var p = plantillas.find(function(x){return x._key===key;});
+  var txt = p ? (p.bonos||'') : '';
+  var ta = document.getElementById('bonos-ta-'+key);
+  if (ta) { ta.value = txt; ta.style.display = 'none'; }
+  var disp = document.getElementById('bonos-disp-'+key);
+  if (disp) { disp.textContent = txt; disp.style.display = txt ? '' : 'none'; }
+  var empty = document.getElementById('bonos-empty-'+key);
+  if (empty) empty.style.display = txt ? 'none' : '';
+  document.getElementById('bonos-view-btns-'+key).style.display = 'flex';
+  document.getElementById('bonos-edit-btns-'+key).style.display = 'none';
+}
+async function bonosGuardar(key) {
+  var ta = document.getElementById('bonos-ta-'+key);
+  if (!ta) return;
+  var value = ta.value;
+  await dbSet('/plantillas/'+key+'/bonos', value);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) p.bonos = value;
+  showPlantillaDetalle(key);
 // ── MIGRACIÓN DATOS FORMACIONES ──
 function _normCurso(s) {
   var r = (s||'').toLowerCase();
