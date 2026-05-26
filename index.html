@@ -1182,7 +1182,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.76</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.77</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1579,14 +1579,17 @@ function renderInicioDashboard() {
 function filterDrill(asesor) {
   const mes = getMesVal();
   const base = mes==='all' ? ventas : ventas.filter(v=>(v.fecha||'').startsWith(mes));
-  const vf = asesor==='all' ? base : base.filter(v=>v.asesor===asesor);
+  const vfAll = asesor==='all' ? base : base.filter(v=>v.asesor===asesor);
+  const vf = vfAll.slice().sort(function(a,b){ return parseFloat(b.monto||0)-parseFloat(a.monto||0); }).slice(0,5);
   inicioFiltro = asesor;
   document.querySelectorAll('.metric-card').forEach(c=>c.classList.remove('selected'));
   const mc = document.getElementById('mc-'+asesor);
   if (mc) mc.classList.add('selected');
-  const total = vf.reduce((s,v)=>s+parseFloat(v.monto||0),0);
+  const total = vfAll.reduce((s,v)=>s+parseFloat(v.monto||0),0);
   document.getElementById('inicio-drill-title').textContent =
-    (asesor==='all'?'Todas las ventas':asesor) + ' — ' + vf.length + ' venta' + (vf.length!==1?'s':'') + ' · $' + total.toLocaleString('en-US') + ' USD';
+    (asesor==='all'?'Todas las ventas':asesor) +
+    (vfAll.length > 5 ? ' — top 5 de ' + vfAll.length : ' — ' + vfAll.length + ' venta' + (vfAll.length!==1?'s':'')) +
+    ' · $' + total.toLocaleString('en-US') + ' USD';
   document.getElementById('inicio-drill').style.display = 'block';
   const isMobile = window.innerWidth <= 700;
   const cardsEl = document.getElementById('inicio-drill-cards');
