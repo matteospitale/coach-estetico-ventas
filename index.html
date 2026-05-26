@@ -1134,7 +1134,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.64</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.65</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -5056,59 +5056,40 @@ function buildGeminiContext() {
   });
   lines.push('');
 
-  // ── CURSO ACTUALMENTE ABIERTO (contexto prioritario) ──
-  if (plantillaDetalleKey) {
-    var curP = plantillas.find(function(x){ return x._key === plantillaDetalleKey; });
-    if (curP) {
-      lines.push('=== CURSO ACTUALMENTE ABIERTO EN PANTALLA ===');
-      lines.push('Titulo: '+(curP.titulo||'?')+' | Categoria: '+(curP.categoria||'?')+' | Nivel: '+(curP.dificultad||'no definido'));
-      if (curP.alumno_ideal) lines.push('Alumno ideal: '+curP.alumno_ideal);
-      if (curP.bonos) lines.push('Bonos: '+curP.bonos);
-      // Plantillas de venta (slider)
-      var textosObj = curP.textos || {};
-      var textosArr = Object.values(textosObj);
-      if (textosArr.length) {
-        lines.push('Plantillas de venta ('+textosArr.length+'):');
-        textosArr.forEach(function(t,i){ lines.push('  ['+(i+1)+'] '+(t.titulo||'Plantilla')+':\n'+t.texto); });
-      } else if (curP.texto) {
-        lines.push('Plantilla de venta:\n'+curP.texto);
-      }
-      // Precios
-      var preciosObj = curP.precios_list || {};
-      var preciosArr = Object.values(preciosObj);
-      if (preciosArr.length) {
-        lines.push('Precios:');
-        preciosArr.forEach(function(pr){ lines.push('  '+pr.label+': '+pr.monto+(pr.link?' | Link: '+pr.link:'')); });
-      }
-      // Landing links
-      var landingObj = curP.landing_links || {};
-      var landingArr = Object.values(landingObj);
-      if (landingArr.length) {
-        lines.push('Landing pages:');
-        landingArr.forEach(function(l){ lines.push('  '+(l.nombre||'?')+': '+l.url+(l.descripcion?' ('+l.descripcion+')':'')); });
-      }
-      // FICHA TÉCNICA COMPLETA
-      if (curP.ficha_tecnica && curP.ficha_tecnica.trim()) {
-        lines.push('--- FICHA TÉCNICA COMPLETA DEL CURSO ---');
-        lines.push(curP.ficha_tecnica);
-        lines.push('--- FIN FICHA TÉCNICA ---');
-      }
-      lines.push('');
-    }
-  }
-
-  // ── FORMACIONES / PLANTILLAS DE CURSOS ──
+  // ── FORMACIONES / CURSOS (siempre disponible, con ficha técnica completa) ──
   lines.push('=== FORMACIONES ('+plantillas.length+' cursos) ===');
+  if (plantillaDetalleKey) {
+    var pAbierto = plantillas.find(function(x){ return x._key === plantillaDetalleKey; });
+    if (pAbierto) lines.push('(El usuario está viendo el detalle de: "'+( pAbierto.titulo||'?')+'")');
+  }
   plantillas.forEach(function(p){
-    lines.push('-- '+(p.titulo||'Sin titulo')+' ['+( p.categoria||'?')+'] nivel: '+(p.dificultad||'?')+' --');
-    var textosObjG = p.textos || {};
-    var firstTexto = Object.values(textosObjG)[0];
-    if (firstTexto) lines.push(firstTexto.texto||'');
-    else if (p.texto) lines.push(p.texto);
-    var preciosG = Object.values(p.precios_list||{});
-    if (preciosG.length) lines.push('Precios: '+preciosG.map(function(pr){return pr.label+' '+pr.monto;}).join(' | '));
     lines.push('');
+    lines.push('=== CURSO: '+(p.titulo||'Sin titulo')+' ===');
+    lines.push('Categoria: '+(p.categoria||'?')+' | Nivel: '+(p.dificultad||'no definido'));
+    if (p.alumno_ideal) lines.push('Alumno ideal: '+p.alumno_ideal);
+    if (p.bonos) lines.push('Bonos: '+p.bonos);
+    // Plantillas de venta
+    var textosO = p.textos || {};
+    var textosV = Object.values(textosO);
+    if (textosV.length) {
+      textosV.forEach(function(t,i){ lines.push('Plantilla de venta ['+(i+1)+'] '+(t.titulo||'')+': '+(t.texto||'')); });
+    } else if (p.texto) {
+      lines.push('Plantilla de venta: '+p.texto);
+    }
+    // Precios
+    var precV = Object.values(p.precios_list||{});
+    if (precV.length) lines.push('Precios: '+precV.map(function(pr){return pr.label+' '+pr.monto+(pr.link?' ('+pr.link+')':'');}).join(' | '));
+    // Landing
+    var landV = Object.values(p.landing_links||{});
+    if (landV.length) lines.push('Landings: '+landV.map(function(l){return l.nombre+': '+l.url;}).join(' | '));
+    // Ficha técnica completa
+    if (p.ficha_tecnica && p.ficha_tecnica.trim()) {
+      lines.push('--- Ficha técnica ---');
+      lines.push(p.ficha_tecnica.trim());
+      lines.push('--- Fin ficha ---');
+    }
   });
+  lines.push('');
 
   // ── CALENDARIO ──
   lines.push('=== CALENDARIO ===');
