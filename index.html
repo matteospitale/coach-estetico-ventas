@@ -639,6 +639,51 @@ body.admin-ro .admin-edit { display:none!important; }
 .resource-name { font-size: 13px; font-weight: 600; color: var(--text); }
 .resource-link { font-size: 11px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ── DIFICULTAD SELECT ── */
+.dif-select { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:4px 12px; border-radius:20px; border:none; cursor:pointer; font-family:inherit; outline:none; }
+/* ── SLIDER DE PLANTILLAS ── */
+.slider-nav-bar { display:flex; align-items:center; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.slider-btn { width:32px; height:32px; border-radius:50%; background:var(--glass); border:1px solid var(--border); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); transition:all 0.15s; flex-shrink:0; }
+.slider-btn:hover:not(:disabled) { background:rgba(255,255,255,0.88); color:var(--text); }
+.slider-btn:disabled { opacity:0.3; cursor:default; }
+.slider-indicator { font-size:12px; color:var(--text3); min-width:55px; text-align:center; }
+/* ── PLANTILLAS DROPDOWN ── */
+.pdet-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.plantillas-menu-btn { background:var(--glass); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:16px; cursor:pointer; color:var(--text2); line-height:1; transition:all 0.15s; }
+.plantillas-menu-btn:hover { background:rgba(255,255,255,0.88); color:var(--text); }
+.plantillas-dropdown { position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1px solid var(--border); border-radius:var(--radius); box-shadow:0 8px 24px rgba(0,0,0,0.14); min-width:230px; z-index:200; overflow:hidden; }
+.plantillas-dropdown-item { padding:10px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid rgba(0,0,0,0.05); color:var(--text); transition:background 0.1s; display:flex; align-items:center; gap:8px; }
+.plantillas-dropdown-item:last-child { border-bottom:none; }
+.plantillas-dropdown-item:hover { background:rgba(0,0,0,0.04); }
+.plantillas-dropdown-item.pdd-active { font-weight:700; color:var(--accent); }
+.slide-titulo-input { width:100%; font-size:14px; font-weight:700; font-family:inherit; border:none; border-bottom:2px solid transparent; background:transparent; color:var(--text); padding:4px 0 6px; outline:none; margin-bottom:10px; box-sizing:border-box; transition:border-color 0.15s; }
+.slide-titulo-input:focus { border-bottom-color:var(--accent); }
+.slide-titulo-input::placeholder { font-weight:400; color:var(--text3); }
+/* ── VISUALES ── */
+.visual-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.05); }
+.visual-row:last-child { border-bottom:none; }
+.visual-nombre { font-size:13px; font-weight:600; color:var(--text); }
+.visual-url-txt { font-size:11px; color:var(--accent); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px; }
+/* ── LANDING LINKS ── */
+.landing-link-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.05); }
+.landing-link-row:last-child { border-bottom:none; }
+.landing-link-nombre { font-size:13px; font-weight:600; color:var(--text); }
+.landing-link-desc { font-size:11px; color:var(--text3); margin-top:1px; }
+/* ── PRECIOS LIST ── */
+.precio-item-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.05); }
+.precio-item-row:last-child { border-bottom:none; }
+.precio-item-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.04em; }
+.precio-item-monto { font-size:16px; font-weight:800; color:var(--text); letter-spacing:-0.02em; }
+.icon-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer; color:var(--text2); transition:all 0.15s; font-family:inherit; }
+.icon-btn:hover { background:rgba(0,0,0,0.06); }
+.icon-btn.danger { color:var(--danger); border-color:var(--danger); }
+.icon-btn.danger:hover { background:var(--danger-bg); }
+.section-add-btn { width:100%; margin-top:10px; padding:8px; border:1.5px dashed var(--border); background:rgba(0,0,0,0.02); border-radius:var(--radius); font-size:12px; font-weight:600; color:var(--text3); cursor:pointer; transition:all 0.15s; font-family:inherit; }
+.section-add-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(0,0,0,0.04); }
+/* ── ALUMNO IDEAL ── */
+.alumno-ideal-area { width:100%; font-size:12px; line-height:1.6; font-family:inherit; background:rgba(255,255,255,0.5); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; color:var(--text); resize:none; outline:none; min-height:56px; box-sizing:border-box; }
+.alumno-ideal-area:focus { border-color:var(--accent); }
+
 /* ── ADMIN TABLE INLINE INPUT ── */
 .admin-inline-input { padding: 3px 7px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,255,255,0.65); font-family: inherit; color: var(--text); }
 .admin-inline-input:focus { outline: none; border-color: var(--accent); }
@@ -1053,7 +1098,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.51</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.56</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1066,6 +1111,7 @@ const FB_WEB_API_KEY = 'AIzaSyBEnj64ibIYAv_8QWRoFzOwRmCJqxfqi54';
 let ventas = [], plantillas = [], pendiente = null, cierres = {};
 let inicioFiltro = null, modoEdicion = false, seleccionados = new Set();
 let catActual = 'todos', plantillasInicializadas = false;
+let plantillaDetalleKey = null, plantillaTextosArr = [], plantillaTextosIdx = 0;
 
 // ── FIREBASE ANONYMOUS AUTH ──
 var _fbToken = null, _fbRefreshToken = null, _fbTokenExpiry = 0;
@@ -2142,279 +2188,417 @@ function catCoverImgError(img, label) {
   if (fb) fb.style.display = 'flex';
 }
 
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
 function showPlantillaDetalle(key) {
   const p = plantillas.find(function(x){ return x._key===key; });
   if (!p) return;
+  plantillaDetalleKey = key;
+  const textosObj = p.textos || {};
+  plantillaTextosArr = Object.entries(textosObj).map(function(e){ return {_key:e[0], titulo:e[1].titulo||'', texto:e[1].texto||''}; });
+  if (plantillaTextosArr.length === 0) {
+    plantillaTextosArr = [{_key:'__legacy__', titulo:'Plantilla principal', texto:p.texto||''}];
+  }
+  plantillaTextosIdx = Math.min(plantillaTextosIdx, plantillaTextosArr.length - 1);
   document.getElementById('plant-grid-view').style.display = 'none';
   const dv = document.getElementById('plant-detalle-view');
   dv.style.display = 'block';
-  const adj = p.adjuntos || {};
-  const precios = p.precios || {};
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  dv.innerHTML = buildDetalleHTML(p);
+}
 
-  function precioInput(campo, label, placeholder) {
-    const val = precios[campo] || '';
-    return '<div class="plant-precio-row">' +
-      '<span class="plant-precio-label">' + label + '</span>' +
-      '<input class="plant-precio-edit" value="' + val + '" placeholder="' + placeholder + '" ' +
-        'onchange="savePlantillaField(\'' + key + '\',\'precios.' + campo + '\',this.value)" ' +
-        'onclick="event.stopPropagation()">' +
-    '</div>';
-  }
+function buildDetalleHTML(p) {
+  const key = p._key;
+  const dif = p.dificultad || '';
+  const difOpts = ['iniciante','intermedio','avanzado','profesional'];
+  const difLabels = {iniciante:'Iniciante', intermedio:'Intermedio', avanzado:'Avanzado', profesional:'Profesional'};
+  const difColors = {iniciante:'#2e7d32', intermedio:'#e65100', avanzado:'#c62828', profesional:'#4527a0'};
+  const difBgs   = {iniciante:'#e8f5e9', intermedio:'#fff3e0', avanzado:'#fce4ec', profesional:'#ede7f6'};
 
-  function resourceRow(icon, label, url, inputId, accept, tipo) {
-    return '<div class="resource-row">' +
-      '<span class="resource-icon">' + icon + '</span>' +
-      '<div class="resource-info">' +
-        '<div class="resource-name">' + label + '</div>' +
-        (url ? '<div class="resource-link">' + url.substring(0,60) + (url.length>60?'…':'') + '</div>' : '<div class="resource-link" style="color:var(--text3);font-style:italic">Sin cargar</div>') +
-      '</div>' +
-      '<div style="display:flex;gap:6px;flex-shrink:0">' +
-        (url ? '<a href="' + url + '" target="_blank" class="btn btn-ghost" style="padding:5px 12px;font-size:12px">↗ Abrir</a>' : '') +
-        '<label class="btn btn-ghost" style="padding:5px 12px;font-size:12px;cursor:pointer" for="' + inputId + '">+ Subir</label>' +
-        '<input type="file" id="' + inputId + '" accept="' + accept + '" style="display:none" data-pkey="' + key + '" data-ptype="' + tipo + '" onchange="adjuntarPlantillaArchivo(this)">' +
+  const headerHtml =
+    '<div class="plant-detail-header">' +
+      '<button class="plant-detail-back" onclick="closePlantillaDetalle()">← Volver</button>' +
+      '<div style="flex:1">' +
+        '<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<span class="plantilla-cat-badge">' + escHtml(p.categoria||'') + '</span>' +
+          '<select class="dif-select" style="background:' + (difBgs[dif]||'#f0f0f0') + ';color:' + (difColors[dif]||'#888') + '" onchange="saveDificultad(\'' + key + '\',this)">' +
+            '<option value="">Nivel...</option>' +
+            difOpts.map(function(d){ return '<option value="' + d + '"' + (dif===d?' selected':'') + '>' + difLabels[d] + '</option>'; }).join('') +
+          '</select>' +
+        '</div>' +
+        '<div class="plant-detail-title">' + escHtml(limpiarTitulo(p.titulo||'')) + '</div>' +
       '</div>' +
     '</div>';
-  }
 
-  function landingRow() {
-    const url = adj.landing || '';
-    return '<div class="resource-row">' +
-      '<span class="resource-icon">🔗</span>' +
-      '<div class="resource-info">' +
-        '<div class="resource-name">Landing page</div>' +
-        (url ? '<div class="resource-link">' + url + '</div>' : '<div class="resource-link" style="color:var(--text3);font-style:italic">Sin cargar</div>') +
-      '</div>' +
-      '<div style="display:flex;gap:6px;flex-shrink:0">' +
-        (url ? '<a href="' + url + '" target="_blank" class="btn btn-accent" style="padding:5px 12px;font-size:12px">Ir a la landing ↗</a>' : '') +
-        '<button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="promptLandingURL(\'' + key + '\')">✎ Editar URL</button>' +
-      '</div>' +
+  const alumnoIdealHtml =
+    '<div class="plant-section-card" style="margin-bottom:18px">' +
+      '<div class="plant-section-label">Alumno ideal</div>' +
+      '<textarea class="alumno-ideal-area" placeholder="Describí el perfil del alumno ideal para este curso..." ' +
+        'onchange="saveAlumnoIdeal(\'' + key + '\',this.value)">' + escHtml(p.alumno_ideal||'') + '</textarea>' +
     '</div>';
-  }
 
-  // Plantilla text section
-  const textoHtml =
+  const sliderHtml = buildSliderHTML(key);
+
+  const visualesArr = Object.entries(p.visuales||{}).map(function(e){ return Object.assign({_key:e[0]},e[1]); });
+  const visualesHtml =
     '<div class="plant-section-card">' +
-      '<div class="plant-section-label">Plantilla de venta</div>' +
-      '<div id="pdet-txt-' + key + '" style="font-size:13px;line-height:1.8;white-space:pre-wrap;background:rgba(0,0,0,0.04);border-radius:var(--radius);padding:14px;color:var(--text);margin-bottom:12px">' + (p.texto||'') + '</div>' +
-      '<textarea id="pdet-edit-' + key + '" style="display:none;width:100%;font-size:13px;line-height:1.8;font-family:inherit;background:rgba(255,255,255,0.7);border:1.5px solid var(--accent);border-radius:var(--radius);padding:14px;color:var(--text);min-height:200px;resize:vertical;outline:none;margin-bottom:12px">' + (p.texto||'') + '</textarea>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-        '<button class="p-btn p-btn-copy" id="pdet-copy-' + key + '" onclick="copiarPlantilla(\'' + key + '\')">Copiar texto</button>' +
-        '<button class="p-btn p-btn-edit" id="pdet-edit-btn-' + key + '" onclick="editarPlantillaDetalle(\'' + key + '\')">✎ Editar</button>' +
-        '<button class="p-btn p-btn-save" id="pdet-save-' + key + '" style="display:none" onclick="guardarPlantillaDetalle(\'' + key + '\')">✓ Guardar</button>' +
-        '<button class="p-btn p-btn-cancel" id="pdet-cancel-' + key + '" style="display:none" onclick="cancelarEdicionDetalle(\'' + key + '\')">Cancelar</button>' +
-        '<button class="p-btn p-btn-delete" onclick="eliminarPlantillaDetalle(\'' + key + '\')">✕ Eliminar</button>' +
-      '</div>' +
+      '<div class="plant-section-label">Visuales</div>' +
+      (visualesArr.length ? visualesArr.map(function(v){
+        return '<div class="visual-row">' +
+          '<span style="font-size:18px;flex-shrink:0">📁</span>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div class="visual-nombre">' + escHtml(v.nombre||'Sin nombre') + '</div>' +
+            (v.url ? '<div class="visual-url-txt">' + escHtml(v.url) + '</div>' : '') +
+          '</div>' +
+          (v.url ? '<a href="' + escAttr(v.url) + '" target="_blank" class="btn btn-ghost" style="padding:5px 10px;font-size:12px;flex-shrink:0;text-decoration:none">↗ Abrir</a>' : '') +
+          '<button class="icon-btn" onclick="editVisual(\'' + key + '\',\'' + v._key + '\')">✎</button>' +
+          '<button class="icon-btn danger" onclick="deleteVisual(\'' + key + '\',\'' + v._key + '\')">✕</button>' +
+        '</div>';
+      }).join('') : '<div style="font-size:13px;color:var(--text3);font-style:italic;padding:4px 0">Sin carpetas cargadas</div>') +
+      '<button class="section-add-btn" onclick="addVisual(\'' + key + '\')">+ Agregar carpeta de Drive</button>' +
     '</div>';
 
-  // Resources section
-  const recursosHtml =
+  const landingArr = Object.entries(p.landing_links||{}).map(function(e){ return Object.assign({_key:e[0]},e[1]); });
+  const landingHtml =
     '<div class="plant-section-card">' +
-      '<div class="plant-section-label">Recursos del curso</div>' +
-      resourceRow('🖼', 'Portada', adj.imagen||'', 'pdet-img-' + key, 'image/*', 'imagen') +
-      resourceRow('📋', 'Temario', adj.pdf||'', 'pdet-pdf-' + key, '.pdf,image/*', 'pdf') +
-      landingRow() +
+      '<div class="plant-section-label">Landing pages</div>' +
+      (landingArr.length ? landingArr.map(function(l){
+        return '<div class="landing-link-row">' +
+          '<span style="font-size:16px;flex-shrink:0">🔗</span>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div class="landing-link-nombre">' + escHtml(l.nombre||'Sin nombre') + '</div>' +
+            (l.descripcion ? '<div class="landing-link-desc">' + escHtml(l.descripcion) + '</div>' : '') +
+            (l.url ? '<div style="font-size:11px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(l.url) + '</div>' : '') +
+          '</div>' +
+          (l.url ? '<a href="' + escAttr(l.url) + '" target="_blank" class="btn btn-accent" style="padding:5px 12px;font-size:12px;flex-shrink:0;text-decoration:none">Ir ↗</a>' : '') +
+          '<button class="icon-btn" onclick="editLandingLink(\'' + key + '\',\'' + l._key + '\')">✎</button>' +
+          '<button class="icon-btn danger" onclick="deleteLandingLink(\'' + key + '\',\'' + l._key + '\')">✕</button>' +
+        '</div>';
+      }).join('') : '<div style="font-size:13px;color:var(--text3);font-style:italic;padding:4px 0">Sin landing pages cargadas</div>') +
+      '<button class="section-add-btn" onclick="addLandingLink(\'' + key + '\')">+ Agregar link</button>' +
     '</div>';
 
-  // Precios section
+  const preciosArr = Object.entries(p.precios_list||{}).map(function(e){ return Object.assign({_key:e[0]},e[1]); });
   const preciosHtml =
     '<div class="plant-section-card">' +
       '<div class="plant-section-label">Precios</div>' +
-      precioInput('lista', 'Precio de lista', 'Ej: $199') +
-      precioInput('nuevo', 'Alumno nuevo', 'Ej: $149') +
-      precioInput('existente', 'Alumno existente', 'Ej: $99') +
+      (preciosArr.length ? preciosArr.map(function(pr){
+        return '<div class="precio-item-row">' +
+          '<div style="flex:1;min-width:0">' +
+            '<div class="precio-item-label">' + escHtml(pr.label||'Precio') + '</div>' +
+            '<div class="precio-item-monto">' + escHtml(pr.monto||'—') + '</div>' +
+          '</div>' +
+          (pr.link ? '<a href="' + escAttr(pr.link) + '" target="_blank" style="font-size:12px;color:var(--accent);text-decoration:none;flex-shrink:0">💳 Pagar</a>' : '') +
+          '<div style="display:flex;gap:4px;flex-shrink:0">' +
+            '<button class="icon-btn" onclick="editPrecioItem(\'' + key + '\',\'' + pr._key + '\')">✎</button>' +
+            '<button class="icon-btn danger" onclick="deletePrecioItem(\'' + key + '\',\'' + pr._key + '\')">✕</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') : '<div style="font-size:13px;color:var(--text3);font-style:italic;padding:4px 0">Sin precios cargados</div>') +
+      '<button class="section-add-btn" onclick="addPrecioItem(\'' + key + '\')">+ Agregar precio</button>' +
     '</div>';
 
-  // Bonos section
-  const bonosHtml =
-    '<div class="plant-section-card">' +
-      '<div class="plant-section-label">Bonos incluidos</div>' +
-      '<textarea style="width:100%;font-size:13px;line-height:1.7;font-family:inherit;background:rgba(255,255,255,0.6);border:1px solid var(--border);border-radius:var(--radius);padding:12px;color:var(--text);min-height:100px;resize:vertical;outline:none" ' +
-        'placeholder="Ej: Acceso al grupo privado, PDF descargable..." ' +
-        'onchange="savePlantillaField(\'' + key + '\',\'bonos\',this.value)">' + (p.bonos||'') + '</textarea>' +
-    '</div>';
-
-  // Portada preview
-  const portadaHtml = adj.imagen ?
-    '<div class="plant-section-card" style="padding:0;overflow:hidden">' +
-      '<img src="' + adj.imagen + '" style="width:100%;height:200px;object-fit:cover;display:block">' +
-    '</div>' : '';
-
-  dv.innerHTML =
-    '<div class="plant-detail-header">' +
-      '<button class="plant-detail-back" onclick="closePlantillaDetalle()">← Volver</button>' +
-      '<div>' +
-        '<div style="margin-bottom:4px"><span class="plantilla-cat-badge">' + (p.categoria||'') + '</span></div>' +
-        '<div class="plant-detail-title">' + (p.titulo||'') + '</div>' +
-      '</div>' +
-    '</div>' +
+  return headerHtml +
+    alumnoIdealHtml +
     '<div class="plant-detail-grid">' +
-      '<div>' + textoHtml + '</div>' +
-      '<div>' + portadaHtml + recursosHtml + preciosHtml + bonosHtml + '</div>' +
+      '<div>' + sliderHtml + '</div>' +
+      '<div>' + visualesHtml + landingHtml + preciosHtml + '</div>' +
     '</div>';
 }
 
+function buildSliderHTML(key) {
+  const total = plantillaTextosArr.length;
+  const idx   = plantillaTextosIdx;
+  const cur   = plantillaTextosArr[idx] || {_key:'__legacy__', titulo:'', texto:''};
+  const tk    = cur._key;
+  const dropdownItems = plantillaTextosArr.map(function(t, i){
+    return '<div class="plantillas-dropdown-item' + (i===idx?' pdd-active':'') + '" onclick="goToTextoSlide(\'' + key + '\',' + i + ')">' +
+      '<span style="font-size:10px;color:var(--text3);width:18px;flex-shrink:0">' + (i+1) + '</span>' +
+      '<span>' + escHtml(t.titulo || ('Plantilla ' + (i+1))) + '</span>' +
+    '</div>';
+  }).join('');
+  return '<div class="plant-section-card">' +
+    '<div class="pdet-header-row">' +
+      '<div class="plant-section-label" style="margin-bottom:0">Plantilla de venta</div>' +
+      '<div style="position:relative">' +
+        '<button class="plantillas-menu-btn" onclick="togglePlantillasMenu(\'' + key + '\')">☰</button>' +
+        '<div class="plantillas-dropdown" id="pmenu-' + key + '" style="display:none">' + dropdownItems + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<input class="slide-titulo-input" type="text" value="' + escAttr(cur.titulo) + '" placeholder="Nombre de esta plantilla..." ' +
+      'onchange="saveTituloTexto(\'' + key + '\',\'' + tk + '\',this.value)">' +
+    '<div id="pdet-txt-' + tk + '" style="font-size:13px;line-height:1.8;white-space:pre-wrap;background:rgba(0,0,0,0.04);border-radius:var(--radius);padding:14px;color:var(--text);margin-bottom:12px;min-height:80px">' + escHtml(cur.texto) + '</div>' +
+    '<textarea id="pdet-edit-' + tk + '" style="display:none;width:100%;font-size:13px;line-height:1.8;font-family:inherit;background:rgba(255,255,255,0.7);border:1.5px solid var(--accent);border-radius:var(--radius);padding:14px;color:var(--text);min-height:200px;resize:vertical;outline:none;margin-bottom:12px;box-sizing:border-box">' + escHtml(cur.texto) + '</textarea>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">' +
+      '<button class="p-btn p-btn-copy" onclick="copiarTextoActual(\'' + key + '\')">Copiar texto</button>' +
+      '<button class="p-btn p-btn-edit" id="pdet-edit-btn-' + tk + '" onclick="editarTexto(\'' + key + '\',\'' + tk + '\')">✎ Editar</button>' +
+      '<button class="p-btn p-btn-save" id="pdet-save-' + tk + '" style="display:none" onclick="guardarTexto(\'' + key + '\',\'' + tk + '\')">✓ Guardar</button>' +
+      '<button class="p-btn p-btn-cancel" id="pdet-cancel-' + tk + '" style="display:none" onclick="cancelarTexto(\'' + tk + '\')">Cancelar</button>' +
+    '</div>' +
+    '<div class="slider-nav-bar">' +
+      '<button class="slider-btn" onclick="prevTextoSlide(\'' + key + '\')"' + (idx===0?' disabled':'') + '>‹</button>' +
+      '<div class="slider-indicator">' + (idx+1) + ' de ' + total + '</div>' +
+      '<button class="slider-btn" onclick="nextTextoSlide(\'' + key + '\')"' + (idx===total-1?' disabled':'') + '>›</button>' +
+      '<button class="p-btn p-btn-edit" style="margin-left:auto" onclick="addTextoPlantilla(\'' + key + '\')">+ Agregar</button>' +
+      '<button class="p-btn p-btn-delete" onclick="deleteTextoPlantilla(\'' + key + '\',\'' + tk + '\')">✕ Eliminar</button>' +
+    '</div>' +
+  '</div>';
+}
+
+
 function closePlantillaDetalle() {
+  plantillaTextosIdx = 0;
+  plantillaDetalleKey = null;
   document.getElementById('plant-grid-view').style.display = '';
   document.getElementById('plant-detalle-view').style.display = 'none';
 }
 
-function editarPlantillaDetalle(key) {
-  const p = plantillas.find(function(x){ return x._key===key; });
-  if (!p) return;
-  document.getElementById('pdet-txt-'+key).style.display = 'none';
-  const ea = document.getElementById('pdet-edit-'+key);
-  ea.value = p.texto||'';
-  ea.style.display = 'block';
-  document.getElementById('pdet-edit-btn-'+key).style.display = 'none';
-  document.getElementById('pdet-save-'+key).style.display = 'inline-flex';
-  document.getElementById('pdet-cancel-'+key).style.display = 'inline-flex';
+// ── DIFICULTAD / ALUMNO IDEAL ──
+async function saveDificultad(key, sel) {
+  var val = sel.value;
+  var difColors = {iniciante:'#2e7d32',intermedio:'#e65100',avanzado:'#c62828',profesional:'#4527a0'};
+  var difBgs = {iniciante:'#e8f5e9',intermedio:'#fff3e0',avanzado:'#fce4ec',profesional:'#ede7f6'};
+  sel.style.color = difColors[val]||'#888';
+  sel.style.background = difBgs[val]||'#f0f0f0';
+  await dbSet('/plantillas/'+key+'/dificultad', val);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) p.dificultad = val;
 }
-function cancelarEdicionDetalle(key) {
-  document.getElementById('pdet-txt-'+key).style.display = 'block';
-  document.getElementById('pdet-edit-'+key).style.display = 'none';
-  document.getElementById('pdet-edit-btn-'+key).style.display = 'inline-flex';
-  document.getElementById('pdet-save-'+key).style.display = 'none';
-  document.getElementById('pdet-cancel-'+key).style.display = 'none';
+async function saveAlumnoIdeal(key, value) {
+  await dbSet('/plantillas/'+key+'/alumno_ideal', value);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) p.alumno_ideal = value;
 }
-async function guardarPlantillaDetalle(key) {
-  const nuevoTexto = document.getElementById('pdet-edit-'+key).value;
-  await dbSet('/plantillas/' + key + '/texto', nuevoTexto);
-  const p = plantillas.find(function(x){ return x._key===key; });
-  if (p) p.texto = nuevoTexto;
-  showToast('Plantilla guardada');
-  cancelarEdicionDetalle(key);
-  document.getElementById('pdet-txt-'+key).textContent = nuevoTexto;
+
+// ── SLIDER ──
+function goToTextoSlide(key, idx) {
+  var menu = document.getElementById('pmenu-'+key);
+  if (menu) menu.style.display = 'none';
+  plantillaTextosIdx = idx;
+  showPlantillaDetalle(key);
 }
-async function eliminarPlantillaDetalle(key) {
-  if (!confirm('¿Eliminar esta plantilla?')) return;
-  await dbDelete('/plantillas/' + key);
-  await loadPlantillas();
-  closePlantillaDetalle();
-  renderPlantillas();
-  showToast('Plantilla eliminada');
+function prevTextoSlide(key) {
+  if (plantillaTextosIdx > 0) { plantillaTextosIdx--; showPlantillaDetalle(key); }
 }
-async function savePlantillaField(key, field, value) {
-  const parts = field.split('.');
-  let path = '/plantillas/' + key;
-  parts.forEach(function(p){ path += '/' + p; });
-  await dbSet(path, value);
-  const p = plantillas.find(function(x){ return x._key===key; });
-  if (p) {
-    if (parts.length === 1) { p[parts[0]] = value; }
-    else if (parts.length === 2) { if (!p[parts[0]]) p[parts[0]]= {}; p[parts[0]][parts[1]] = value; }
-  }
+function nextTextoSlide(key) {
+  if (plantillaTextosIdx < plantillaTextosArr.length-1) { plantillaTextosIdx++; showPlantillaDetalle(key); }
 }
-async function promptLandingURL(key) {
-  const url = prompt('URL de la landing page:');
-  if (url && url.trim()) {
-    await adjuntarPlantillaURL(key, url.trim());
-    showPlantillaDetalle(key);
+function togglePlantillasMenu(key) {
+  var menu = document.getElementById('pmenu-'+key);
+  if (!menu) return;
+  var open = menu.style.display === 'none' || menu.style.display === '';
+  menu.style.display = open ? 'block' : 'none';
+  if (open) {
+    setTimeout(function() {
+      document.addEventListener('click', function handler(e) {
+        if (!menu.contains(e.target)) { menu.style.display='none'; document.removeEventListener('click',handler); }
+      });
+    }, 0);
   }
 }
 
-function togglePlantilla(key) {
-  const body = document.getElementById('pbody-'+key);
-  const arr = document.getElementById('parr-'+key);
-  if (!body) return;
-  const open = body.classList.toggle('open');
-  if (arr) arr.classList.toggle('open', open);
+// ── TEXTO CRUD ──
+async function addTextoPlantilla(key) {
+  var titulo = prompt('Nombre de la nueva plantilla:');
+  if (titulo === null) return;
+  var result = await dbPush('/plantillas/'+key+'/textos', {titulo:titulo.trim(), texto:''});
+  if (!result) { showToast('Error al crear plantilla'); return; }
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) { if (!p.textos) p.textos={}; p.textos[result.name]={titulo:titulo.trim(),texto:''}; }
+  var obj = p ? p.textos : {};
+  plantillaTextosArr = Object.entries(obj).map(function(e){return {_key:e[0],titulo:e[1].titulo||'',texto:e[1].texto||''};});
+  plantillaTextosIdx = plantillaTextosArr.length-1;
+  showPlantillaDetalle(key);
+  showToast('Plantilla agregada');
 }
-
-function copiarPlantilla(key) {
-  const p = plantillas.find(function(x){return x._key===key;});
-  if (!p) return;
-  const btn = document.querySelector('#pw-' + key + ' .p-btn-copy');
-  const texto = p.texto || '';
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(texto).then(function(){ flashCopy(btn); });
+async function deleteTextoPlantilla(key, textoKey) {
+  if (plantillaTextosArr.length <= 1) { showToast('Debe haber al menos una plantilla'); return; }
+  if (!confirm('¿Eliminar esta plantilla de venta?')) return;
+  if (textoKey === '__legacy__') {
+    await dbSet('/plantillas/'+key+'/texto', '');
+    var p0 = plantillas.find(function(x){return x._key===key;});
+    if (p0) p0.texto = '';
   } else {
-    const ta = document.createElement('textarea');
-    ta.value = texto; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    await dbDelete('/plantillas/'+key+'/textos/'+textoKey);
+    var p0 = plantillas.find(function(x){return x._key===key;});
+    if (p0 && p0.textos) delete p0.textos[textoKey];
+  }
+  plantillaTextosIdx = Math.max(0, plantillaTextosIdx-1);
+  showPlantillaDetalle(key);
+  showToast('Eliminada');
+}
+async function saveTituloTexto(key, textoKey, valor) {
+  if (textoKey === '__legacy__' || textoKey === '__new__') return;
+  await dbSet('/plantillas/'+key+'/textos/'+textoKey+'/titulo', valor);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p && p.textos && p.textos[textoKey]) p.textos[textoKey].titulo = valor;
+  if (plantillaTextosArr[plantillaTextosIdx]) plantillaTextosArr[plantillaTextosIdx].titulo = valor;
+}
+function copiarTextoActual(key) {
+  var cur = plantillaTextosArr[plantillaTextosIdx];
+  if (!cur) return;
+  var texto = cur.texto || '';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function(){showToast('Copiado ✓');});
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = texto; ta.style.position='fixed'; ta.style.left='-9999px';
     document.body.appendChild(ta); ta.focus(); ta.select();
-    try { document.execCommand('copy'); flashCopy(btn); } catch(e){}
+    try { document.execCommand('copy'); showToast('Copiado ✓'); } catch(e){}
     document.body.removeChild(ta);
   }
 }
-function flashCopy(btn) {
-  if (!btn) return;
-  btn.textContent = 'Copiado ✓'; btn.style.background = 'var(--accent-dark)';
-  setTimeout(function(){ btn.textContent = 'Copiar'; btn.style.background = ''; }, 2000);
-}
-
-function editarPlantilla(key) {
-  const p = plantillas.find(function(x){return x._key===key;});
-  if (!p) return;
-  document.getElementById('ptxt-'+key).style.display = 'none';
-  const ea = document.getElementById('pedit-'+key);
-  ea.value = p.texto||'';
+function editarTexto(key, textoKey) {
+  document.getElementById('pdet-txt-'+textoKey).style.display = 'none';
+  var ea = document.getElementById('pdet-edit-'+textoKey);
+  ea.value = (plantillaTextosArr[plantillaTextosIdx]||{}).texto || '';
   ea.style.display = 'block';
-  document.getElementById('pbtn-edit-'+key).style.display = 'none';
-  document.getElementById('pbtn-save-'+key).style.display = 'inline-flex';
-  document.getElementById('pbtn-cancel-'+key).style.display = 'inline-flex';
+  document.getElementById('pdet-edit-btn-'+textoKey).style.display = 'none';
+  document.getElementById('pdet-save-'+textoKey).style.display = 'inline-flex';
+  document.getElementById('pdet-cancel-'+textoKey).style.display = 'inline-flex';
+  ea.focus();
 }
-function cancelarEdicion(key) {
-  document.getElementById('ptxt-'+key).style.display = 'block';
-  document.getElementById('pedit-'+key).style.display = 'none';
-  document.getElementById('pbtn-edit-'+key).style.display = 'inline-flex';
-  document.getElementById('pbtn-save-'+key).style.display = 'none';
-  document.getElementById('pbtn-cancel-'+key).style.display = 'none';
+function cancelarTexto(textoKey) {
+  document.getElementById('pdet-txt-'+textoKey).style.display = 'block';
+  document.getElementById('pdet-edit-'+textoKey).style.display = 'none';
+  document.getElementById('pdet-edit-btn-'+textoKey).style.display = 'inline-flex';
+  document.getElementById('pdet-save-'+textoKey).style.display = 'none';
+  document.getElementById('pdet-cancel-'+textoKey).style.display = 'none';
 }
-async function guardarPlantilla(key) {
-  const nuevoTexto = document.getElementById('pedit-'+key).value;
-  await dbSet('/plantillas/' + key + '/texto', nuevoTexto);
-  const p = plantillas.find(x=>x._key===key);
-  if (p) p.texto = nuevoTexto;
-  showToast('Plantilla guardada');
-  cancelarEdicion(key);
-  // refresh display
-  document.getElementById('ptxt-'+key).textContent = nuevoTexto;
+async function guardarTexto(key, textoKey) {
+  var nuevoTexto = document.getElementById('pdet-edit-'+textoKey).value;
+  if (textoKey === '__legacy__') {
+    var res = await dbPush('/plantillas/'+key+'/textos', {titulo:(plantillaTextosArr[0]||{}).titulo||'Plantilla principal', texto:nuevoTexto});
+    if (res) {
+      var p = plantillas.find(function(x){return x._key===key;});
+      if (!p.textos) p.textos={};
+      p.textos[res.name]={titulo:(plantillaTextosArr[0]||{}).titulo||'Plantilla principal',texto:nuevoTexto};
+      plantillaTextosArr=[{_key:res.name,titulo:p.textos[res.name].titulo,texto:nuevoTexto}];
+      plantillaTextosIdx=0;
+    }
+    showToast('Plantilla guardada');
+    showPlantillaDetalle(key);
+    return;
+  }
+  await dbSet('/plantillas/'+key+'/textos/'+textoKey+'/texto', nuevoTexto);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p && p.textos && p.textos[textoKey]) p.textos[textoKey].texto = nuevoTexto;
+  if (plantillaTextosArr[plantillaTextosIdx]) plantillaTextosArr[plantillaTextosIdx].texto = nuevoTexto;
+  showToast('Guardada');
+  cancelarTexto(textoKey);
+  var el = document.getElementById('pdet-txt-'+textoKey);
+  if (el) el.textContent = nuevoTexto;
 }
-async function eliminarPlantilla(key) {
-  if (!confirm('¿Eliminar esta plantilla?')) return;
-  await dbDelete('/plantillas/' + key);
-  await loadPlantillas();
-  renderPlantillas();
-  showToast('Plantilla eliminada');
+
+// ── VISUALES ──
+async function addVisual(key) {
+  var nombre = prompt('Nombre de la carpeta (ej: Logos, Portadas...):');
+  if (!nombre || !nombre.trim()) return;
+  var url = prompt('Link de Google Drive:') || '';
+  var result = await dbPush('/plantillas/'+key+'/visuales', {nombre:nombre.trim(),url:url.trim()});
+  if (!result) { showToast('Error'); return; }
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) { if (!p.visuales) p.visuales={}; p.visuales[result.name]={nombre:nombre.trim(),url:url.trim()}; }
+  showPlantillaDetalle(key); showToast('Carpeta agregada');
 }
+async function editVisual(key, vKey) {
+  var p = plantillas.find(function(x){return x._key===key;});
+  var v = p && p.visuales && p.visuales[vKey];
+  if (!v) return;
+  var nombre = prompt('Nombre de la carpeta:', v.nombre||'');
+  if (nombre === null) return;
+  var url = prompt('Link de Drive:', v.url||'');
+  if (url === null) return;
+  await dbSet('/plantillas/'+key+'/visuales/'+vKey, {nombre:nombre.trim(),url:url.trim()});
+  if (p && p.visuales) p.visuales[vKey]={nombre:nombre.trim(),url:url.trim()};
+  showPlantillaDetalle(key); showToast('Actualizada');
+}
+async function deleteVisual(key, vKey) {
+  if (!confirm('¿Eliminar esta carpeta?')) return;
+  await dbDelete('/plantillas/'+key+'/visuales/'+vKey);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p && p.visuales) delete p.visuales[vKey];
+  showPlantillaDetalle(key); showToast('Eliminada');
+}
+
+// ── LANDING LINKS ──
+async function addLandingLink(key) {
+  var nombre = prompt('Nombre del link (ej: Landing principal):');
+  if (!nombre || !nombre.trim()) return;
+  var url = prompt('URL:') || '';
+  var descripcion = prompt('Descripción breve (opcional):') || '';
+  var result = await dbPush('/plantillas/'+key+'/landing_links', {nombre:nombre.trim(),url:url.trim(),descripcion:descripcion.trim()});
+  if (!result) { showToast('Error'); return; }
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) { if (!p.landing_links) p.landing_links={}; p.landing_links[result.name]={nombre:nombre.trim(),url:url.trim(),descripcion:descripcion.trim()}; }
+  showPlantillaDetalle(key); showToast('Link agregado');
+}
+async function editLandingLink(key, lKey) {
+  var p = plantillas.find(function(x){return x._key===key;});
+  var l = p && p.landing_links && p.landing_links[lKey];
+  if (!l) return;
+  var nombre = prompt('Nombre:', l.nombre||'');
+  if (nombre === null) return;
+  var url = prompt('URL:', l.url||'');
+  if (url === null) return;
+  var descripcion = prompt('Descripción:', l.descripcion||'');
+  if (descripcion === null) return;
+  await dbSet('/plantillas/'+key+'/landing_links/'+lKey, {nombre:nombre.trim(),url:url.trim(),descripcion:descripcion.trim()});
+  if (p && p.landing_links) p.landing_links[lKey]={nombre:nombre.trim(),url:url.trim(),descripcion:descripcion.trim()};
+  showPlantillaDetalle(key); showToast('Actualizado');
+}
+async function deleteLandingLink(key, lKey) {
+  if (!confirm('¿Eliminar este link?')) return;
+  await dbDelete('/plantillas/'+key+'/landing_links/'+lKey);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p && p.landing_links) delete p.landing_links[lKey];
+  showPlantillaDetalle(key); showToast('Eliminado');
+}
+
+// ── PRECIOS LIST ──
+async function addPrecioItem(key) {
+  var label = prompt('Clasificación (ej: Alumno nuevo, Precio lista...):');
+  if (!label || !label.trim()) return;
+  var monto = prompt('Monto (ej: $199):') || '';
+  var link = prompt('Link de pago (opcional):') || '';
+  var result = await dbPush('/plantillas/'+key+'/precios_list', {label:label.trim(),monto:monto.trim(),link:link.trim()});
+  if (!result) { showToast('Error'); return; }
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p) { if (!p.precios_list) p.precios_list={}; p.precios_list[result.name]={label:label.trim(),monto:monto.trim(),link:link.trim()}; }
+  showPlantillaDetalle(key); showToast('Precio agregado');
+}
+async function editPrecioItem(key, pKey) {
+  var p = plantillas.find(function(x){return x._key===key;});
+  var pr = p && p.precios_list && p.precios_list[pKey];
+  if (!pr) return;
+  var label = prompt('Clasificación:', pr.label||'');
+  if (label === null) return;
+  var monto = prompt('Monto:', pr.monto||'');
+  if (monto === null) return;
+  var link = prompt('Link de pago:', pr.link||'');
+  if (link === null) return;
+  await dbSet('/plantillas/'+key+'/precios_list/'+pKey, {label:label.trim(),monto:monto.trim(),link:link.trim()});
+  if (p && p.precios_list) p.precios_list[pKey]={label:label.trim(),monto:monto.trim(),link:link.trim()};
+  showPlantillaDetalle(key); showToast('Actualizado');
+}
+async function deletePrecioItem(key, pKey) {
+  if (!confirm('¿Eliminar este precio?')) return;
+  await dbDelete('/plantillas/'+key+'/precios_list/'+pKey);
+  var p = plantillas.find(function(x){return x._key===key;});
+  if (p && p.precios_list) delete p.precios_list[pKey];
+  showPlantillaDetalle(key); showToast('Eliminado');
+}
+
 async function abrirNuevaPlantilla() {
-  const titulo = prompt('Título de la plantilla:');
+  var titulo = prompt('Título del curso:');
   if (!titulo || !titulo.trim()) return;
-  const cats = ['diplomado','premium','esencial','masterclass','express'];
-  const catStr = prompt('Categoría: ' + cats.join(', '));
-  const categoria = cats.indexOf((catStr||'').toLowerCase()) >= 0 ? catStr.toLowerCase() : 'esencial';
-  const texto = prompt('Texto de la plantilla:');
-  if (!texto || !texto.trim()) return;
-  await dbPush('/plantillas', { titulo: titulo.trim(), categoria: categoria, texto: texto.trim() });
+  var cats = ['diplomado','premium','esencial','masterclass','express'];
+  var catStr = prompt('Categoría: '+cats.join(', '));
+  var categoria = cats.indexOf((catStr||'').toLowerCase()) >= 0 ? catStr.toLowerCase() : 'esencial';
+  await dbPush('/plantillas', {titulo:titulo.trim(), categoria:categoria});
   await loadPlantillas();
   renderPlantillas();
-  showToast('Plantilla creada');
-}
-
-// ── VENTAS FORM ──
-// ── PLANTILLA ATTACHMENTS ──
-async function adjuntarPlantillaArchivo(input) {
-  const key = input.dataset.pkey;
-  const tipo = input.dataset.ptype;
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    await dbSet('/plantillas/' + key + '/adjuntos/' + tipo, e.target.result);
-    const p = plantillas.find(x=>x._key===key);
-    if (p) { if (!p.adjuntos) p.adjuntos={}; p.adjuntos[tipo] = e.target.result; }
-    showToast('Archivo adjuntado correctamente');
-    renderPlantillas();
-  };
-  reader.readAsDataURL(file);
-}
-
-async function adjuntarPlantillaURL(key, url) {
-  await dbSet('/plantillas/' + key + '/adjuntos/landing', url);
-  const p = plantillas.find(x=>x._key===key);
-  if (p) { if (!p.adjuntos) p.adjuntos={}; p.adjuntos.landing = url; }
-  showToast('Landing guardada');
-  renderPlantillas();
+  showToast('Curso creado');
 }
 
 // ── VENTAS FORM ──
