@@ -332,6 +332,9 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 .stat-bar-row:hover { background: rgba(0,0,0,0.04); }
 .stat-bar-row.stat-active { background: var(--accent-light); }
 
+/* ── STATS DRILL ── */
+#stats-drill { background: var(--glass); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin: 20px 0 8px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+
 /* ── INICIO DRILL ── */
 .inicio-drill { display: none; margin-bottom: 20px; }
 .drill-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
@@ -1179,7 +1182,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.75</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.76</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1627,9 +1630,13 @@ function filterDrill(asesor) {
   }
 }
 function clearDrill() {
+  var asesor = inicioFiltro;
   inicioFiltro = null;
   document.getElementById('inicio-drill').style.display = 'none';
   document.querySelectorAll('.metric-card').forEach(c=>c.classList.remove('selected'));
+  var filAsesor = document.getElementById('fil-asesor');
+  if (filAsesor) filAsesor.value = (asesor && asesor !== 'all') ? asesor : 'all';
+  switchTab('ventas');
 }
 
 function renderResumen() {
@@ -3018,6 +3025,15 @@ async function saveTituloTexto(key, textoKey, valor) {
   var p = plantillas.find(function(x){return x._key===key;});
   if (p && p.textos && p.textos[textoKey]) p.textos[textoKey].titulo = valor;
   if (plantillaTextosArr[plantillaTextosIdx]) plantillaTextosArr[plantillaTextosIdx].titulo = valor;
+  var menu = document.getElementById('pmenu-' + key);
+  if (menu) {
+    menu.innerHTML = plantillaTextosArr.map(function(t, i) {
+      return '<div class="plantillas-dropdown-item' + (i===plantillaTextosIdx?' pdd-active':'') + '" onclick="goToTextoSlide(\'' + key + '\',' + i + ')">' +
+        '<span style="font-size:10px;color:var(--text3);width:18px;flex-shrink:0">' + (i+1) + '</span>' +
+        '<span>' + escHtml(t.titulo || ('Plantilla ' + (i+1))) + '</span>' +
+      '</div>';
+    }).join('');
+  }
 }
 function copiarTextoActual(key) {
   var cur = plantillaTextosArr[plantillaTextosIdx];
