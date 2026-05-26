@@ -65,10 +65,12 @@ body {
 .topnav-logo-text { font-size: 15px; font-weight: 700; color: #3a1a12; letter-spacing: -0.01em; line-height: 1; }
 .topnav-pills { display: flex; align-items: center; gap: 2px; position: absolute; left: 50%; transform: translateX(-50%); }
 .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
-.nav-dropdown-menu { display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--card); border-radius: var(--radius); box-shadow: 0 6px 28px rgba(0,0,0,0.18); min-width: 156px; z-index: 1000; padding: 4px; border: 1px solid var(--border); }
-.nav-dropdown:hover .nav-dropdown-menu { display: block; }
-.nav-dropdown-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 9px 14px; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; border-radius: calc(var(--radius) - 2px); white-space: nowrap; transition: background 0.15s; }
-.nav-dropdown-menu button:hover { background: var(--hover); color: var(--accent); }
+.nav-dropdown-menu { opacity:0; pointer-events:none; position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-4px); background: rgba(253,248,245,0.97); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 0 0 1px rgba(182,31,58,0.15); min-width: 152px; z-index: 1000; padding: 5px; overflow: hidden; transition: opacity 0.18s, transform 0.18s; }
+.nav-dropdown-menu.nd-open { opacity:1; pointer-events:auto; transform: translateX(-50%) translateY(0); }
+.nav-dropdown-menu button { display: block; width: 100%; text-align: center; background: none; border: none; padding: 9px 16px; font-size: 13px; font-weight: 500; font-family: inherit; color: rgba(50,18,12,0.65); cursor: pointer; border-radius: 10px; white-space: nowrap; transition: all 0.15s; letter-spacing: -0.01em; }
+.nav-dropdown-menu button:hover { background: rgba(182,31,58,0.08); color: var(--accent); }
+.btn-config { width:34px; height:34px; border-radius:50%; border:1.5px solid rgba(182,31,58,0.25); background:transparent; color:var(--text2); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.25s; padding:0; }
+.btn-config:hover { background:rgba(182,31,58,0.08); border-color:var(--accent); color:var(--accent); transform:rotate(45deg); }
 .pill {
   padding: 7px 15px; border-radius: 999px; border: none;
   font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
@@ -754,6 +756,7 @@ body.admin-ro .admin-edit { display:none!important; }
     </select>
     <button class="btn-logout" id="btn-logout" onclick="logout()" style="display:none">Salir</button>
     <button class="btn-nueva-venta" id="btn-nueva-venta-nav" onclick="switchTab('cargar')" style="display:none">+ Nueva venta</button>
+    <button class="btn-config" id="btn-config" onclick="switchTab('usuarios')" style="display:none" title="Configuración">⚙</button>
     <button class="mob-hamburger" id="mob-hamburger" onclick="toggleMobDrawer()" aria-label="Menu"><span></span><span></span><span></span></button>
   </div>
 </nav>
@@ -1039,10 +1042,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
     <!-- USUARIOS -->
     <section class="section" id="sec-usuarios">
-      <div class="section-header">
-        <div class="section-title">Configuración</div>
-        <button class="btn btn-ghost" onclick="migrarDatosFormaciones()" title="Asigna dificultad y alumno ideal a todos los cursos según la ficha técnica">⚙ Migrar datos de formaciones</button>
-      </div>
+      <div class="section-header"><div class="section-title">Configuración</div></div>
       <div id="usuarios-content" style="padding:4px"></div>
     </section>
 
@@ -1152,7 +1152,7 @@ body.admin-ro .admin-edit { display:none!important; }
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.68</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.72</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1247,6 +1247,9 @@ async function loadPlantillas() {
     plantillasInicializadas = true;
     await initPlantillas();
     await loadPlantillas();
+  } else {
+    // Auto-fill missing dificultad/alumno_ideal silently in background
+    setTimeout(silentMigrateFormaciones, 800);
   }
 }
 
@@ -1286,6 +1289,7 @@ async function init() {
     await Promise.all([loadVentas(), loadCierres(), loadCalendarioConfig()]);
     document.getElementById('loading-state').style.display = 'none';
     renderAll();
+    initNavDropdown();
     await Promise.all([loadPlantillas(), loadPostVentaData(), loadNotificaciones(), loadGeminiKey()]);
     // Don't re-apply permisos here — would redirect user away from current tab
     setInterval(refreshData, 15000);
@@ -1462,6 +1466,18 @@ function toggleMobDrawer() {
 }
 function closeMobDrawer() {
   document.getElementById('mob-drawer').classList.remove('open');
+}
+function initNavDropdown() {
+  var wrapper = document.querySelector('.nav-dropdown');
+  if (!wrapper) return;
+  var menu = wrapper.querySelector('.nav-dropdown-menu');
+  var timer;
+  function openMenu() { clearTimeout(timer); menu.classList.add('nd-open'); }
+  function closeMenu() { timer = setTimeout(function(){ menu.classList.remove('nd-open'); }, 200); }
+  wrapper.addEventListener('mouseenter', openMenu);
+  wrapper.addEventListener('mouseleave', closeMenu);
+  menu.addEventListener('mouseenter', openMenu);
+  menu.addEventListener('mouseleave', closeMenu);
 }
 
 // ── INICIO DASHBOARD ──
@@ -2502,6 +2518,73 @@ async function fichaBorrar(key) {
 }
 
 // ── MIGRACIÓN DATOS FORMACIONES ──
+function _normCurso(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/̀-ͯ/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+}
+var _MAPA_FORMACIONES = {
+  'diplomado peeling':{d:'profesional',a:'Cosmiatras, dermatocosmiatras, esteticistas y médicos estéticos con experiencia que deseen ampliar sus competencias clínicas avanzadas en peelings y regeneración cutánea.'},
+  'diplomado microneedling':{d:'profesional',a:'Cosmetólogas, cosmiatras y esteticistas con experiencia que deseen dominar el microneedling con criterio técnico avanzado, anatomía y protocolos clínicos de alto impacto.'},
+  'cosmiatria profesional':{d:'iniciante',a:'Iniciantes que desean formarse como cosmiatras profesionales. También para cosmetólogos que quieren dominar técnicas estéticas seguras con criterio profesional e internacional.'},
+  'formacion peeling quimico':{d:'intermedio',a:'Profesionales que buscan dominar peelings químicos de manera segura. También para iniciantes que desean construir una base sólida en peeling como técnica diferenciadora.'},
+  'microneedling pro':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el microneedling con criterio técnico. Ideal para quienes ya aplican Dermapen y desean perfeccionar su práctica.'},
+  'hifu':{d:'avanzado',a:'Profesionales de la estética avanzada, cosmetólogas, cosmiatras y técnicos en aparatología que deseen dominar el HIFU facial y corporal con criterio clínico y resultados sostenibles.'},
+  'diagnostico estetico facial':{d:'avanzado',a:'Cosmetólogas, cosmiatras y esteticistas que desean dominar el diagnóstico facial profesional, la lectura clínica de la piel y el uso correcto de instrumentos diagnósticos.'},
+  'cosmetologia':{d:'iniciante',a:'Personas que desean iniciarse profesionalmente en la estética y aprender procedimientos faciales y corporales. También para profesionales empíricos que buscan formalizar su práctica.'},
+  'acne expert':{d:'avanzado',a:'Cosmetólogas, cosmiatras y esteticistas que desean especializarse en diagnóstico y protocolización del acné, integrando limpieza, aparatología y peelings según el caso clínico.'},
+  'melanosis expert':{d:'avanzado',a:'Cosmetólogas, cosmiatras y esteticistas que desean especializarse en diagnóstico y tratamiento de pieles pigmentadas. Ideal para quienes ya trabajan con peelings o aparatología.'},
+  'envejecimiento expert':{d:'avanzado',a:'Cosmetólogas, cosmiatras y esteticistas que desean dominar el abordaje clínico del envejecimiento cutáneo, aplicar electroestética con criterio y crear protocolos de rejuvenecimiento integrales.'},
+  'consultor skin care':{d:'avanzado',a:'Cosmetólogas, cosmiatras y esteticistas que desean expandir su práctica ofreciendo consultorías digitales de piel con criterio clínico, más allá del trabajo en cabina.'},
+  'nutriskin':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean elevar su criterio clínico integrando la piel con la nutrición, el metabolismo y la fisiología interna del paciente.'},
+  'estetica intima':{d:'avanzado',a:'Cosmiatras, cosmetólogos y esteticistas que desean incorporar la estética íntima a su práctica con seguridad, criterio y protocolos claros para diferenciarse y ampliar servicios.'},
+  'lampara wood':{d:'intermedio',a:'Cosmetólogas, cosmiatras y esteticistas que desean incorporar la Lámpara de Wood como herramienta de diagnóstico clínico preciso en pieles acneicas, pigmentadas o sensibilizadas.'},
+  'acne activo con dermapen':{d:'avanzado',a:'Cosmetólogas y cosmiatras que ya manejan limpiezas faciales o peeling y desean aprender a aplicar Dermapen de manera segura en pieles con acné activo.'},
+  'despigmentacion':{d:'avanzado',a:'Cosmetólogas, cosmiatras y médicos estéticos que buscan actualizar sus criterios en el abordaje de la pigmentación desde una perspectiva moderna, regenerativa y segura.'},
+  'radiofrecuencias':{d:'intermedio',a:'Cosmetólogas, cosmiatras y esteticistas que utilizan o desean incorporar radiofrecuencias faciales y corporales, buscando comprender su funcionamiento con lógica clínica.'},
+  'limpiezas faciales':{d:'iniciante',a:'Cosmetólogas, cosmiatras y esteticistas que deseen dominar la limpieza facial profesional desde su base clínica, conociendo tipos, herramientas y secuencias para lograr resultados visibles.'},
+  'plasma pen':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales estéticos que deseen comprender y dominar el Plasma Pen y Electrolifting, con protocolos clínicos guiados en rejuvenecimiento y regeneración cutánea.'},
+  'tratamientos domiciliares':{d:'intermedio',a:'Cosmetólogas, cosmiatras y esteticistas que deseen aprender a diseñar rutinas domiciliarias personalizadas según biotipo y principios activos, para sostener resultados de cabina.'},
+  'hidrafacial':{d:'intermedio',a:'Cosmetólogas, cosmiatras y esteticistas que buscan dominar la técnica Hidrafacial profesional e integrarla a protocolos combinados de limpieza, rejuvenecimiento y regeneración.'},
+  'electroestetica':{d:'iniciante',a:'Cosmetólogas, cosmiatras y esteticistas que desean comprender la electroestética desde la base. Ideal para quienes ya tienen aparatología pero no saben cómo utilizarla correctamente.'},
+  'quimioexfoliacion pro':{d:'avanzado',a:'Cosmetólogas y cosmiatras con formación previa en peeling químico que desean elevar su manejo clínico hacia el control total de la quimioexfoliación, comprendiendo ácidos y resistencias.'},
+  'perfeccionamiento en dermapen':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales estéticos que ya utilizan Dermapen y desean perfeccionar su técnica con dominio total del mapa facial, profundidades y criterio clínico.'},
+  'estrias':{d:'avanzado',a:'Cosmetólogas, cosmiatras y esteticistas que deseen entender las estrías desde su origen biológico y combinarlas con peeling químico, radiofrecuencias y microneedling con resultados clínicos medibles.'},
+  'secuela post acne':{d:'avanzado',a:'Profesionales en estética que deseen dominar el abordaje clínico de las secuelas post acné con lógica regenerativa, para pieles atróficas, hiperpigmentadas o con hipertrofias.'},
+  'tecnica de aplicacion de peeling':{d:'intermedio',a:'Cosmetólogas, cosmiatras y profesionales que ya trabajan con peelings químicos y desean perfeccionar su técnica de aplicación con criterio clínico.'},
+  'pigmentacion':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean profundizar en el manejo clínico de la pigmentación cutánea, desde el diagnóstico hasta la protocolización de melanosis.'},
+  'rebrote acneico':{d:'intermedio',a:'Cosmetólogas, cosmiatras y profesionales que desean entender las causas reales de los rebrotes acneicos y estructurar tratamientos efectivos para prevenirlos.'},
+  'rosacea':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que atienden pieles sensibles, inflamadas o con reactividad vascular, buscando manejar con precisión los cuadros de rosácea y acné.'},
+  'principios activos con dermapen':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que ya aplican microneedling y necesitan dominar la selección, clasificación y combinación segura de principios activos con Dermapen.'},
+  'fototipos altos':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que trabajan con pacientes de pieles morenas, mestizas u oscuras (fototipos III a V) y necesitan protocolos sin riesgo de reacciones pigmentarias.'},
+  'quimica cosmetica':{d:'intermedio',a:'Profesionales de la estética que desean entender la base química de los cosméticos y sus principios activos, para elegirlos con criterio científico y clínico en lugar de por marca.'},
+  'reestructuracion de pieles':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el abordaje de pieles sensibilizadas, reactivas o lesionadas, aplicando protocolos clínicos de recuperación tisular.'},
+  'diagnostico 0':{d:'intermedio',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el diagnóstico clínico completo de la piel antes de aplicar un peeling, comprendiendo biotipo, fototipo y barrera cutánea.'},
+  'dermaplaning':{d:'iniciante',a:'Cosmetólogas, cosmiatras y profesionales de la estética que buscan incorporar el dermaplaning de forma segura, profesional y rentable, comprendiendo su base clínica y ejecución paso a paso.'},
+  'microdermoabrasion':{d:'iniciante',a:'Cosmetólogas, cosmiatras y profesionales que aplican o desean reentrenar la microdermoabrasión, comprendiendo su base clínica, variaciones e integración con otros procedimientos.'},
+  'microneedling capilar':{d:'intermedio',a:'Cosmetólogas, cosmiatras, tricólogos y profesionales de la estética que deseen dominar el microneedling capilar para fortalecer, regenerar y estimular el cuero cabelludo.'},
+  'altafrecuencia':{d:'iniciante',a:'Esteticistas, cosmetólogas y cosmiatras que deseen dominar la técnica completa de Altafrecuencia, sus principios, usos clínicos y combinaciones seguras con otros procedimientos en cabina.'},
+  'ultrasonido':{d:'iniciante',a:'Cosmetólogas, cosmiatras y profesionales que buscan incorporar o perfeccionar el uso clínico del ultrasonido superficial según tipo de piel, frecuencia y objetivo estético.'},
+  'acidos 360':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el uso integral de los ácidos desde una perspectiva clínica 360°, con criterio diagnóstico y protocolos avanzados.'},
+  'especializacion acidos':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el uso integral de los ácidos desde una perspectiva clínica 360°, con criterio diagnóstico y protocolos avanzados.'},
+};
+async function silentMigrateFormaciones() {
+  var keys = Object.keys(_MAPA_FORMACIONES);
+  for (var i = 0; i < plantillas.length; i++) {
+    var p = plantillas[i];
+    if (p.dificultad && p.alumno_ideal) continue; // already set, skip
+    var norm = _normCurso(p.titulo||'');
+    var match = null;
+    for (var j = 0; j < keys.length; j++) {
+      var kw = keys[j], parts = kw.split(' ');
+      if (norm.indexOf(kw) !== -1 || (parts.length > 1 && parts.every(function(w){ return norm.indexOf(w) !== -1; }))) {
+        match = _MAPA_FORMACIONES[kw]; break;
+      }
+    }
+    if (match) {
+      if (!p.dificultad) { await dbSet('/plantillas/'+p._key+'/dificultad', match.d); p.dificultad = match.d; }
+      if (!p.alumno_ideal) { await dbSet('/plantillas/'+p._key+'/alumno_ideal', match.a); p.alumno_ideal = match.a; }
+    }
+  }
+}
 async function migrarDatosFormaciones() {
   var MAPA = {
     'diplomado peeling': {d:'profesional', a:'Cosmiatras, dermatocosmiatras, esteticistas y médicos estéticos con experiencia que deseen ampliar sus competencias clínicas avanzadas en peelings y regeneración cutánea.'},
@@ -4558,12 +4641,18 @@ function aplicarPermisos(navigate) {
   const u = USUARIOS_CONFIG[usuarioActual];
 
   // Mostrar/ocultar nav items según secciones del usuario
-  const todasSecs = ['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar','usuarios'];
+  const todasSecs = ['inicio','ventas','plantillas','stats','admin','clientes','myf','cargar'];
   todasSecs.forEach(tab => {
     const visible = (u.secciones || []).includes(tab);
     const el = document.getElementById('nav-'+tab); if (el) el.style.display = visible ? '' : 'none';
     const mel = document.getElementById('mnav-'+tab); if (mel) mel.style.display = visible ? '' : 'none';
   });
+  // nav-usuarios siempre oculto (usa btn-config en su lugar)
+  var nuEl = document.getElementById('nav-usuarios'); if (nuEl) nuEl.style.display = 'none';
+  var mnuEl = document.getElementById('mnav-usuarios'); if (mnuEl) mnuEl.style.display = (u.secciones||[]).includes('usuarios') ? '' : 'none';
+  // Gear config button
+  var btnCfg = document.getElementById('btn-config');
+  if (btnCfg) btnCfg.style.display = (u.secciones||[]).includes('usuarios') ? 'flex' : 'none';
 
   // Botón + Nueva venta: visible solo si tiene acceso a cargar
   const btnNV = document.getElementById('btn-nueva-venta-nav');
