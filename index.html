@@ -443,7 +443,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── BARRA FLOTANTE ── */
-#barra-acciones { display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 8px 10px 8px 18px; border-radius: 999px; box-shadow: 0 4px 20px rgba(182,31,58,0.35); align-items: center; gap: 10px; z-index: 999; white-space: nowrap; }
+#barra-acciones { display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: rgba(253,248,245,0.88); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1.5px solid rgba(182,31,58,0.28); color: var(--text); padding: 8px 10px 8px 18px; border-radius: 999px; box-shadow: 0 4px 24px rgba(182,31,58,0.18); align-items: center; gap: 10px; z-index: 9999; white-space: nowrap; }
 
 /* ── AUTOCOMPLETE ── */
 #curso-list div:last-child { border-bottom: none !important; }
@@ -892,11 +892,6 @@ body::before {
           <div id="tabla-body-cards"></div>
         </div>
       </div>
-      <div id="barra-acciones">
-        <span id="barra-count" style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.9)"></span>
-        <button onclick="accionEditar()" style="background:rgba(255,255,255,0.55);color:var(--text);border:none;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">✎ Editar</button>
-        <button onclick="accionEliminar()" style="background:#C0392B;color:#fff;border:none;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">✕ Eliminar</button>
-      </div>
     </section>
 
     <!-- FORMACIONES / COACH -->
@@ -1269,7 +1264,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.109</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.111</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1974,6 +1969,10 @@ function editarVenta(key) {
   document.getElementById('f-apellido').value = v.apellido || (_nbParts.length>1 ? _nbParts.slice(1).join(' ') : '');
   document.getElementById('f-pais').value = v.pais||'';
   document.querySelectorAll('input[name="canal"]').forEach(r => { r.checked = r.value===v.canal; });
+  // Restaurar comprobantes existentes
+  clearComprobante(1); clearComprobante(2);
+  if (v.comprobante) setComprobanteFromDataURL(v.comprobante, 1);
+  if (v.comprobante2) setComprobanteFromDataURL(v.comprobante2, 2);
   window._editKey = key;
   switchTab('cargar');
   actualizarCompletitud();
@@ -6845,5 +6844,10 @@ init();
   </div>
 </div>
 
+  <div id="barra-acciones">
+    <span id="barra-count" style="font-size:13px;font-weight:600;color:var(--text)"></span>
+    <button onclick="accionEditar()" style="background:rgba(182,31,58,0.1);color:var(--accent);border:1px solid rgba(182,31,58,0.25);padding:6px 15px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s">✎ Editar</button>
+    <button onclick="accionEliminar()" style="background:rgba(182,31,58,0.12);color:#b61f3a;border:1px solid rgba(182,31,58,0.3);padding:6px 15px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s">✕ Eliminar</button>
+  </div>
 </body>
 </html>
