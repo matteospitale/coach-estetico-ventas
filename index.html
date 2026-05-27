@@ -1257,7 +1257,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.95</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.99</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -2019,6 +2019,9 @@ function filterStats(campo, valor) {
   }
 }
 
+var statsTab = 'resumen';
+function switchStatsTab(tab) { statsTab = tab; renderStats(); }
+
 function renderStats() {
   const mes = getMesVal();
   const vf = mes==='all' ? ventas : ventas.filter(v=>(v.fecha||'').startsWith(mes));
@@ -2273,9 +2276,9 @@ function renderStats() {
   // cursoColorMap ya está definido arriba junto con buildStackedBar
 
   // ── HTML OUTPUT ──
-  document.getElementById('stats-content').innerHTML =
 
-    // 1. KPIs
+  // KPIs — siempre visibles
+  var _kpiHtml =
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px">' +
       '<div class="chart-card" style="padding:16px 18px">' +
         '<div class="chart-title" style="margin-bottom:8px">Total USD</div>' +
@@ -2297,45 +2300,17 @@ function renderStats() {
         '<div style="font-size:24px;font-weight:800;color:#4A8C5C;letter-spacing:-0.02em;line-height:1">' + pctRecomp + '%</div>' +
         '<div style="margin-top:6px;font-size:11px;color:var(--text3)">' + recomp.length + ' alumnos</div>' +
       '</div>' +
-    '</div>' +
+    '</div>';
 
-    // 2. Evolución mensual — columnas verticales SVG
-    '<div class="chart-card" style="margin-bottom:16px">' +
-      '<div class="chart-title">Evolución mensual · últimos 6 meses</div>' +
-      buildColChart(topMes, function(k){ return k===mesActualKey?'#b61f3a':'#3B6B9E'; }, 'mes', maxMes, function(k){ var p=k.split('-'); return MESES_ABR[parseInt(p[1],10)-1]||k; }) +
-    '</div>' +
+  // Tab nav
+  var _tabs = ['resumen','evolucion','cursos','canales','asesores','cierres'];
+  var _tabLabels = {resumen:'Resumen',evolucion:'Evolución',cursos:'Cursos',canales:'Canales',asesores:'Asesores',cierres:'Cierres'};
+  var _tabNavHtml = '<div class="coach-subnav" style="margin-bottom:18px">' +
+    _tabs.map(function(t){ return '<button class="coach-subtab' + (statsTab===t?' active':'') + '" onclick="switchStatsTab(\'' + t + '\')">' + _tabLabels[t] + '</button>'; }).join('') +
+  '</div>';
 
-    // 3. Canal (donut) + Forma de pago (pills)
-    '<div class="stats-grid" style="margin-bottom:16px">' +
-      '<div class="chart-card">' +
-        '<div class="chart-title">Distribución por canal</div>' +
-        buildDonut(Object.entries(byCanal).sort((a,b)=>b[1].usd-a[1].usd), function(l){return cColors[l]||'#aaa';}, 'canal') +
-      '</div>' +
-      '<div class="chart-card">' +
-        '<div class="chart-title">Forma de pago</div>' +
-        (pagoHtml || '<div style="text-align:center;color:var(--text3);font-size:12px;padding:20px">Sin datos</div>') +
-      '</div>' +
-    '</div>' +
-
-    // 4. Asesor + País
-    '<div class="stats-grid" style="margin-bottom:16px">' +
-      '<div class="chart-card">' +
-        '<div class="chart-title">Por asesor</div>' +
-        asesorHtml +
-      '</div>' +
-      '<div class="chart-card">' +
-        '<div class="chart-title">Por país · top ' + topPais.length + '</div>' +
-        paisHtml +
-      '</div>' +
-    '</div>' +
-
-    // 5. Top cursos — barra apilada + leyenda
-    '<div class="chart-card" style="margin-bottom:16px">' +
-      '<div class="chart-title">Top cursos · distribución y detalle</div>' +
-      buildStackedBar(topCurso, function(l){ return cursoColorMap[l]||'#888'; }, 'curso') +
-    '</div>' +
-
-    // 6. Ritmo del mes + Día de semana — columnas SVG
+  // Tab: Resumen — ritmo + día de semana
+  var _tabResumen =
     '<div class="stats-grid" style="margin-bottom:16px">' +
       '<div class="chart-card">' +
         '<div class="chart-title">Ritmo del mes actual</div>' +
@@ -2361,9 +2336,56 @@ function renderStats() {
         '<div class="chart-title">Cierres por día de la semana</div>' +
         buildColChart([1,2,3,4,5,6,0].map(function(d){return [d,byDow[d]];}), function(d){return (d===0||d===6)?'#b61f3a':'#3B6B9E';}, null, maxDow, function(d){return DIAS_ES[d];}) +
       '</div>' +
-    '</div>' +
+    '</div>';
 
-    // 7. Recompras + Ticket promedio
+  // Tab: Evolución mensual
+  var _tabEvolucion =
+    '<div class="chart-card" style="margin-bottom:16px">' +
+      '<div class="chart-title">Evolución mensual · últimos 6 meses</div>' +
+      buildColChart(topMes, function(k){ return k===mesActualKey?'#b61f3a':'#3B6B9E'; }, 'mes', maxMes, function(k){ var p=k.split('-'); return MESES_ABR[parseInt(p[1],10)-1]||k; }) +
+    '</div>';
+
+  // Tab: Cursos
+  var _tabCursos =
+    '<div class="chart-card" style="margin-bottom:16px">' +
+      '<div class="chart-title">Top cursos · distribución y detalle</div>' +
+      buildStackedBar(topCurso, function(l){ return cursoColorMap[l]||'#888'; }, 'curso') +
+    '</div>' +
+    (topTkCurso.length ?
+      '<div class="chart-card" style="margin-bottom:16px">' +
+        '<div class="chart-title">Ticket promedio por curso</div>' +
+        topTkCurso.map(function(c){
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--surface2)">' +
+            '<span style="font-size:12px;color:var(--text2);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + c.nombre.replace(/"/g,'&quot;') + '">' + c.nombre + '</span>' +
+            '<span style="font-size:13px;font-weight:700;color:var(--text);flex-shrink:0">$' + c.avg.toLocaleString('en-US',{maximumFractionDigits:0}) + ' <span style="font-size:10px;color:var(--text3)">×' + c.n + '</span></span>' +
+          '</div>';
+        }).join('') +
+      '</div>'
+    : '');
+
+  // Tab: Canales
+  var _tabCanales =
+    '<div class="stats-grid" style="margin-bottom:16px">' +
+      '<div class="chart-card">' +
+        '<div class="chart-title">Distribución por canal</div>' +
+        buildDonut(Object.entries(byCanal).sort((a,b)=>b[1].usd-a[1].usd), function(l){return cColors[l]||'#aaa';}, 'canal') +
+      '</div>' +
+      '<div class="chart-card">' +
+        '<div class="chart-title">Forma de pago</div>' +
+        (pagoHtml || '<div style="text-align:center;color:var(--text3);font-size:12px;padding:20px">Sin datos</div>') +
+      '</div>' +
+    '</div>' +
+    '<div class="chart-card" style="margin-bottom:16px">' +
+      '<div class="chart-title">Por país · top ' + topPais.length + '</div>' +
+      paisHtml +
+    '</div>';
+
+  // Tab: Asesores
+  var _tabAsesores =
+    '<div class="chart-card" style="margin-bottom:16px">' +
+      '<div class="chart-title">Por asesor</div>' +
+      asesorHtml +
+    '</div>' +
     '<div class="stats-grid" style="margin-bottom:16px">' +
       '<div class="chart-card">' +
         '<div class="chart-title">Recompras (historial total)</div>' +
@@ -2377,7 +2399,7 @@ function renderStats() {
             '<div style="font-size:11px;color:var(--text3)">alumnos recompraron</div>' +
           '</div>' +
         '</div>' +
-        recomp.slice(0,6).map(function(c){
+        recomp.slice(0,8).map(function(c){
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--surface2)">' +
             '<span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">' + (c.nombre||'—') + '</span>' +
             '<span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent);border-radius:20px;padding:2px 9px;flex-shrink:0">' + c.n + ' compras</span>' +
@@ -2401,19 +2423,45 @@ function renderStats() {
             '<span style="font-size:13px;font-weight:700;color:var(--text)">$' + (d.usd/d.n).toLocaleString('en-US',{maximumFractionDigits:0}) + '</span>' +
           '</div>';
         }).join('') +
-        (topTkCurso.length ? '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">' +
-          '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Top por curso</div>' +
-          topTkCurso.map(function(c){
-            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--surface2)">' +
-              '<span style="font-size:11px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + c.nombre.replace(/"/g,'&quot;') + '">' + c.nombre + '</span>' +
-              '<span style="font-size:12px;font-weight:700;color:var(--text);flex-shrink:0">$' + c.avg.toLocaleString('en-US',{maximumFractionDigits:0}) + ' <span style="font-size:10px;color:var(--text3)">×' + c.n + '</span></span>' +
-            '</div>';
-          }).join('') +
-        '</div>' : '') +
       '</div>' +
-    '</div>' +
+    '</div>';
 
-    // 8. Drill panel
+  // Tab: Cierres
+  var _tabCierres = (function() {
+    var cierresArr = Object.entries(cierres).sort(function(a,b){ return b[0].localeCompare(a[0]); });
+    var rows = cierresArr.length ? cierresArr.map(function(kv) {
+      var k = kv[0], c = kv[1];
+      var fechaTs = c.timestamp ? new Date(c.timestamp) : null;
+      var fechaStr = fechaTs ? fechaTs.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + fechaTs.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '—';
+      return '<tr style="border-bottom:1px solid var(--surface2)">' +
+        '<td style="padding:9px 8px;font-weight:700;color:var(--text)">' + mesLabel(k) + '</td>' +
+        '<td style="padding:9px 8px;text-align:right;font-weight:700;color:#3B6B9E">$' + (c.carteraUSD||0).toLocaleString('en-US',{maximumFractionDigits:0}) + ' <span style="font-size:10px;font-weight:400;color:var(--text3)">USD</span></td>' +
+        '<td style="padding:9px 8px;text-align:right;font-weight:700;color:#4A8C5C">$' + (c.carteraARS||0).toLocaleString('en-US',{maximumFractionDigits:0}) + ' <span style="font-size:10px;font-weight:400;color:var(--text3)">ARS</span></td>' +
+        '<td style="padding:9px 8px;text-align:center;color:var(--text2);font-size:13px">' + (c.ventasCount||0) + '</td>' +
+        '<td style="padding:9px 8px;color:var(--text2);font-size:13px">' + (c.cerradoPor||'—') + '</td>' +
+        '<td style="padding:9px 8px;font-size:11px;color:var(--text3)">' + fechaStr + '</td>' +
+      '</tr>';
+    }).join('') : '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3);font-size:13px">No hay cierres registrados</td></tr>';
+    return '<div class="chart-card" style="margin-bottom:16px">' +
+      '<div class="chart-title">Cierres de mes</div>' +
+      '<div style="overflow-x:auto">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+          '<thead><tr style="border-bottom:1px solid var(--border)">' +
+            '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Mes</th>' +
+            '<th style="text-align:right;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cartera USD</th>' +
+            '<th style="text-align:right;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cartera ARS</th>' +
+            '<th style="text-align:center;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Ventas apr.</th>' +
+            '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cerrado por</th>' +
+            '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Fecha</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+      '</div>' +
+    '</div>';
+  })();
+
+  // Drill panel — siempre al final
+  var _drillHtml =
     '<div id="stats-drill" style="display:none">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">' +
         '<div style="font-size:14px;font-weight:500;color:var(--text)" id="stats-drill-title"></div>' +
@@ -2424,41 +2472,11 @@ function renderStats() {
         '<thead><tr><th>Fecha</th><th>Asesor</th><th>Canal</th><th>USD</th><th>Pago</th><th>Curso</th></tr></thead>' +
         '<tbody id="stats-drill-tbody"></tbody>' +
       '</table></div></div>' +
-    '</div>' +
+    '</div>';
 
-    // 9. Cierres de mes
-    (function() {
-      var cierresArr = Object.entries(cierres).sort(function(a,b){ return b[0].localeCompare(a[0]); });
-      var rows = cierresArr.length ? cierresArr.map(function(kv) {
-        var k = kv[0], c = kv[1];
-        var fechaTs = c.timestamp ? new Date(c.timestamp) : null;
-        var fechaStr = fechaTs ? fechaTs.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + fechaTs.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '—';
-        return '<tr style="border-bottom:1px solid var(--surface2)">' +
-          '<td style="padding:9px 8px;font-weight:700;color:var(--text)">' + mesLabel(k) + '</td>' +
-          '<td style="padding:9px 8px;text-align:right;font-weight:700;color:#3B6B9E">$' + (c.carteraUSD||0).toLocaleString('en-US',{maximumFractionDigits:0}) + ' <span style="font-size:10px;font-weight:400;color:var(--text3)">USD</span></td>' +
-          '<td style="padding:9px 8px;text-align:right;font-weight:700;color:#4A8C5C">$' + (c.carteraARS||0).toLocaleString('en-US',{maximumFractionDigits:0}) + ' <span style="font-size:10px;font-weight:400;color:var(--text3)">ARS</span></td>' +
-          '<td style="padding:9px 8px;text-align:center;color:var(--text2);font-size:13px">' + (c.ventasCount||0) + '</td>' +
-          '<td style="padding:9px 8px;color:var(--text2);font-size:13px">' + (c.cerradoPor||'—') + '</td>' +
-          '<td style="padding:9px 8px;font-size:11px;color:var(--text3)">' + fechaStr + '</td>' +
-        '</tr>';
-      }).join('') : '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3);font-size:13px">No hay cierres registrados</td></tr>';
-      return '<div class="chart-card" style="margin-bottom:16px">' +
-        '<div class="chart-title">Cierres de mes</div>' +
-        '<div style="overflow-x:auto">' +
-          '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
-            '<thead><tr style="border-bottom:1px solid var(--border)">' +
-              '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Mes</th>' +
-              '<th style="text-align:right;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cartera USD</th>' +
-              '<th style="text-align:right;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cartera ARS</th>' +
-              '<th style="text-align:center;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Ventas apr.</th>' +
-              '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Cerrado por</th>' +
-              '<th style="text-align:left;padding:7px 8px;font-size:11px;font-weight:700;color:var(--text3)">Fecha</th>' +
-            '</tr></thead>' +
-            '<tbody>' + rows + '</tbody>' +
-          '</table>' +
-        '</div>' +
-      '</div>';
-    })();
+  var _tabContent = {resumen:_tabResumen, evolucion:_tabEvolucion, cursos:_tabCursos, canales:_tabCanales, asesores:_tabAsesores, cierres:_tabCierres};
+
+  document.getElementById('stats-content').innerHTML = _kpiHtml + _tabNavHtml + (_tabContent[statsTab] || _tabResumen) + _drillHtml;
 
   document.querySelectorAll('.stat-bar-row').forEach(function(el) {
     el.addEventListener('click', function() {
@@ -3580,6 +3598,74 @@ async function abrirNuevaPlantilla() {
 
 // ── VENTAS FORM ──
 const CURSOS = ['Club Coach','Lifetime','Migración','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
+
+// Mapea abreviaturas de Excel al nombre oficial.
+// Agrega aliases acá cuando aparezcan variantes nuevas de algún asesor.
+const CURSO_ALIASES = {
+  'lampara de wood': 'Lámpara de Wood PRO',
+  'lámpara de wood': 'Lámpara de Wood PRO',
+  'wood pro': 'Lámpara de Wood PRO',
+  'diplo peeling': 'Diplomado Internacional en Peeling Químico: Ciencia y Maestría',
+  'diplo micro': 'Diplomado Internacional en Microneedling',
+  'diplo aparato': 'Diplomado Internacional Aparatología y Tecnologías Estéticas 2025',
+  'diplo dermato': 'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
+  'acne expert': 'Acné Expert Training',
+  'melanosis expert': 'Melanosis Expert Training',
+  'envejecimiento expert': 'Envejecimiento Expert Training',
+  'nutriskin': 'Método NutriSkin con Dra. Israelina',
+  'hifu': 'Anatomía del HIFU: Más que un equipo',
+  'quimioexfoliacion': 'Formación Profesional en Peeling Químico',
+  'cosmiatria': 'Formación en Cosmiatría Profesional e Internacional',
+  'skin care': 'Consultor(a) Skin Care',
+};
+
+function _normalizarCurso(raw) {
+  if (!raw) return raw;
+  var norm = function(s) {
+    return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  };
+  var r = norm(raw);
+
+  // 1. Alias exacto
+  if (CURSO_ALIASES[r]) return CURSO_ALIASES[r];
+  // Alias parcial (raw contiene la clave)
+  for (var ak in CURSO_ALIASES) {
+    if (r.includes(ak)) return CURSO_ALIASES[ak];
+  }
+
+  // 2. Coincidencia exacta (normalizada)
+  for (var i = 0; i < CURSOS.length; i++) {
+    if (norm(CURSOS[i]) === r) return CURSOS[i];
+  }
+
+  // 3. El nombre oficial empieza con el raw (ej. "MC Técnicas" → "MC Técnicas de Aplicación...")
+  for (var i = 0; i < CURSOS.length; i++) {
+    var cn = norm(CURSOS[i]);
+    if (cn.startsWith(r + ' ') || cn.startsWith(r + ':')) return CURSOS[i];
+  }
+
+  // 4. El raw es substring del oficial (ej. "Lampara de Wood PRO" → "Lámpara de Wood PRO")
+  if (r.length >= 5) {
+    for (var i = 0; i < CURSOS.length; i++) {
+      if (norm(CURSOS[i]).includes(r)) return CURSOS[i];
+    }
+  }
+
+  // 5. Scoring por keywords (mínimo 3 chars c/u)
+  var words = r.split(/\s+/).filter(function(w) { return w.length >= 3; });
+  if (words.length >= 2) {
+    var best = null, bestScore = 0;
+    CURSOS.forEach(function(c) {
+      var cn = norm(c);
+      var score = words.filter(function(w) { return cn.includes(w); }).length;
+      if (score > bestScore) { bestScore = score; best = c; }
+    });
+    if (best && bestScore === words.length) return best;
+    if (best && bestScore >= 2 && bestScore >= Math.ceil(words.length * 0.6)) return best;
+  }
+
+  return raw;
+}
 
 const PAISES = ['Alemania','Andorra','Argentina','Aruba','Australia','Belice','Bolivia','Brasil','Canadá','Chile','Colombia','Costa Rica','Cuba','Ecuador','El Salvador','España','Estados Unidos','Francia','Guatemala','Honduras','Israel','Italia','México','Nicaragua','Países Bajos','Panamá','Paraguay','Perú','Portugal','Puerto Rico','Reino Unido','República Checa','República Dominicana','Suiza','Trinidad y Tobago','Uruguay','Venezuela'];
 
@@ -6199,7 +6285,7 @@ async function procesarImportFiles() {
       // Si el valor raw es número (serial Excel), tomarlo del objeto raw
       var fechaVal = row['Fecha'] !== undefined ? row['Fecha'] : (row['fecha'] !== undefined ? row['fecha'] : fechaRaw);
       var fecha = _parseFechaImport(fechaVal !== '' ? fechaVal : fechaRaw);
-      var curso = _rowGet(row, ['Que compro','Qué compro','que compro','que compró','Producto','producto']);
+      var curso = _normalizarCurso(_rowGet(row, ['Que compro','Qué compro','que compro','que compró','Producto','producto','Curso','curso']));
       var pago  = _rowGet(row, ['Forma de pago','forma de pago','Metodo de pago','método de pago','metodo de pago']);
 
       var monto = 0, montoLocal = 0, email = '', telefono = '', nota = '';
@@ -6376,10 +6462,28 @@ function _renderImportPreview() {
       return '<td style="padding:3px 5px">' + s + '</select></td>';
     }
 
+    // Curso — input con datalist: naranja si no está en la lista oficial, rojo si vacío
+    function cursoTd(val) {
+      var isOfficial = val && CURSOS.includes(val);
+      var iWarn = iBase + 'border:1.5px solid #CF6C1E;background:rgba(207,108,30,0.07);color:var(--text);';
+      var st = !val ? iErr : (isOfficial ? iOk : iWarn);
+      var escaped = (val||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+      var dlId = 'cdl' + i;
+      var opts = CURSOS.map(function(c){ return '<option value="' + c.replace(/"/g,'&quot;') + '">'; }).join('');
+      return '<td style="padding:3px 5px;white-space:nowrap">' +
+        '<input type="text" list="' + dlId + '" value="' + escaped + '" placeholder="Curso..." ' +
+        'oninput="_importRows[' + i + '].curso=this.value;var ok=CURSOS.includes(this.value);' +
+        'this.style.cssText=this.value?(ok?\'' + iOk + '\':\'' + iWarn + '\'):\'' + iErr + '\';' +
+        'this.style.width=\'180px\';_checkImportReady()" ' +
+        'style="' + st + 'width:180px">' +
+        '<datalist id="' + dlId + '">' + opts + '</datalist>' +
+        '</td>';
+    }
+
     html += '<tr style="' + rowBorder + ';background:' + bg + '">';
     html += '<td style="padding:5px 10px;white-space:nowrap;color:var(--text2);font-size:11px">' + (v.fecha||'—') + '</td>';
     html += '<td style="padding:5px 10px;font-family:monospace;font-size:11px;color:var(--text3);white-space:nowrap">' + (v.lead||'—') + '</td>';
-    html += '<td style="padding:5px 10px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="' + (v.curso||'') + '">' + (v.curso||'—') + '</td>';
+    html += cursoTd(v.curso);
     html += '<td style="padding:5px 10px;text-align:right;font-weight:700;white-space:nowrap">$' + (v.monto||0).toLocaleString('en-US') + '</td>';
     html += pagoTd(v.pago);
     html += inp('nombre',   v.nombre,   'Nombre',   '78px');
