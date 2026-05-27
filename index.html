@@ -1307,7 +1307,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.123</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.124</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1620,7 +1620,7 @@ async function updateCanalInline(key, val, el) {
   v.canal = val;
   if (el) el.style.color = canalColor(val);
   try {
-    await dbSet('ventas/' + key + '/canal', val);
+    await dbSet('/ventas/' + key + '/canal', val);
     showToast('✓ Canal actualizado');
   } catch(e) {
     showToast('Error al guardar canal: ' + (e.message||e));
