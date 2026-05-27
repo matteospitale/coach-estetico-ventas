@@ -1307,7 +1307,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.124</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.126</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1614,15 +1614,20 @@ function fillMesOptions(selId) {
   });
 }
 function canalColor(c) { return c==='Instagram'?'#C13584':c==='WhatsApp'?'#25D366':'var(--text3)'; }
+// Override map: survives loadVentas() re-fetches until PUT is confirmed in Firebase
+var _canalOverrides = {};
 async function updateCanalInline(key, val, el) {
   var v = ventas.find(function(x){ return x._key === key; });
   if (!v) return;
   v.canal = val;
+  _canalOverrides[key] = val; // hold value across re-renders while PUT is in-flight
   if (el) el.style.color = canalColor(val);
   try {
     await dbSet('/ventas/' + key + '/canal', val);
     showToast('✓ Canal actualizado');
+    delete _canalOverrides[key]; // PUT confirmed — Firebase has the new value now
   } catch(e) {
+    delete _canalOverrides[key];
     showToast('Error al guardar canal: ' + (e.message||e));
   }
 }
@@ -1901,12 +1906,13 @@ function renderTabla() {
       '<div class="venta-card-header">' +
         '<div style="display:flex;align-items:center;gap:8px">' +
           '<span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span>' +
-          '<select onchange="updateCanalInline(\'' + v._key + '\',this.value,this)" style="font-size:12px;font-weight:600;border:1.5px solid rgba(182,31,58,0.18);border-radius:6px;padding:2px 4px;background:transparent;color:' + canalColor(v.canal) + ';font-family:inherit;cursor:pointer;outline:none">' +
-            '<option value=""' + (!v.canal?' selected':'') + '>—</option>' +
-            '<option value="Instagram"' + (v.canal==='Instagram'?' selected':'') + '>Instagram</option>' +
-            '<option value="WhatsApp"' + (v.canal==='WhatsApp'?' selected':'') + '>WhatsApp</option>' +
-            '<option value="IA/Web"' + (v.canal==='IA/Web'?' selected':'') + '>IA/Web</option>' +
-          '</select>' +
+          (function(){ var cv = _canalOverrides[v._key] !== undefined ? _canalOverrides[v._key] : (v.canal||'');
+            return '<select onchange="updateCanalInline(\'' + v._key + '\',this.value,this)" style="font-size:12px;font-weight:600;border:1.5px solid rgba(182,31,58,0.18);border-radius:6px;padding:2px 4px;background:transparent;color:' + canalColor(cv) + ';font-family:inherit;cursor:pointer;outline:none">' +
+              '<option value=""' + (!cv?' selected':'') + '>—</option>' +
+              '<option value="Instagram"' + (cv==='Instagram'?' selected':'') + '>Instagram</option>' +
+              '<option value="WhatsApp"' + (cv==='WhatsApp'?' selected':'') + '>WhatsApp</option>' +
+              '<option value="IA/Web"' + (cv==='IA/Web'?' selected':'') + '>IA/Web</option>' +
+            '</select>'; })() +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:10px">' +
           '<span style="font-family:inherit;font-weight:700;color:var(--accent);font-size:16px">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
@@ -1926,7 +1932,8 @@ function renderTabla() {
 
   // Desktop table
   tbody.innerHTML = vf.map(function(v) {
-    const cc = canalColor(v.canal);
+    const canalVal = _canalOverrides[v._key] !== undefined ? _canalOverrides[v._key] : (v.canal||'');
+    const cc = canalColor(canalVal);
     const est = v.estado || 'Pendiente';
     const chkTd = modoEdicion ? '<td style="text-align:center;padding:6px 8px"><input type="checkbox" class="row-check" data-key="' + v._key + '" ' + (seleccionados.has(v._key)?'checked':'') + ' onchange="toggleCheck(this)" style="accent-color:var(--accent);width:15px;height:15px;cursor:pointer"></td>' : '';
     const fechaCorta = v.fecha ? v.fecha.split('-').slice(-2).reverse().join('/') : '—';
@@ -1935,10 +1942,10 @@ function renderTabla() {
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
       '<td style="padding:3px 6px">' +
         '<select onchange="updateCanalInline(\'' + v._key + '\',this.value,this)" style="font-size:11px;font-weight:600;border:1.5px solid rgba(182,31,58,0.18);border-radius:6px;padding:2px 4px;background:transparent;color:' + cc + ';font-family:inherit;cursor:pointer;outline:none;max-width:105px">' +
-          '<option value=""' + (!v.canal?' selected':'') + '>—</option>' +
-          '<option value="Instagram"' + (v.canal==='Instagram'?' selected':'') + '>Instagram</option>' +
-          '<option value="WhatsApp"' + (v.canal==='WhatsApp'?' selected':'') + '>WhatsApp</option>' +
-          '<option value="IA/Web"' + (v.canal==='IA/Web'?' selected':'') + '>IA/Web</option>' +
+          '<option value=""' + (!canalVal?' selected':'') + '>—</option>' +
+          '<option value="Instagram"' + (canalVal==='Instagram'?' selected':'') + '>Instagram</option>' +
+          '<option value="WhatsApp"' + (canalVal==='WhatsApp'?' selected':'') + '>WhatsApp</option>' +
+          '<option value="IA/Web"' + (canalVal==='IA/Web'?' selected':'') + '>IA/Web</option>' +
         '</select>' +
       '</td>' +
       '<td class="mono" style="font-weight:600;color:var(--accent);white-space:nowrap">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
