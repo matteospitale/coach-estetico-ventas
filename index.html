@@ -1163,7 +1163,7 @@ body::before {
         <div class="table-scroll">
           <table>
             <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País</th><th>Valor oficial</th><th>Pago alumno</th><th>Descuento</th><th>Venta neta</th><th style="border-left:2px solid var(--border)">M.Final USD</th><th>= USD</th><th style="border-left:2px solid var(--border)">M.Final ARS</th><th>= ARS</th><th>Estado</th><th style="width:36px"></th>
+              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País / Pago</th><th>Valor oficial</th><th>Pago alumno</th><th>Descuento</th><th>Venta neta</th><th style="border-left:2px solid var(--border)">M.Final USD</th><th>= USD</th><th style="border-left:2px solid var(--border)">M.Final ARS</th><th>= ARS</th><th>Estado</th><th style="width:36px"></th>
             </tr></thead>
             <tbody id="admin-body"></tbody>
           </table>
@@ -1257,7 +1257,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.87</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.90</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -2022,22 +2022,30 @@ function filterStats(campo, valor) {
 function renderStats() {
   const mes = getMesVal();
   const vf = mes==='all' ? ventas : ventas.filter(v=>(v.fecha||'').startsWith(mes));
+
+  // ── Agregaciones ──
   const byCanal = {};
   vf.forEach(v=>{ const c=v.canal||'Sin canal'; byCanal[c]=(byCanal[c]||{n:0,usd:0}); byCanal[c].n++; byCanal[c].usd+=parseFloat(v.monto||0); });
-  const maxCanal = Math.max.apply(null, Object.values(byCanal).map(x=>x.usd).concat([1]));
-  const cColors = {Instagram:'#C13584',WhatsApp:'#25D366','IA/Web':'#b61f3a','Sin canal':'#aaa'};
+
   const byPago = {};
-  vf.forEach(v=>{ byPago[v.pago]=(byPago[v.pago]||{n:0,usd:0}); byPago[v.pago].n++; byPago[v.pago].usd+=parseFloat(v.monto||0); });
+  vf.forEach(v=>{ const p=v.pago||'Sin pago'; byPago[p]=(byPago[p]||{n:0,usd:0}); byPago[p].n++; byPago[p].usd+=parseFloat(v.monto||0); });
   const topPago = Object.entries(byPago).sort((a,b)=>b[1].usd-a[1].usd);
-  const maxPago = topPago.length ? topPago[0][1].usd : 1;
+
   const byCurso = {};
-  vf.forEach(v=>{ byCurso[v.curso]=(byCurso[v.curso]||{n:0,usd:0}); byCurso[v.curso].n++; byCurso[v.curso].usd+=parseFloat(v.monto||0); });
+  vf.forEach(v=>{ const c=v.curso||'Sin curso'; byCurso[c]=(byCurso[c]||{n:0,usd:0}); byCurso[c].n++; byCurso[c].usd+=parseFloat(v.monto||0); });
   const topCurso = Object.entries(byCurso).sort((a,b)=>b[1].usd-a[1].usd).slice(0,8);
   const maxCurso = topCurso.length ? topCurso[0][1].usd : 1;
+
   const byAsesor = {};
-  vf.forEach(v=>{ byAsesor[v.asesor]=(byAsesor[v.asesor]||{n:0,usd:0}); byAsesor[v.asesor].n++; byAsesor[v.asesor].usd+=parseFloat(v.monto||0); });
+  vf.forEach(v=>{ const a=v.asesor||'Sin asesor'; byAsesor[a]=(byAsesor[a]||{n:0,usd:0}); byAsesor[a].n++; byAsesor[a].usd+=parseFloat(v.monto||0); });
   const aColors = {Matteo:'#3B6B9E',Facundo:'#4A8C5C',Dianela:'#9B5E9B'};
   const maxAsesor = Math.max.apply(null, Object.values(byAsesor).map(x=>x.usd).concat([1]));
+
+  const byPais = {};
+  vf.forEach(v=>{ if(!v.pais) return; byPais[v.pais]=(byPais[v.pais]||{n:0,usd:0}); byPais[v.pais].n++; byPais[v.pais].usd+=parseFloat(v.monto||0); });
+  const topPais = Object.entries(byPais).sort((a,b)=>b[1].usd-a[1].usd).slice(0,8);
+  const maxPais = topPais.length ? topPais[0][1].usd : 1;
+
   const byMes = {};
   ventas.forEach(v=>{ const m=v.fecha&&v.fecha.substring(0,7); if(m){byMes[m]=(byMes[m]||{n:0,usd:0}); byMes[m].n++; byMes[m].usd+=parseFloat(v.monto||0);} });
   const topMes = Object.entries(byMes).sort((a,b)=>a[0].localeCompare(b[0])).slice(-6);
@@ -2057,75 +2065,243 @@ function renderStats() {
   const promDia = diaActualR > 0 ? totalMA / diaActualR : 0;
   const proyFin = promDia * diasMesR;
   const diffPct = totalMAnt > 0 ? Math.round((proyFin - totalMAnt) / totalMAnt * 100) : 0;
+
   // ── Día de semana ──
   const DIAS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const byDow = {0:{n:0,usd:0},1:{n:0,usd:0},2:{n:0,usd:0},3:{n:0,usd:0},4:{n:0,usd:0},5:{n:0,usd:0},6:{n:0,usd:0}};
   vf.forEach(v=>{ if(v.fecha){ const p=v.fecha.split('-'); const dow=new Date(+p[0],+p[1]-1,+p[2]).getDay(); byDow[dow].n++; byDow[dow].usd+=parseFloat(v.monto||0); } });
   const maxDow = Math.max.apply(null, Object.values(byDow).map(x=>x.usd).concat([1]));
+
   // ── Recompras ──
   const cMap = {};
   ventas.filter(v=>(v.estado||'Pendiente')!=='Rechazada').forEach(v=>{ const k=(v.email||'').toLowerCase().trim()||('ne_'+(v.lead||v._key)); if(!cMap[k]) cMap[k]={nombre:v.nombre||v.email||k,n:0}; cMap[k].n++; });
   const allCl = Object.values(cMap);
   const recomp = allCl.filter(c=>c.n>1).sort((a,b)=>b.n-a.n);
   const pctRecomp = allCl.length > 0 ? Math.round(recomp.length/allCl.length*100) : 0;
+
   // ── Ticket promedio ──
-  const ticketTotal = vf.length > 0 ? vf.reduce((s,v)=>s+parseFloat(v.monto||0),0)/vf.length : 0;
+  const totalUSD = vf.reduce((s,v)=>s+parseFloat(v.monto||0),0);
+  const ticketTotal = vf.length > 0 ? totalUSD / vf.length : 0;
   const tAsesor = {};
   vf.forEach(v=>{ if(!v.asesor) return; if(!tAsesor[v.asesor]) tAsesor[v.asesor]={n:0,usd:0}; tAsesor[v.asesor].n++; tAsesor[v.asesor].usd+=parseFloat(v.monto||0); });
   const topTkCurso = Object.entries(byCurso).filter(([,d])=>d.n>=2).map(([k,d])=>({nombre:k,avg:d.usd/d.n,n:d.n})).sort((a,b)=>b.avg-a.avg).slice(0,5);
 
-  function sCard(title, rows, maxV, colorFn, campo) {
-    let html = '<div class="chart-card" style="margin-bottom:16px"><div class="chart-title">' + title + '</div>';
-    rows.forEach(function(entry) {
-      const label = entry[0], data = entry[1];
-      const safeLabel = label.replace(/"/g, '&quot;');
-      html += '<div class="bar-row stat-bar-row" data-campo="' + campo + '" data-valor="' + safeLabel + '">' +
-        '<span class="bar-name" title="' + label + '">' + label + '</span>' +
-        '<div class="bar-track"><div class="bar-fill" style="width:' + Math.round(data.usd/maxV*100) + '%;background:' + colorFn(label) + '"></div></div>' +
-        '<span class="bar-amount" style="min-width:90px;text-align:right;font-size:11px">$' + data.usd.toLocaleString('en-US') + ' <span style="color:var(--text3)">(' + data.n + ')</span></span>' +
-        '</div>';
-    });
-    html += '</div>';
-    return html;
+  // ── KPI trend vs mes anterior ──
+  let kpiTrendHtml = '';
+  if (mes && mes !== 'all') {
+    const pp = mes.split('-');
+    const pd = new Date(+pp[0], +pp[1]-2, 1);
+    const prevMesKey = pd.getFullYear() + '-' + String(pd.getMonth()+1).padStart(2,'0');
+    const prevTotal = ventas.filter(v=>(v.fecha||'').startsWith(prevMesKey)).reduce((s,v)=>s+parseFloat(v.monto||0),0);
+    if (prevTotal > 0) {
+      const d = Math.round((totalUSD - prevTotal) / prevTotal * 100);
+      kpiTrendHtml = ' <span style="font-size:10px;font-weight:700;color:' + (d>=0?'#155724':'var(--danger)') + ';background:' + (d>=0?'rgba(21,87,36,0.1)':'rgba(192,57,43,0.1)') + ';border-radius:20px;padding:2px 7px">' + (d>=0?'+':'') + d + '% vs ant.</span>';
+    }
   }
 
+  // ── Configs visuales ──
+  const cColors = {Instagram:'#C13584',WhatsApp:'#25D366','IA/Web':'#b61f3a','Sin canal':'#aaa'};
+  const FLAGS = {'Argentina':'🇦🇷','Colombia':'🇨🇴','México':'🇲🇽','Venezuela':'🇻🇪','Chile':'🇨🇱','Perú':'🇵🇪','España':'🇪🇸','Estados Unidos':'🇺🇸','Ecuador':'🇪🇨','Bolivia':'🇧🇴','Paraguay':'🇵🇾','Uruguay':'🇺🇾','Brasil':'🇧🇷','Costa Rica':'🇨🇷','Panamá':'🇵🇦','Honduras':'🇭🇳','Guatemala':'🇬🇹','El Salvador':'🇸🇻','Nicaragua':'🇳🇮','Cuba':'🇨🇺','República Dominicana':'🇩🇴','Puerto Rico':'🇵🇷','Portugal':'🇵🇹','Italia':'🇮🇹','Francia':'🇫🇷','Alemania':'🇩🇪','Canadá':'🇨🇦','Australia':'🇦🇺','Israel':'🇮🇱','Andorra':'🇦🇩','Aruba':'🇦🇼','Belice':'🇧🇿','Suiza':'🇨🇭','Trinidad y Tobago':'🇹🇹','Reino Unido':'🇬🇧','Países Bajos':'🇳🇱','República Checa':'🇨🇿'};
+  const PAGO_CFG = {'Hotmart':{icon:'🛒',color:'#E8533F'},'Link Mercado Pago Argentina':{icon:'💳',color:'#009EE3'},'Transferencia Argentina':{icon:'🏦',color:'#4A8C5C'},'Zelle':{icon:'💵',color:'#6A3DE8'},'Bolívares':{icon:'💸',color:'#CF6C1E'},'Pesos Chilenos':{icon:'🇨🇱',color:'#D42B2B'},'Pesos Dominicanos':{icon:'🇩🇴',color:'#003580'},'Pesos Colombianos':{icon:'🇨🇴',color:'#FCA326'},'Pesos Peruanos':{icon:'🇵🇪',color:'#D91023'},'PayPal':{icon:'🅿️',color:'#003087'},'Sin pago':{icon:'❓',color:'#aaa'}};
+  const CURSO_PAL = ['#3B6B9E','#E8533F','#4A8C5C','#9B5E9B','#CF6C1E','#3D9B9B','#9B3D3D','#7C6FA0','#5E8B3D','#8B5E3D'];
+  const PAIS_PAL  = ['#3B6B9E','#4A8C5C','#9B5E9B','#CF6C1E','#3D9B9B','#9B3D3D','#6B7CB8','#8B8B30'];
+
+  // ── SVG Donut chart ──
+  function buildDonut(entries, colorFn, campo) {
+    if (!entries.length) return '<div style="text-align:center;color:var(--text3);font-size:12px;padding:20px">Sin datos</div>';
+    const R = 34, circ = 2 * Math.PI * R;
+    const total = entries.reduce((s,[,d])=>s+d.usd,0)||1;
+    const totalN = entries.reduce((s,[,d])=>s+d.n,0);
+    let circles = '', off = 0;
+    entries.forEach(function(e) {
+      const dashLen = circ * e[1].usd / total;
+      circles += '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="' + colorFn(e[0]) + '" stroke-width="14" stroke-dasharray="' + dashLen.toFixed(2) + ' ' + (circ - dashLen + 0.1).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '"/>';
+      off += dashLen;
+    });
+    return '<div style="display:flex;align-items:center;gap:14px">' +
+      '<div style="position:relative;width:90px;height:90px;flex-shrink:0">' +
+        '<svg viewBox="0 0 100 100" width="90" height="90" style="display:block;transform:rotate(-90deg)">' +
+          '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="14"/>' +
+          circles +
+        '</svg>' +
+        '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">' +
+          '<div style="font-size:19px;font-weight:800;color:var(--text);line-height:1">' + totalN + '</div>' +
+          '<div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em">ventas</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        entries.map(function(e) {
+          const label = e[0], data = e[1];
+          const pctBar = Math.round(data.usd / total * 100);
+          const sl = label.replace(/"/g,'&quot;');
+          return '<div class="stat-bar-row" style="display:flex;align-items:center;gap:7px;padding:4px 6px;margin:0 -6px;border-radius:7px;cursor:pointer" data-campo="' + campo + '" data-valor="' + sl + '">' +
+            '<div style="width:8px;height:8px;border-radius:50%;background:' + colorFn(label) + ';flex-shrink:0"></div>' +
+            '<span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + label + '</span>' +
+            '<span style="font-size:11px;font-weight:700;color:var(--text);flex-shrink:0">' + pctBar + '%</span>' +
+            '<span style="font-size:10px;color:var(--text3);flex-shrink:0">(' + data.n + ')</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  // ── Evolución mensual ──
   let mesBars = '';
   topMes.forEach(function(entry) {
+    const isActual = entry[0] === mesActualKey;
+    const pct = Math.round(entry[1].usd / maxMes * 100);
     mesBars += '<div class="bar-row stat-bar-row" data-campo="mes" data-valor="' + entry[0] + '">' +
-      '<span class="bar-name">' + mesLabel(entry[0]) + '</span>' +
-      '<div class="bar-track"><div class="bar-fill" style="width:' + Math.round(entry[1].usd/maxMes*100) + '%;background:var(--accent)"></div></div>' +
-      '<span class="bar-amount">$' + entry[1].usd.toLocaleString('en-US') + ' <span style="color:var(--text3)">(' + entry[1].n + ')</span></span>' +
-      '</div>';
+      '<span class="bar-name" style="font-size:12px;min-width:62px">' + mesLabel(entry[0]) + (isActual ? ' <span style="color:var(--accent);font-size:9px">●</span>' : '') + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + (isActual ? 'var(--accent)' : 'var(--matteo)') + ';opacity:' + (isActual ? 1 : 0.75) + '"></div></div>' +
+      '<div style="min-width:110px;text-align:right"><span class="bar-amount" style="font-size:12px">$' + entry[1].usd.toLocaleString('en-US') + '</span> <span style="font-size:10px;color:var(--text3)">(' + entry[1].n + ' v.)</span></div>' +
+    '</div>';
   });
 
-  document.getElementById('stats-content').innerHTML =
-    '<div class="stats-grid">' +
-      sCard('Por canal', Object.entries(byCanal).sort((a,b)=>b[1].usd-a[1].usd), maxCanal, function(l){return cColors[l]||'#aaa';}, 'canal') +
-      sCard('Por asesor', Object.entries(byAsesor).sort((a,b)=>b[1].usd-a[1].usd), maxAsesor, function(l){return aColors[l]||'#888';}, 'asesor') +
-      sCard('Por forma de pago', topPago, maxPago, function(){return 'var(--accent)';}, 'pago') +
-      sCard('Por curso (top 8)', topCurso, maxCurso, function(){return '#7F77DD';}, 'curso') +
-    '</div>' +
-    '<div class="chart-card" style="margin-bottom:16px"><div class="chart-title">Evolución mensual (USD)</div>' + mesBars + '</div>' +
+  // ── Forma de pago (pills) ──
+  const pagoTotalUSD = topPago.reduce((s,[,d])=>s+d.usd,0)||1;
+  const pagoHtml = topPago.map(function(e) {
+    const label = e[0], data = e[1];
+    const cfg = PAGO_CFG[label] || {icon:'💰',color:'var(--accent)'};
+    const pct = Math.round(data.usd / pagoTotalUSD * 100);
+    const sl = label.replace(/"/g,'&quot;');
+    return '<div class="stat-bar-row" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:10px;margin-bottom:6px;cursor:pointer" data-campo="pago" data-valor="' + sl + '">' +
+      '<span style="font-size:15px;flex-shrink:0">' + cfg.icon + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+          '<span style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + label + '</span>' +
+          '<span style="font-size:11px;font-weight:700;color:var(--text);flex-shrink:0;margin-left:6px">$' + data.usd.toLocaleString('en-US') + '</span>' +
+        '</div>' +
+        '<div style="height:4px;background:rgba(0,0,0,0.08);border-radius:2px;overflow:hidden">' +
+          '<div style="height:100%;width:' + pct + '%;background:' + cfg.color + ';border-radius:2px;transition:width 0.5s"></div>' +
+        '</div>' +
+      '</div>' +
+      '<span style="font-size:10px;color:var(--text3);flex-shrink:0;min-width:26px;text-align:right">' + pct + '%</span>' +
+    '</div>';
+  }).join('');
 
-    // ── Ritmo + Día de semana ──
+  // ── Por asesor ──
+  const asesorHtml = Object.entries(byAsesor).sort((a,b)=>b[1].usd-a[1].usd).map(function(e) {
+    const label = e[0], data = e[1];
+    const pct = Math.round(data.usd / maxAsesor * 100);
+    const sl = label.replace(/"/g,'&quot;');
+    const color = aColors[label] || '#888';
+    return '<div class="bar-row stat-bar-row" data-campo="asesor" data-valor="' + sl + '">' +
+      '<span class="badge badge-' + (label||'').toLowerCase() + '" style="min-width:66px;font-size:10px;text-align:center;flex-shrink:0">' + label + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<span class="bar-amount" style="font-size:11px">$' + data.usd.toLocaleString('en-US') + ' <span style="color:var(--text3)">(' + data.n + ')</span></span>' +
+    '</div>';
+  }).join('');
+
+  // ── Por país ──
+  const paisHtml = topPais.map(function(e, i) {
+    const label = e[0], data = e[1];
+    const pct = Math.round(data.usd / maxPais * 100);
+    const sl = label.replace(/"/g,'&quot;');
+    const flag = FLAGS[label] || '🌎';
+    return '<div class="bar-row stat-bar-row" data-campo="pais" data-valor="' + sl + '">' +
+      '<span style="font-size:13px;flex-shrink:0;line-height:1">' + flag + '</span>' +
+      '<span class="bar-name" style="font-size:12px">' + label + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + PAIS_PAL[i % PAIS_PAL.length] + '"></div></div>' +
+      '<span class="bar-amount" style="font-size:11px">$' + data.usd.toLocaleString('en-US') + ' <span style="color:var(--text3)">(' + data.n + ')</span></span>' +
+    '</div>';
+  }).join('') || '<div style="text-align:center;color:var(--text3);font-size:12px;padding:10px">Sin datos</div>';
+
+  // ── Top cursos (multicolor) ──
+  const cursosHtml = topCurso.map(function(e, i) {
+    const label = e[0], data = e[1];
+    const pct = Math.round(data.usd / maxCurso * 100);
+    const sl = label.replace(/"/g,'&quot;');
+    const color = CURSO_PAL[i % CURSO_PAL.length];
+    return '<div class="bar-row stat-bar-row" data-campo="curso" data-valor="' + sl + '">' +
+      '<div style="width:10px;height:10px;border-radius:3px;background:' + color + ';flex-shrink:0"></div>' +
+      '<span class="bar-name" style="font-size:12px;min-width:150px" title="' + sl + '">' + label + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<span class="bar-amount" style="font-size:11px">$' + data.usd.toLocaleString('en-US') + ' <span style="color:var(--text3)">(' + data.n + ')</span></span>' +
+    '</div>';
+  }).join('');
+
+  // ── HTML OUTPUT ──
+  document.getElementById('stats-content').innerHTML =
+
+    // 1. KPIs
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px">' +
+      '<div class="chart-card" style="padding:16px 18px">' +
+        '<div class="chart-title" style="margin-bottom:8px">Total USD</div>' +
+        '<div style="font-size:24px;font-weight:800;color:var(--accent);letter-spacing:-0.02em;line-height:1">$' + totalUSD.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>' +
+        '<div style="margin-top:6px;font-size:11px;color:var(--text3)">' + vf.length + ' ventas' + kpiTrendHtml + '</div>' +
+      '</div>' +
+      '<div class="chart-card" style="padding:16px 18px">' +
+        '<div class="chart-title" style="margin-bottom:8px">Ventas</div>' +
+        '<div style="font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.02em;line-height:1">' + vf.length + '</div>' +
+        '<div style="margin-top:6px;font-size:11px;color:var(--text3)">en el período</div>' +
+      '</div>' +
+      '<div class="chart-card" style="padding:16px 18px">' +
+        '<div class="chart-title" style="margin-bottom:8px">Ticket promedio</div>' +
+        '<div style="font-size:24px;font-weight:800;color:#3B6B9E;letter-spacing:-0.02em;line-height:1">$' + ticketTotal.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>' +
+        '<div style="margin-top:6px;font-size:11px;color:var(--text3)">por venta · USD</div>' +
+      '</div>' +
+      '<div class="chart-card" style="padding:16px 18px">' +
+        '<div class="chart-title" style="margin-bottom:8px">Recompra</div>' +
+        '<div style="font-size:24px;font-weight:800;color:#4A8C5C;letter-spacing:-0.02em;line-height:1">' + pctRecomp + '%</div>' +
+        '<div style="margin-top:6px;font-size:11px;color:var(--text3)">' + recomp.length + ' alumnos</div>' +
+      '</div>' +
+    '</div>' +
+
+    // 2. Evolución mensual
+    '<div class="chart-card" style="margin-bottom:16px">' +
+      '<div class="chart-title">Evolución mensual · últimos 6 meses</div>' +
+      mesBars +
+    '</div>' +
+
+    // 3. Canal (donut) + Forma de pago (pills)
+    '<div class="stats-grid" style="margin-bottom:16px">' +
+      '<div class="chart-card">' +
+        '<div class="chart-title">Distribución por canal</div>' +
+        buildDonut(Object.entries(byCanal).sort((a,b)=>b[1].usd-a[1].usd), function(l){return cColors[l]||'#aaa';}, 'canal') +
+      '</div>' +
+      '<div class="chart-card">' +
+        '<div class="chart-title">Forma de pago</div>' +
+        (pagoHtml || '<div style="text-align:center;color:var(--text3);font-size:12px;padding:20px">Sin datos</div>') +
+      '</div>' +
+    '</div>' +
+
+    // 4. Asesor + País
+    '<div class="stats-grid" style="margin-bottom:16px">' +
+      '<div class="chart-card">' +
+        '<div class="chart-title">Por asesor</div>' +
+        asesorHtml +
+      '</div>' +
+      '<div class="chart-card">' +
+        '<div class="chart-title">Por país · top ' + topPais.length + '</div>' +
+        paisHtml +
+      '</div>' +
+    '</div>' +
+
+    // 5. Top cursos
+    '<div class="chart-card" style="margin-bottom:16px">' +
+      '<div class="chart-title">Top cursos por facturación</div>' +
+      (cursosHtml || '<div style="text-align:center;color:var(--text3);font-size:12px;padding:10px">Sin datos</div>') +
+    '</div>' +
+
+    // 6. Ritmo del mes + Día de semana
     '<div class="stats-grid" style="margin-bottom:16px">' +
       '<div class="chart-card">' +
         '<div class="chart-title">Ritmo del mes actual</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px">' +
           '<div style="text-align:center;padding:10px;background:var(--surface2);border-radius:var(--radius)">' +
-            '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Promedio/día</div>' +
-            '<div style="font-size:20px;font-weight:800;color:var(--accent)">$' + promDia.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>' +
-            '<div style="font-size:10px;color:var(--text3)">día ' + diaActualR + ' del mes</div>' +
+            '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Prom/día</div>' +
+            '<div style="font-size:18px;font-weight:800;color:var(--accent)">$' + promDia.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>' +
+            '<div style="font-size:10px;color:var(--text3)">día ' + diaActualR + '</div>' +
           '</div>' +
           '<div style="text-align:center;padding:10px;background:var(--surface2);border-radius:var(--radius)">' +
-            '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Proyección fin</div>' +
-            '<div style="font-size:20px;font-weight:800;color:var(--text)">$' + proyFin.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>' +
+            '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Proyección</div>' +
+            '<div style="font-size:18px;font-weight:800;color:var(--text)">$' + proyFin.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>' +
             '<div style="font-size:10px;color:var(--text3)">al ritmo actual</div>' +
           '</div>' +
           '<div style="text-align:center;padding:10px;background:var(--surface2);border-radius:var(--radius)">' +
-            '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">vs mes anterior</div>' +
-            '<div style="font-size:20px;font-weight:800;color:' + (diffPct >= 0 ? '#155724' : 'var(--danger)') + '">' + (diffPct >= 0 ? '+' : '') + diffPct + '%</div>' +
-            '<div style="font-size:10px;color:var(--text3)">ant. $' + totalMAnt.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>' +
+            '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">vs ant.</div>' +
+            '<div style="font-size:18px;font-weight:800;color:' + (diffPct >= 0 ? '#155724' : 'var(--danger)') + '">' + (diffPct >= 0 ? '+' : '') + diffPct + '%</div>' +
+            '<div style="font-size:10px;color:var(--text3)">$' + totalMAnt.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -2142,7 +2318,7 @@ function renderStats() {
       '</div>' +
     '</div>' +
 
-    // ── Recompras + Ticket promedio ──
+    // 7. Recompras + Ticket promedio
     '<div class="stats-grid" style="margin-bottom:16px">' +
       '<div class="chart-card">' +
         '<div class="chart-title">Recompras (historial total)</div>' +
@@ -2192,6 +2368,7 @@ function renderStats() {
       '</div>' +
     '</div>' +
 
+    // 8. Drill panel
     '<div id="stats-drill" style="display:none">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">' +
         '<div style="font-size:14px;font-weight:500;color:var(--text)" id="stats-drill-title"></div>' +
@@ -2204,7 +2381,7 @@ function renderStats() {
       '</table></div></div>' +
     '</div>' +
 
-    // ── Cierres de mes ──
+    // 9. Cierres de mes
     (function() {
       var cierresArr = Object.entries(cierres).sort(function(a,b){ return b[0].localeCompare(a[0]); });
       var rows = cierresArr.length ? cierresArr.map(function(kv) {
@@ -2238,7 +2415,6 @@ function renderStats() {
       '</div>';
     })();
 
-  // Event delegation for stat bars
   document.querySelectorAll('.stat-bar-row').forEach(function(el) {
     el.addEventListener('click', function() {
       filterStats(this.dataset.campo, this.dataset.valor);
@@ -3727,7 +3903,10 @@ function renderAdmin() {
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">' + v.lead + '</a>' : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="font-size:13px;font-weight:500">' + (v.nombre||'<span style="color:var(--text3)">Sin nombre</span>') + '</td>' +
-      '<td style="font-size:12px;color:var(--text2)">' + (v.pais||'—') + '</td>' +
+      '<td style="font-size:12px">' +
+        '<div style="color:var(--text2);white-space:nowrap">' + (v.pais||'—') + '</div>' +
+        (v.pago ? '<div style="font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap">' + v.pago + '</div>' : '') +
+      '</td>' +
       '<td style="font-size:13px;font-weight:700;color:var(--text)">$' + pagoAlumno.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
       '<td onclick="event.stopPropagation()" style="padding:6px 8px">' + cellPagoLocal + '</td>' +
       cellDescuento +
