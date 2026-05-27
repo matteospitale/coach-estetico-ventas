@@ -1258,7 +1258,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.100</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.102</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -2341,9 +2341,15 @@ function renderStats() {
 
   // Tab: Evolución mensual
   var _tabEvolucion =
-    '<div class="chart-card" style="margin-bottom:16px">' +
-      '<div class="chart-title">Evolución mensual · últimos 6 meses</div>' +
-      buildColChart(topMes, function(k){ return k===mesActualKey?'#b61f3a':'#3B6B9E'; }, 'mes', maxMes, function(k){ var p=k.split('-'); return MESES_ABR[parseInt(p[1],10)-1]||k; }) +
+    '<div class="stats-grid" style="margin-bottom:16px">' +
+      '<div class="chart-card">' +
+        '<div class="chart-title">Evolución mensual · últimos 6 meses</div>' +
+        buildColChart(topMes, function(k){ return k===mesActualKey?'#b61f3a':'#3B6B9E'; }, 'mes', maxMes, function(k){ var p=k.split('-'); return MESES_ABR[parseInt(p[1],10)-1]||k; }) +
+      '</div>' +
+      '<div class="chart-card">' +
+        '<div class="chart-title">Cierres por día de la semana</div>' +
+        buildColChart([1,2,3,4,5,6,0].map(function(d){return [d,byDow[d]];}), function(d){return (d===0||d===6)?'#b61f3a':'#3B6B9E';}, null, maxDow, function(d){return DIAS_ES[d];}) +
+      '</div>' +
     '</div>';
 
   // Tab: Cursos
@@ -3602,67 +3608,107 @@ const CURSOS = ['Club Coach','Lifetime','Migración','Diplomado Dermatocosmiatr�
 
 // Mapea abreviaturas de Excel al nombre oficial.
 // Agrega aliases acá cuando aparezcan variantes nuevas de algún asesor.
+// qn = quitar acentos + lowercase, para comparaciones
+function _qn(s) {
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+}
+
+// Aliases: clave en minúsculas SIN acentos → nombre oficial exacto
 const CURSO_ALIASES = {
-  'lampara de wood': 'Lámpara de Wood PRO',
-  'lámpara de wood': 'Lámpara de Wood PRO',
-  'wood pro': 'Lámpara de Wood PRO',
-  'diplo peeling': 'Diplomado Internacional en Peeling Químico: Ciencia y Maestría',
-  'diplo micro': 'Diplomado Internacional en Microneedling',
-  'diplo aparato': 'Diplomado Internacional Aparatología y Tecnologías Estéticas 2025',
-  'diplo dermato': 'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
-  'acne expert': 'Acné Expert Training',
-  'melanosis expert': 'Melanosis Expert Training',
-  'envejecimiento expert': 'Envejecimiento Expert Training',
-  'nutriskin': 'Método NutriSkin con Dra. Israelina',
-  'hifu': 'Anatomía del HIFU: Más que un equipo',
-  'quimioexfoliacion': 'Formación Profesional en Peeling Químico',
-  'cosmiatria': 'Formación en Cosmiatría Profesional e Internacional',
-  'skin care': 'Consultor(a) Skin Care',
+  // Lámpara de Wood
+  'lampara de wood pro':  'Lámpara de Wood PRO',
+  'lampara de wood':      'Lámpara de Wood PRO',
+  'wood pro':             'Lámpara de Wood PRO',
+  // MC Técnicas (con o sin año, con o sin resto del nombre)
+  'mc tecnicas':          'MC Técnicas de Aplicación con Peeling Químico Actualización 2026',
+  'mc tecnicas de aplicacion con peeling quimico': 'MC Técnicas de Aplicación con Peeling Químico Actualización 2026',
+  'tecnicas de aplicacion': 'MC Técnicas de Aplicación con Peeling Químico Actualización 2026',
+  // Plasma Pen
+  'plasmapen':            'Plasma Pen',
+  'plasma pen':           'Plasma Pen',
+  // NutriSkin
+  'nutriskin':            'Método NutriSkin con Dra. Israelina',
+  'metodo nutriskin':     'Método NutriSkin con Dra. Israelina',
+  'nutri skin':           'Método NutriSkin con Dra. Israelina',
+  // Consultor Skin Care
+  'skincare':             'Consultor(a) Skin Care',
+  'skin care':            'Consultor(a) Skin Care',
+  'consultor skin care':  'Consultor(a) Skin Care',
+  'consultor skincare':   'Consultor(a) Skin Care',
+  'consultora skin care': 'Consultor(a) Skin Care',
+  // Diplomados
+  'diplomado microneedling':  'Diplomado Internacional en Microneedling',
+  'diplomado en microneedling': 'Diplomado Internacional en Microneedling',
+  'diplo micro':              'Diplomado Internacional en Microneedling',
+  'diplomado peeling':        'Diplomado Internacional en Peeling Químico: Ciencia y Maestría',
+  'diplo peeling':            'Diplomado Internacional en Peeling Químico: Ciencia y Maestría',
+  'diplomado aparatologia':   'Diplomado Internacional Aparatología y Tecnologías Estéticas 2025',
+  'diplo aparato':            'Diplomado Internacional Aparatología y Tecnologías Estéticas 2025',
+  'diplomado dermato':        'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
+  'diplo dermato':            'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
+  // Expert Trainings
+  'acne expert':          'Acné Expert Training',
+  'acne expert training': 'Acné Expert Training',
+  'melanosis expert':     'Melanosis Expert Training',
+  'envejecimiento expert':'Envejecimiento Expert Training',
+  // Otros
+  'hifu':                 'Anatomía del HIFU: Más que un equipo',
+  'quimioexfoliacion':    'Formación Profesional en Peeling Químico',
+  'formacion peeling':    'Formación Profesional en Peeling Químico',
+  'cosmiatria':           'Formación en Cosmiatría Profesional e Internacional',
+  'microneedling pro':    'Microneedling PRO: Entrenamiento Intensivo en Dermapen',
+  'microneedling cuero':  'Microneedling en Cuero Cabelludo',
+  'ipl':                  'IPL - Luz Pulsada Intensa',
+  'luz pulsada':          'IPL - Luz Pulsada Intensa',
+  'altafrecuencia':       'Altafrecuencia',
+  'alta frecuencia':      'Altafrecuencia',
+  'estrias':              'Abordaje Inteligente Estrías',
+  'abordaje estrias':     'Abordaje Inteligente Estrías',
+  'despigmentacion':      'Actualización en Despigmentación',
+  'actualizacion despigmentacion': 'Actualización en Despigmentación',
 };
 
 function _normalizarCurso(raw) {
   if (!raw) return raw;
-  var norm = function(s) {
-    return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-  };
-  var r = norm(raw);
+  var r = _qn(raw);
 
-  // 1. Alias exacto
+  // 1. Alias exacto (clave sin acentos)
   if (CURSO_ALIASES[r]) return CURSO_ALIASES[r];
-  // Alias parcial (raw contiene la clave)
+
+  // 2. Alias parcial (r contiene alguna clave de alias)
   for (var ak in CURSO_ALIASES) {
     if (r.includes(ak)) return CURSO_ALIASES[ak];
   }
 
-  // 2. Coincidencia exacta (normalizada)
+  // 3. Coincidencia exacta contra CURSOS (ambos normalizados sin acento)
   for (var i = 0; i < CURSOS.length; i++) {
-    if (norm(CURSOS[i]) === r) return CURSOS[i];
+    if (_qn(CURSOS[i]) === r) return CURSOS[i];
   }
 
-  // 3. El nombre oficial empieza con el raw (ej. "MC Técnicas" → "MC Técnicas de Aplicación...")
+  // 4. Nombre oficial empieza con el raw (ej. "MC Técnicas" → nombre completo)
   for (var i = 0; i < CURSOS.length; i++) {
-    var cn = norm(CURSOS[i]);
+    var cn = _qn(CURSOS[i]);
     if (cn.startsWith(r + ' ') || cn.startsWith(r + ':')) return CURSOS[i];
   }
 
-  // 4. El raw es substring del oficial (ej. "Lampara de Wood PRO" → "Lámpara de Wood PRO")
-  if (r.length >= 5) {
+  // 5. Raw es substring del oficial (ej. variante sin acento)
+  if (r.length >= 6) {
     for (var i = 0; i < CURSOS.length; i++) {
-      if (norm(CURSOS[i]).includes(r)) return CURSOS[i];
+      if (_qn(CURSOS[i]).includes(r)) return CURSOS[i];
     }
   }
 
-  // 5. Scoring por keywords (mínimo 3 chars c/u)
-  var words = r.split(/\s+/).filter(function(w) { return w.length >= 3; });
+  // 6. Keyword scoring (keywords ≥ 4 chars, necesita ≥ 2 palabras y match total)
+  var words = r.split(/\s+/).filter(function(w){ return w.length >= 4; });
   if (words.length >= 2) {
     var best = null, bestScore = 0;
     CURSOS.forEach(function(c) {
-      var cn = norm(c);
-      var score = words.filter(function(w) { return cn.includes(w); }).length;
+      var cn = _qn(c);
+      var score = words.filter(function(w){ return cn.includes(w); }).length;
       if (score > bestScore) { bestScore = score; best = c; }
     });
     if (best && bestScore === words.length) return best;
-    if (best && bestScore >= 2 && bestScore >= Math.ceil(words.length * 0.6)) return best;
+    if (best && bestScore >= 2 && bestScore >= Math.ceil(words.length * 0.7)) return best;
   }
 
   return raw;
