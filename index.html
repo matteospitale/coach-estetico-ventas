@@ -1132,6 +1132,7 @@ body::before {
           </button>
           <button class="btn btn-ghost" onclick="exportAdminCSV()">↓ CSV</button>
           <button class="btn btn-ghost" id="btn-import-excel-admin" onclick="abrirImportExcel()" title="Importar ventas desde Excel">⬆ Excel</button>
+          <button class="btn btn-ghost" onclick="normalizarCursosExistentes()" title="Normalizar nombres de curso en todas las ventas">⚙ Cursos</button>
           <div id="admin-cierre-btn-wrap" style="display:flex;align-items:center;gap:6px"></div>
         </div>
       </div>
@@ -1257,7 +1258,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.99</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.100</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -4483,6 +4484,42 @@ async function obtenerTCWise(key) {
   } catch(e) {
     if(statusEl) { statusEl.textContent = '✗ Error de conexión'; statusEl.style.color = 'var(--danger)'; }
   }
+}
+
+async function normalizarCursosExistentes() {
+  if (!ventas.length) { showToast('No hay ventas cargadas'); return; }
+
+  // Calcular qué registros van a cambiar
+  var cambios = [];
+  ventas.forEach(function(v) {
+    if (!v.curso) return;
+    var normalizado = _normalizarCurso(v.curso);
+    if (normalizado !== v.curso) cambios.push({ key: v._key, viejo: v.curso, nuevo: normalizado });
+  });
+
+  if (!cambios.length) { showToast('Todos los cursos ya están normalizados ✓'); return; }
+
+  // Mostrar preview antes de confirmar
+  var lista = cambios.slice(0, 12).map(function(c) {
+    return '"' + c.viejo + '" → ' + c.nuevo;
+  }).join('\n') + (cambios.length > 12 ? '\n... y ' + (cambios.length - 12) + ' más' : '');
+
+  if (!confirm('Se van a actualizar ' + cambios.length + ' ventas:\n\n' + lista + '\n\n¿Confirmar?')) return;
+
+  showToast('Actualizando ' + cambios.length + ' registros...');
+  var ok = 0, err = 0;
+  for (var i = 0; i < cambios.length; i++) {
+    var c = cambios[i];
+    try {
+      await dbSet('/ventas/' + c.key + '/curso', c.nuevo);
+      // Actualizar también el array local
+      var v = ventas.find(function(x){ return x._key === c.key; });
+      if (v) v.curso = c.nuevo;
+      ok++;
+    } catch(e) { err++; }
+  }
+  renderAdmin();
+  showToast('Cursos actualizados: ' + ok + (err ? ' · ' + err + ' errores' : '') + ' ✓');
 }
 
 function exportAdminCSV() {
