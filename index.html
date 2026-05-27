@@ -1100,12 +1100,23 @@ body::before {
             <input type="text" class="form-input" id="f-codigo" placeholder="Ej: HP0198428386">
           </div>
           <div class="form-group full">
-            <label class="form-label">Comprobante (imagen)</label>
-            <div id="comprobante-drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:rgba(255,255,255,0.55)" onclick="document.getElementById('f-comprobante-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleComprobanteDrop(event)">
-              <div style="font-size:13px;color:var(--text3)">📎 Hacé clic, arrastrá una imagen, o pegá con <strong>Ctrl+V</strong></div>
+            <label class="form-label">Comprobantes (hasta 2 imágenes)</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <div id="comprobante-drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:rgba(255,255,255,0.55)" onclick="document.getElementById('f-comprobante-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleComprobanteDrop(event,1)">
+                  <div style="font-size:13px;color:var(--text3)">📎 Comprobante 1 · clic, arrastrá o pegá <strong>Ctrl+V</strong></div>
+                </div>
+                <input type="file" id="f-comprobante-file" accept="image/*" style="display:none" onchange="previewComprobante(this,1)">
+                <div id="f-comprobante-preview" style="margin-top:8px"></div>
+              </div>
+              <div>
+                <div id="comprobante-drop-zone-2" style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:rgba(255,255,255,0.55)" onclick="document.getElementById('f-comprobante-file-2').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleComprobanteDrop(event,2)">
+                  <div style="font-size:13px;color:var(--text3)">📎 Comprobante 2 · opcional</div>
+                </div>
+                <input type="file" id="f-comprobante-file-2" accept="image/*" style="display:none" onchange="previewComprobante(this,2)">
+                <div id="f-comprobante-preview-2" style="margin-top:8px"></div>
+              </div>
             </div>
-            <input type="file" id="f-comprobante-file" accept="image/*" style="display:none" onchange="previewComprobante(this)">
-            <div id="f-comprobante-preview" style="margin-top:10px"></div>
           </div>
         </div>
         <div class="form-actions">
@@ -1258,7 +1269,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.104</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.107</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1854,7 +1865,7 @@ function renderTabla() {
       (v.lead ? '<div class="venta-card-row"><span class="venta-card-label">ID Lead</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);font-weight:600">' + v.lead + '</a></span></div>' : '') +
       (v.telefono ? '<div class="venta-card-row"><span class="venta-card-label">Teléfono</span><span class="venta-card-val">' + v.telefono + '</span></div>' : '') +
       (v.email ? '<div class="venta-card-row"><span class="venta-card-label">Email</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent)">' + v.email + '</a></span></div>' : '') +
-      (v.comprobante ? '<div class="venta-card-row"><span class="venta-card-label">Comprobante</span><span class="venta-card-val"><a href="' + v.comprobante + '" target="_blank" style="color:var(--accent)">Ver imagen</a></span></div>' : '') +
+      (v.comprobante ? '<div class="venta-card-row"><span class="venta-card-label">Comprobante</span><span class="venta-card-val"><a href="' + v.comprobante + '" target="_blank" style="color:var(--accent)">Ver imagen 1</a>' + (v.comprobante2 ? ' · <a href="' + v.comprobante2 + '" target="_blank" style="color:var(--accent)">Ver imagen 2</a>' : '') + '</span></div>' : '') +
     '</div>';
   }).join('');
 
@@ -1877,7 +1888,7 @@ function renderTabla() {
       '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.email||'') + '">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
       '<td class="mono" style="color:var(--text3)">' + (v.codigo||'—') + '</td>' +
       '<td style="font-size:11px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.nota||'') + '">' + (v.nota||'—') + '</td>' +
-      '<td onclick="v_compr_click(event)" style="cursor:pointer">' + (v.comprobante ? '<img src="' + v.comprobante + '" data-full="' + v._key + '" style="height:28px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="ventaComprobanteClick(event,ventas.find(function(x){return x._key===\'' + v._key + '\'}))">' : '—') + '</td>' +
+      '<td style="white-space:nowrap">' + (v.comprobante ? '<img src="' + v.comprobante + '" style="height:28px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="verComprobanteGrande(this.src)">' + (v.comprobante2 ? ' <img src="' + v.comprobante2 + '" style="height:28px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="verComprobanteGrande(this.src)">' : '') : '—') + '</td>' +
       '<td><span class="estado-select ' + estadoClass(est) + '">' + est + '</span></td>' +
       chkTd +
       '</tr>';
@@ -3755,18 +3766,21 @@ function buscarCurso(q) {
 }
 function closeCursoList() { document.getElementById('curso-list').style.display='none'; }
 
-// comprobante stored as base64 dataURL in memory
-let comprobanteData = null;
+// comprobantes stored as base64 dataURLs in memory
+let comprobanteData = null, comprobanteData2 = null;
 
-function setComprobanteFromDataURL(dataURL) {
-  comprobanteData = dataURL;
-  const prev = document.getElementById('f-comprobante-preview');
+function setComprobanteFromDataURL(dataURL, slot) {
+  slot = slot || 1;
+  var sfx = slot === 2 ? '-2' : '';
+  if (slot === 2) comprobanteData2 = dataURL;
+  else comprobanteData = dataURL;
+  var prev = document.getElementById('f-comprobante-preview' + sfx);
   prev.innerHTML =
     '<div style="position:relative;display:inline-block;margin-top:4px">' +
-      '<img src="' + dataURL + '" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border);display:block;cursor:zoom-in" onclick="verComprobanteGrande(this.src)">' +
-      '<button onclick="clearComprobante()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;line-height:1">✕</button>' +
+      '<img src="' + dataURL + '" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--border);display:block;cursor:zoom-in" onclick="verComprobanteGrande(this.src)">' +
+      '<button onclick="clearComprobante(' + slot + ')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;line-height:1">✕</button>' +
     '</div>';
-  const zone = document.getElementById('comprobante-drop-zone');
+  var zone = document.getElementById('comprobante-drop-zone' + sfx);
   if (zone) zone.style.borderColor = 'var(--accent)';
 }
 
@@ -3781,26 +3795,28 @@ function verComprobanteGrande(src) {
   document.body.appendChild(overlay);
 }
 
-function previewComprobante(input) {
+function previewComprobante(input, slot) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(e) { setComprobanteFromDataURL(e.target.result); };
+  reader.onload = function(e) { setComprobanteFromDataURL(e.target.result, slot || 1); };
   reader.readAsDataURL(file);
 }
 
-function handleComprobanteDrop(event) {
+function handleComprobanteDrop(event, slot) {
   event.preventDefault();
-  document.getElementById('comprobante-drop-zone').style.borderColor = 'var(--border)';
+  slot = slot || 1;
+  var sfx = slot === 2 ? '-2' : '';
+  document.getElementById('comprobante-drop-zone' + sfx).style.borderColor = 'var(--border)';
   const file = event.dataTransfer.files[0];
   if (file && file.type.startsWith('image/')) {
     const reader = new FileReader();
-    reader.onload = function(e) { setComprobanteFromDataURL(e.target.result); };
+    reader.onload = function(e) { setComprobanteFromDataURL(e.target.result, slot); };
     reader.readAsDataURL(file);
   }
 }
 
-// Global paste listener for comprobante
+// Global paste listener for comprobante — fills slot 1 first, then slot 2
 document.addEventListener('paste', function(e) {
   if (!document.getElementById('sec-cargar') || !document.getElementById('sec-cargar').classList.contains('active')) return;
   const items = e.clipboardData && e.clipboardData.items;
@@ -3809,18 +3825,23 @@ document.addEventListener('paste', function(e) {
     if (items[i].type.startsWith('image/')) {
       const file = items[i].getAsFile();
       const reader = new FileReader();
-      reader.onload = function(ev) { setComprobanteFromDataURL(ev.target.result); };
+      const slot = comprobanteData ? 2 : 1;
+      reader.onload = function(ev) { setComprobanteFromDataURL(ev.target.result, slot); };
       reader.readAsDataURL(file);
       break;
     }
   }
 });
 
-function clearComprobante() {
-  comprobanteData = null;
-  document.getElementById('f-comprobante-file').value = '';
-  document.getElementById('f-comprobante-preview').innerHTML = '';
-  const zone = document.getElementById('comprobante-drop-zone');
+function clearComprobante(slot) {
+  slot = slot || 1;
+  var sfx = slot === 2 ? '-2' : '';
+  if (slot === 2) comprobanteData2 = null;
+  else comprobanteData = null;
+  var fileInput = document.getElementById('f-comprobante-file' + sfx);
+  if (fileInput) fileInput.value = '';
+  document.getElementById('f-comprobante-preview' + sfx).innerHTML = '';
+  var zone = document.getElementById('comprobante-drop-zone' + sfx);
   if (zone) zone.style.borderColor = 'var(--border)';
 }
 
@@ -4006,9 +4027,10 @@ function renderAdmin() {
                 '<option' + (est==='Rechazada'?' selected':'') + '>Rechazada</option>' +
               '</select></div>' +
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Comprobante</label>' +
-              '<div style="margin-top:4px">' +
+              '<div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">' +
                 (v.comprobante
-                  ? '<img src="' + v.comprobante + '" style="max-height:120px;max-width:200px;border-radius:6px;border:1px solid var(--border);cursor:zoom-in" onclick="verComprobanteGrande(ventas.find(function(x){return x._key===\\\'' + v._key + '\\\'}).comprobante)">'
+                  ? '<img src="' + v.comprobante + '" style="max-height:120px;max-width:180px;border-radius:6px;border:1px solid var(--border);cursor:zoom-in" onclick="verComprobanteGrande(this.src)">' +
+                    (v.comprobante2 ? '<img src="' + v.comprobante2 + '" style="max-height:120px;max-width:180px;border-radius:6px;border:1px solid var(--border);cursor:zoom-in" onclick="verComprobanteGrande(this.src)">' : '')
                   : '<span style="font-size:12px;color:var(--text3)">Sin comprobante</span>') +
               '</div></div>' +
             '<div class="admin-field" style="grid-column:1/-1"><label class="form-label" style="font-size:11px">Notas admin</label>' +
@@ -4225,7 +4247,7 @@ function confirmarVenta() {
   const montoNeto = parseFloat(monto.toFixed(2));
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  pendiente = { asesor:asesor, fecha:fecha, monto:monto, montoLocal:montoLocal||undefined, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombre, apellido:apellido, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'' };
+  pendiente = { asesor:asesor, fecha:fecha, monto:monto, montoLocal:montoLocal||undefined, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombre, apellido:apellido, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'', comprobante2: comprobanteData2||'' };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
     '<strong>' + nombre + ' ' + apellido + '</strong> · ' +
@@ -4235,7 +4257,7 @@ function confirmarVenta() {
     (lead ? '<br><span style="color:var(--text3)">Lead: ' + lead + '</span>' : '') +
     (codigo ? ' · <span style="color:var(--text3)">' + codigo + '</span>' : '') +
     (email ? '<br><span style="color:var(--text3)">Email: ' + email + '</span>' : '') +
-    (comprobanteData ? '<br><span style="color:var(--text3)">📎 Comprobante adjunto</span>' : '') +
+    (comprobanteData ? '<br><span style="color:var(--text3)">📎 ' + (comprobanteData2 ? '2 comprobantes adjuntos' : 'Comprobante adjunto') + '</span>' : '') +
     (nota ? '<br><em>' + nota + '</em>' : '');
   document.getElementById('modal-confirm').classList.add('show');
 }
@@ -4278,7 +4300,8 @@ function limpiarForm() {
   ['f-monto','f-monto-local','f-curso','f-lead','f-codigo','f-email','f-telefono','f-nota','f-nombre','f-apellido'].forEach(function(id){ document.getElementById(id).value=''; });
   document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked=false; });
   document.getElementById('f-fecha').valueAsDate = new Date();
-  clearComprobante();
+  clearComprobante(1);
+  clearComprobante(2);
   actualizarCompletitud();
 }
 
