@@ -1257,7 +1257,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.90</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.95</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -2145,17 +2145,81 @@ function renderStats() {
     '</div>';
   }
 
-  // ── Evolución mensual ──
-  let mesBars = '';
-  topMes.forEach(function(entry) {
-    const isActual = entry[0] === mesActualKey;
-    const pct = Math.round(entry[1].usd / maxMes * 100);
-    mesBars += '<div class="bar-row stat-bar-row" data-campo="mes" data-valor="' + entry[0] + '">' +
-      '<span class="bar-name" style="font-size:12px;min-width:62px">' + mesLabel(entry[0]) + (isActual ? ' <span style="color:var(--accent);font-size:9px">●</span>' : '') + '</span>' +
-      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + (isActual ? 'var(--accent)' : 'var(--matteo)') + ';opacity:' + (isActual ? 1 : 0.75) + '"></div></div>' +
-      '<div style="min-width:110px;text-align:right"><span class="bar-amount" style="font-size:12px">$' + entry[1].usd.toLocaleString('en-US') + '</span> <span style="font-size:10px;color:var(--text3)">(' + entry[1].n + ' v.)</span></div>' +
-    '</div>';
-  });
+  // ── Helpers de gráficos ──
+  var MESES_ABR = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  function buildColChart(entries, colorFn, campo, maxVal, labelFn) {
+    if (!entries.length) return '<div style="text-align:center;color:var(--text3);font-size:12px;padding:20px">Sin datos</div>';
+    var n = entries.length;
+    var W = 400, H = 150;
+    var pL = 40, pR = 8, pT = 12, pB = 36;
+    var cW = W - pL - pR, cH = H - pT - pB;
+    var colW = cW / n;
+    var barW = Math.max(10, Math.min(40, colW * 0.58));
+    var maxV = maxVal || entries.reduce(function(m,e){return Math.max(m,e[1].usd);},0)||1;
+    var clickable = !!campo;
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block">';
+    [0.25,0.5,0.75,1].forEach(function(pct) {
+      var y = (pT + cH * (1 - pct)).toFixed(1);
+      var v = maxV * pct;
+      var lbl = v >= 1000 ? '$' + Math.round(v/1000) + 'k' : '$' + Math.round(v);
+      svg += '<line x1="' + pL + '" y1="' + y + '" x2="' + (W-pR) + '" y2="' + y + '" stroke="rgba(0,0,0,0.06)" stroke-width="0.8"/>';
+      svg += '<text x="' + (pL-3) + '" y="' + (parseFloat(y)+3.5).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="rgba(0,0,0,0.38)">' + lbl + '</text>';
+    });
+    svg += '<line x1="' + pL + '" y1="' + (pT+cH) + '" x2="' + (W-pR) + '" y2="' + (pT+cH) + '" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>';
+    entries.forEach(function(e, i) {
+      var key = e[0], data = e[1];
+      var bH = Math.max(2, cH * data.usd / maxV);
+      var bX = (pL + i * colW + (colW - barW) / 2).toFixed(1);
+      var bY = (pT + cH - bH).toFixed(1);
+      var color = colorFn(key);
+      var sl = String(key).replace(/"/g,'&quot;');
+      var lbl = labelFn ? labelFn(key) : String(key);
+      var cls = clickable ? ' class="stat-bar-row"' : '';
+      var dat = clickable ? ' data-campo="' + campo + '" data-valor="' + sl + '"' : '';
+      svg += '<rect' + cls + dat + ' x="' + bX + '" y="' + bY + '" width="' + barW.toFixed(1) + '" height="' + bH.toFixed(1) + '" rx="3" fill="' + color + '" style="cursor:' + (clickable?'pointer':'default') + '"/>';
+      if (bH > 16) {
+        var vStr = data.usd >= 1000 ? (data.usd/1000).toFixed(0) + 'k' : Math.round(data.usd);
+        svg += '<text x="' + (parseFloat(bX)+barW/2).toFixed(1) + '" y="' + (parseFloat(bY)-3).toFixed(1) + '" text-anchor="middle" font-size="8" fill="rgba(0,0,0,0.45)" pointer-events="none">$' + vStr + '</text>';
+      }
+      svg += '<text x="' + (parseFloat(bX)+barW/2).toFixed(1) + '" y="' + (H-pB+13) + '" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.5)" pointer-events="none">' + lbl + '</text>';
+      svg += '<text x="' + (parseFloat(bX)+barW/2).toFixed(1) + '" y="' + (H-pB+23) + '" text-anchor="middle" font-size="7.5" fill="rgba(0,0,0,0.3)" pointer-events="none">' + data.n + 'v</text>';
+    });
+    svg += '</svg>';
+    return '<div style="overflow-x:auto">' + svg + '</div>';
+  }
+
+  function buildStackedBar(entries, colorFn, campo) {
+    if (!entries.length) return '<div style="text-align:center;color:var(--text3);font-size:12px;padding:10px">Sin datos</div>';
+    var total = entries.reduce(function(s,e){return s+e[1].usd;},0)||1;
+    var bar = '<div style="display:flex;border-radius:8px;overflow:hidden;height:28px;margin-bottom:14px;gap:1px">';
+    entries.forEach(function(e) {
+      var pct = e[1].usd / total * 100;
+      if (pct < 0.5) return;
+      var sl = e[0].replace(/"/g,'&quot;');
+      bar += '<div class="stat-bar-row" data-campo="' + campo + '" data-valor="' + sl + '" style="flex:0 0 calc(' + pct.toFixed(2) + '% - 1px);background:' + colorFn(e[0]) + ';cursor:pointer;transition:filter 0.15s" title="' + sl + ': ' + pct.toFixed(1) + '%"></div>';
+    });
+    bar += '</div>';
+    var legend = '<div style="display:flex;flex-direction:column;gap:4px">';
+    entries.forEach(function(e) {
+      var label = e[0], data = e[1];
+      var pct = Math.round(data.usd / total * 100);
+      var sl = label.replace(/"/g,'&quot;');
+      var shortName = label.length > 36 ? label.substring(0,34) + '…' : label;
+      legend += '<div class="stat-bar-row" style="display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:7px;cursor:pointer;margin:0 -6px" data-campo="' + campo + '" data-valor="' + sl + '">' +
+        '<div style="width:10px;height:10px;border-radius:3px;background:' + colorFn(label) + ';flex-shrink:0"></div>' +
+        '<span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + shortName + '</span>' +
+        '<span style="font-size:11px;font-weight:700;color:var(--text);flex-shrink:0">$' + data.usd.toLocaleString('en-US') + '</span>' +
+        '<span style="font-size:10px;color:var(--text3);flex-shrink:0;min-width:28px;text-align:right">' + pct + '%</span>' +
+      '</div>';
+    });
+    legend += '</div>';
+    return bar + legend;
+  }
+
+  // Mapa de colores por curso
+  var cursoColorMap = {};
+  topCurso.forEach(function(e,i){ cursoColorMap[e[0]] = CURSO_PAL[i % CURSO_PAL.length]; });
 
   // ── Forma de pago (pills) ──
   const pagoTotalUSD = topPago.reduce((s,[,d])=>s+d.usd,0)||1;
@@ -2206,19 +2270,7 @@ function renderStats() {
     '</div>';
   }).join('') || '<div style="text-align:center;color:var(--text3);font-size:12px;padding:10px">Sin datos</div>';
 
-  // ── Top cursos (multicolor) ──
-  const cursosHtml = topCurso.map(function(e, i) {
-    const label = e[0], data = e[1];
-    const pct = Math.round(data.usd / maxCurso * 100);
-    const sl = label.replace(/"/g,'&quot;');
-    const color = CURSO_PAL[i % CURSO_PAL.length];
-    return '<div class="bar-row stat-bar-row" data-campo="curso" data-valor="' + sl + '">' +
-      '<div style="width:10px;height:10px;border-radius:3px;background:' + color + ';flex-shrink:0"></div>' +
-      '<span class="bar-name" style="font-size:12px;min-width:150px" title="' + sl + '">' + label + '</span>' +
-      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
-      '<span class="bar-amount" style="font-size:11px">$' + data.usd.toLocaleString('en-US') + ' <span style="color:var(--text3)">(' + data.n + ')</span></span>' +
-    '</div>';
-  }).join('');
+  // cursoColorMap ya está definido arriba junto con buildStackedBar
 
   // ── HTML OUTPUT ──
   document.getElementById('stats-content').innerHTML =
@@ -2247,10 +2299,10 @@ function renderStats() {
       '</div>' +
     '</div>' +
 
-    // 2. Evolución mensual
+    // 2. Evolución mensual — columnas verticales SVG
     '<div class="chart-card" style="margin-bottom:16px">' +
       '<div class="chart-title">Evolución mensual · últimos 6 meses</div>' +
-      mesBars +
+      buildColChart(topMes, function(k){ return k===mesActualKey?'#b61f3a':'#3B6B9E'; }, 'mes', maxMes, function(k){ var p=k.split('-'); return MESES_ABR[parseInt(p[1],10)-1]||k; }) +
     '</div>' +
 
     // 3. Canal (donut) + Forma de pago (pills)
@@ -2277,13 +2329,13 @@ function renderStats() {
       '</div>' +
     '</div>' +
 
-    // 5. Top cursos
+    // 5. Top cursos — barra apilada + leyenda
     '<div class="chart-card" style="margin-bottom:16px">' +
-      '<div class="chart-title">Top cursos por facturación</div>' +
-      (cursosHtml || '<div style="text-align:center;color:var(--text3);font-size:12px;padding:10px">Sin datos</div>') +
+      '<div class="chart-title">Top cursos · distribución y detalle</div>' +
+      buildStackedBar(topCurso, function(l){ return cursoColorMap[l]||'#888'; }, 'curso') +
     '</div>' +
 
-    // 6. Ritmo del mes + Día de semana
+    // 6. Ritmo del mes + Día de semana — columnas SVG
     '<div class="stats-grid" style="margin-bottom:16px">' +
       '<div class="chart-card">' +
         '<div class="chart-title">Ritmo del mes actual</div>' +
@@ -2307,14 +2359,7 @@ function renderStats() {
       '</div>' +
       '<div class="chart-card">' +
         '<div class="chart-title">Cierres por día de la semana</div>' +
-        [1,2,3,4,5,6,0].map(function(dow){
-          var d = byDow[dow];
-          return '<div class="bar-row">' +
-            '<span class="bar-name">' + DIAS_ES[dow] + '</span>' +
-            '<div class="bar-track"><div class="bar-fill" style="width:' + Math.round(d.usd/maxDow*100) + '%;background:var(--accent)"></div></div>' +
-            '<span class="bar-amount">$' + d.usd.toLocaleString('en-US') + ' <span style="color:var(--text3)">(' + d.n + ')</span></span>' +
-          '</div>';
-        }).join('') +
+        buildColChart([1,2,3,4,5,6,0].map(function(d){return [d,byDow[d]];}), function(d){return (d===0||d===6)?'#b61f3a':'#3B6B9E';}, null, maxDow, function(d){return DIAS_ES[d];}) +
       '</div>' +
     '</div>' +
 
@@ -5933,6 +5978,20 @@ function _splitNombre(fullName) {
   return { nombre: parts[0] || '', apellido: parts.slice(1).join(' ') };
 }
 
+// Extrae nombre+apellido del campo "Nombre Certificado" de Kommo,
+// limpiando títulos (Lic., Dra., etc.) y texto extra después de / | ; ,
+function _parseCertificado(raw) {
+  if (!raw) return { nombre: '', apellido: '' };
+  // Cortar en separadores comunes (cargo, especialidad, etc.)
+  var s = raw.split(/[\/|;]/)[0];
+  // Quitar títulos/honoríficos al inicio
+  s = s.replace(/^\s*(Lic\.?|Dra?\.?|Prof\.?|Mg\.?|Ing\.?|Tec\.?|Esp\.?|Med\.?|Enf\.?|Mtra?\.?|Cdta?\.?)\s*/i, '');
+  s = s.trim().replace(/\s+/g, ' ');
+  if (!s) return { nombre: '', apellido: '' };
+  var parts = s.split(' ');
+  return { nombre: parts[0] || '', apellido: parts.slice(1).join(' ') };
+}
+
 function _parseNum(val) {
   if (typeof val === 'number') return val;
   return parseFloat(String(val || '').replace(/,/g, '').replace(/[^0-9.-]/g, '')) || 0;
@@ -5997,12 +6056,16 @@ async function impAplicarKommoSiHayPreview() {
         if (!id) return;
         var fullName = _rowGet(row, ['Nombre del lead','Contacto principal','nombre','Nombre']);
         var na = _splitNombre(fullName);
+        var certName = _rowGet(row, ['Nombre Certificados','nombre certificados','Nombre Certificado','nombre certificado','Nombre_Certificados','Nombre_Certificado']);
+        var naCert = _parseCertificado(certName);
         var pais = _rowGet(row, ['Pais de Residencia (contacto)','Pais de Residencia','pais','País','Pais']);
         var utmSrc = _rowGet(row, ['utm_source','UTM Source']);
         var utmMed = _rowGet(row, ['utm_medium','UTM Medium']);
         var email  = _rowGet(row, ['Correo (contacto)','Email','Correo','correo','email']);
         var tel    = _rowGet(row, ['Teléfono Whatsapp','Telefono','Teléfono','telefono']);
-        _importKommoMap[id] = { nombre: na.nombre, apellido: na.apellido, pais: pais, canal: _canalDesdeUtm(utmSrc, utmMed), email: email, telefono: _normTelefono(tel) };
+        var nombre   = na.nombre   || naCert.nombre;
+        var apellido = naCert.apellido || na.apellido;
+        _importKommoMap[id] = { nombre: nombre, apellido: apellido, pais: pais, canal: _canalDesdeUtm(utmSrc, utmMed), email: email, telefono: _normTelefono(tel) };
       });
       // Enriquecer filas existentes con los datos de Kommo
       _importRows.forEach(function(v) {
@@ -6095,13 +6158,17 @@ async function procesarImportFiles() {
         id = id.replace(/\.0$/, ''); // quitar decimales de excel
         var fullName = _rowGet(row, ['Nombre del lead','Contacto principal','nombre','Nombre']);
         var na = _splitNombre(fullName);
+        var certName = _rowGet(row, ['Nombre Certificados','nombre certificados','Nombre Certificado','nombre certificado','Nombre_Certificados','Nombre_Certificado']);
+        var naCert = _parseCertificado(certName);
         var pais = _rowGet(row, ['Pais de Residencia (contacto)','Pais de Residencia','pais','País','Pais']);
         var utmSrc = _rowGet(row, ['utm_source','UTM Source','Utm Source']);
         var utmMed = _rowGet(row, ['utm_medium','UTM Medium','Utm Medium']);
         var canal  = _canalDesdeUtm(utmSrc, utmMed);
         var email  = _rowGet(row, ['Correo (contacto)','Email','Correo','correo','email']);
         var tel    = _rowGet(row, ['Teléfono Whatsapp','Telefono','Teléfono','telefono','teléfono']);
-        _importKommoMap[id] = { nombre: na.nombre, apellido: na.apellido, pais: pais, canal: canal, email: email, telefono: _normTelefono(tel) };
+        var nombre   = na.nombre   || naCert.nombre;
+        var apellido = naCert.apellido || na.apellido;
+        _importKommoMap[id] = { nombre: nombre, apellido: apellido, pais: pais, canal: canal, email: email, telefono: _normTelefono(tel) };
       });
       statusEl.textContent = 'Kommo: ' + Object.keys(_importKommoMap).length + ' leads cargados · Leyendo ventas...';
     }
