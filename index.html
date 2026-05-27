@@ -868,46 +868,58 @@ body::before {
           <button class="btn btn-ghost" id="btn-modo-edicion" onclick="toggleModoEdicion()">✎ Editar / Eliminar</button>
         </div>
       </div>
-      <div class="filters">
-        <select id="fil-asesor" onchange="renderTabla()">
-          <option value="all">Todos los asesores</option>
-          <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Automatizacion</option>
-        </select>
-        <select id="fil-mes" onchange="renderTabla()">
-          <option value="all">Todos los meses</option>
-        </select>
-        <select id="fil-pago" onchange="renderTabla()">
-          <option value="all">Todas las formas de pago</option>
-          <option>Hotmart</option><option>Link Mercado Pago Argentina</option>
-          <option>Transferencia Argentina</option><option>Zelle</option>
-          <option>Bolívares</option><option>Pesos Chilenos</option>
-          <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
-          <option>Pesos Peruanos</option><option>PayPal</option>
-        </select>
-        <select id="fil-estado" onchange="renderTabla()">
-          <option value="all">Todos los estados</option>
-          <option value="Aprobado">✅ Aprobado</option>
-          <option value="Pendiente">🔵 Pendiente</option>
-          <option value="Rechazada">🔴 Rechazada</option>
-        </select>
-        <input id="fil-search" placeholder="Buscar curso o lead..." oninput="renderTabla()">
+      <!-- Ventas subnav -->
+      <div class="admin-subnav">
+        <button class="admin-subnav-btn active" id="ventas-tab-lista" onclick="switchVentasTab('lista')">Mis ventas</button>
+        <button class="admin-subnav-btn" id="ventas-tab-parciales" onclick="switchVentasTab('parciales')">💰 Cobros pendientes<span class="p-badge" id="parciales-badge" style="display:none">0</span></button>
       </div>
-      <div class="table-wrap">
-        <div class="table-scroll">
-          <table>
-            <thead><tr>
-              <th>Fecha</th><th>Asesor</th><th>Canal</th>
-              <th>Valor oficial</th><th>Pago alumno</th><th>Forma de pago</th>
-              <th>Curso / Producto</th><th>ID Lead</th><th>Teléfono</th>
-              <th>Email</th><th>Código</th><th>Aclaración</th><th>Comprobante</th><th>Estado</th>
-              <th id="th-check" style="display:none;width:36px">
-                <input type="checkbox" id="check-all" onchange="toggleCheckAll(this)" style="accent-color:var(--accent);width:15px;height:15px">
-              </th>
-            </tr></thead>
-            <tbody id="tabla-body"></tbody>
-          </table>
-          <div id="tabla-body-cards"></div>
+      <!-- Panel: lista -->
+      <div id="ventas-lista-panel">
+        <div class="filters">
+          <select id="fil-asesor" onchange="renderTabla()">
+            <option value="all">Todos los asesores</option>
+            <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Automatizacion</option>
+          </select>
+          <select id="fil-mes" onchange="renderTabla()">
+            <option value="all">Todos los meses</option>
+          </select>
+          <select id="fil-pago" onchange="renderTabla()">
+            <option value="all">Todas las formas de pago</option>
+            <option>Hotmart</option><option>Link Mercado Pago Argentina</option>
+            <option>Transferencia Argentina</option><option>Zelle</option>
+            <option>Bolívares</option><option>Pesos Chilenos</option>
+            <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
+            <option>Pesos Peruanos</option><option>PayPal</option>
+          </select>
+          <select id="fil-estado" onchange="renderTabla()">
+            <option value="all">Todos los estados</option>
+            <option value="Aprobado">✅ Aprobado</option>
+            <option value="Pendiente">🔵 Pendiente</option>
+            <option value="Rechazada">🔴 Rechazada</option>
+          </select>
+          <input id="fil-search" placeholder="Buscar curso o lead..." oninput="renderTabla()">
         </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead><tr>
+                <th>Fecha</th><th>Asesor</th><th>Canal</th>
+                <th>Valor oficial</th><th>Pago alumno</th><th>Forma de pago</th>
+                <th>Curso / Producto</th><th>ID Lead</th><th>Teléfono</th>
+                <th>Email</th><th>Código</th><th>Aclaración</th><th>Comprobante</th><th>Estado</th>
+                <th id="th-check" style="display:none;width:36px">
+                  <input type="checkbox" id="check-all" onchange="toggleCheckAll(this)" style="accent-color:var(--accent);width:15px;height:15px">
+                </th>
+              </tr></thead>
+              <tbody id="tabla-body"></tbody>
+            </table>
+            <div id="tabla-body-cards"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Panel: cobros pendientes -->
+      <div id="ventas-parciales-panel" style="display:none">
+        <div id="parciales-content"></div>
       </div>
     </section>
 
@@ -1138,23 +1150,10 @@ body::before {
             </label>
           </div>
           <div id="en-partes-panel" class="form-group full" style="display:none">
-            <div class="partes-grid">
-              <div class="form-group">
-                <label class="form-label">Cobrado ahora (USD)</label>
-                <input type="number" class="form-input" id="f-cuota-pagado" placeholder="Ej: 62.50" min="0" step="0.01" oninput="recalcCuotaPendiente()">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Pendiente (USD)</label>
-                <input type="number" class="form-input" id="f-cuota-pendiente" placeholder="Auto" min="0" step="0.01" style="background:rgba(0,0,0,0.04);opacity:0.75" readonly>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Fecha de cobro</label>
-                <input type="date" class="form-input" id="f-cuota-venc">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Nota del cobro pendiente</label>
-                <input type="text" class="form-input" id="f-cuota-nota" placeholder="Ej: Resto acordado para fin de mes">
-              </div>
+            <div style="background:rgba(182,31,58,0.04);border:1.5px solid rgba(182,31,58,0.18);border-radius:12px;padding:16px">
+              <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px">Pagos pendientes a cobrar</div>
+              <div id="cuotas-list"></div>
+              <button type="button" onclick="agregarCuota()" style="margin-top:8px;background:transparent;border:1.5px dashed rgba(182,31,58,0.35);color:var(--accent);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Agregar otro pago</button>
             </div>
           </div>
         </div>
@@ -1186,51 +1185,39 @@ body::before {
           <div id="admin-cierre-btn-wrap" style="display:flex;align-items:center;gap:6px"></div>
         </div>
       </div>
-      <!-- Admin subnav -->
-      <div class="admin-subnav">
-        <button class="admin-subnav-btn active" id="admin-tab-ventas" onclick="switchAdminTab('ventas')">Todas las ventas</button>
-        <button class="admin-subnav-btn" id="admin-tab-parciales" onclick="switchAdminTab('parciales')">💰 Cobros pendientes<span class="p-badge" id="parciales-badge" style="display:none">0</span></button>
+      <div class="filters">
+        <select id="admin-fil-asesor" onchange="renderAdmin()">
+          <option value="all">Todos los asesores</option>
+          <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Automatizacion</option>
+        </select>
+        <select id="admin-fil-mes" onchange="renderAdmin()">
+          <option value="all">Todos los meses</option>
+        </select>
+        <select id="admin-fil-estado" onchange="renderAdmin()">
+          <option value="all">Todos los estados</option>
+          <option value="Aprobado">✅ Aprobado</option>
+          <option value="Pendiente">🔵 Pendiente</option>
+          <option value="Rechazada">🔴 Rechazada</option>
+        </select>
+        <select id="admin-fil-pais" onchange="renderAdmin()">
+          <option value="all">Todos los países</option>
+          <option>Alemania</option><option>Andorra</option><option>Argentina</option><option>Aruba</option><option>Australia</option><option>Belice</option><option>Bolivia</option><option>Brasil</option><option>Canadá</option><option>Chile</option><option>Colombia</option><option>Costa Rica</option><option>Cuba</option><option>Ecuador</option><option>El Salvador</option><option>España</option><option>Estados Unidos</option><option>Francia</option><option>Guatemala</option><option>Honduras</option><option>Israel</option><option>Italia</option><option>México</option><option>Nicaragua</option><option>Países Bajos</option><option>Panamá</option><option>Paraguay</option><option>Perú</option><option>Portugal</option><option>Puerto Rico</option><option>Reino Unido</option><option>República Checa</option><option>República Dominicana</option><option>Suiza</option><option>Trinidad y Tobago</option><option>Uruguay</option><option>Venezuela</option>
+        </select>
+        <select id="admin-fil-pago" onchange="renderAdmin()">
+          <option value="all">Todos los métodos</option>
+          <option>Hotmart</option><option>Link Mercado Pago Argentina</option><option>Transferencia Argentina</option><option>Zelle</option><option>Bolívares</option><option>Pesos Chilenos</option><option>Pesos Dominicanos</option><option>Pesos Colombianos</option><option>Pesos Peruanos</option><option>PayPal</option>
+        </select>
+        <input id="admin-fil-search" style="max-width:180px" placeholder="Buscar nombre o lead..." oninput="renderAdmin()">
       </div>
-      <!-- Panel: ventas -->
-      <div id="admin-ventas-panel">
-        <div class="filters">
-          <select id="admin-fil-asesor" onchange="renderAdmin()">
-            <option value="all">Todos los asesores</option>
-            <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Automatizacion</option>
-          </select>
-          <select id="admin-fil-mes" onchange="renderAdmin()">
-            <option value="all">Todos los meses</option>
-          </select>
-          <select id="admin-fil-estado" onchange="renderAdmin()">
-            <option value="all">Todos los estados</option>
-            <option value="Aprobado">✅ Aprobado</option>
-            <option value="Pendiente">🔵 Pendiente</option>
-            <option value="Rechazada">🔴 Rechazada</option>
-          </select>
-          <select id="admin-fil-pais" onchange="renderAdmin()">
-            <option value="all">Todos los países</option>
-            <option>Alemania</option><option>Andorra</option><option>Argentina</option><option>Aruba</option><option>Australia</option><option>Belice</option><option>Bolivia</option><option>Brasil</option><option>Canadá</option><option>Chile</option><option>Colombia</option><option>Costa Rica</option><option>Cuba</option><option>Ecuador</option><option>El Salvador</option><option>España</option><option>Estados Unidos</option><option>Francia</option><option>Guatemala</option><option>Honduras</option><option>Israel</option><option>Italia</option><option>México</option><option>Nicaragua</option><option>Países Bajos</option><option>Panamá</option><option>Paraguay</option><option>Perú</option><option>Portugal</option><option>Puerto Rico</option><option>Reino Unido</option><option>República Checa</option><option>República Dominicana</option><option>Suiza</option><option>Trinidad y Tobago</option><option>Uruguay</option><option>Venezuela</option>
-          </select>
-          <select id="admin-fil-pago" onchange="renderAdmin()">
-            <option value="all">Todos los métodos</option>
-            <option>Hotmart</option><option>Link Mercado Pago Argentina</option><option>Transferencia Argentina</option><option>Zelle</option><option>Bolívares</option><option>Pesos Chilenos</option><option>Pesos Dominicanos</option><option>Pesos Colombianos</option><option>Pesos Peruanos</option><option>PayPal</option>
-          </select>
-          <input id="admin-fil-search" style="max-width:180px" placeholder="Buscar nombre o lead..." oninput="renderAdmin()">
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País / Pago</th><th>Valor oficial</th><th>Pago alumno</th><th>Descuento</th><th>Venta neta</th><th style="border-left:2px solid var(--border)">M.Final USD</th><th>= USD</th><th style="border-left:2px solid var(--border)">M.Final ARS</th><th>= ARS</th><th>Estado</th><th style="width:36px"></th>
+            </tr></thead>
+            <tbody id="admin-body"></tbody>
+          </table>
         </div>
-        <div class="table-wrap">
-          <div class="table-scroll">
-            <table>
-              <thead><tr>
-                <th>Fecha</th><th>Asesor</th><th>ID Lead</th><th>Nombre</th><th>País / Pago</th><th>Valor oficial</th><th>Pago alumno</th><th>Descuento</th><th>Venta neta</th><th style="border-left:2px solid var(--border)">M.Final USD</th><th>= USD</th><th style="border-left:2px solid var(--border)">M.Final ARS</th><th>= ARS</th><th>Estado</th><th style="width:36px"></th>
-              </tr></thead>
-              <tbody id="admin-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!-- Panel: parciales -->
-      <div id="admin-parciales-panel" style="display:none">
-        <div id="parciales-content"></div>
       </div>
     </section>
 
@@ -1320,7 +1307,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.117</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.123</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1627,6 +1614,18 @@ function fillMesOptions(selId) {
   });
 }
 function canalColor(c) { return c==='Instagram'?'#C13584':c==='WhatsApp'?'#25D366':'var(--text3)'; }
+async function updateCanalInline(key, val, el) {
+  var v = ventas.find(function(x){ return x._key === key; });
+  if (!v) return;
+  v.canal = val;
+  if (el) el.style.color = canalColor(val);
+  try {
+    await dbSet('ventas/' + key + '/canal', val);
+    showToast('✓ Canal actualizado');
+  } catch(e) {
+    showToast('Error al guardar canal: ' + (e.message||e));
+  }
+}
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -1902,7 +1901,12 @@ function renderTabla() {
       '<div class="venta-card-header">' +
         '<div style="display:flex;align-items:center;gap:8px">' +
           '<span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span>' +
-          '<span style="font-size:12px;font-weight:600;color:' + canalColor(v.canal) + '">' + (v.canal||'—') + '</span>' +
+          '<select onchange="updateCanalInline(\'' + v._key + '\',this.value,this)" style="font-size:12px;font-weight:600;border:1.5px solid rgba(182,31,58,0.18);border-radius:6px;padding:2px 4px;background:transparent;color:' + canalColor(v.canal) + ';font-family:inherit;cursor:pointer;outline:none">' +
+            '<option value=""' + (!v.canal?' selected':'') + '>—</option>' +
+            '<option value="Instagram"' + (v.canal==='Instagram'?' selected':'') + '>Instagram</option>' +
+            '<option value="WhatsApp"' + (v.canal==='WhatsApp'?' selected':'') + '>WhatsApp</option>' +
+            '<option value="IA/Web"' + (v.canal==='IA/Web'?' selected':'') + '>IA/Web</option>' +
+          '</select>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:10px">' +
           '<span style="font-family:inherit;font-weight:700;color:var(--accent);font-size:16px">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
@@ -1929,7 +1933,14 @@ function renderTabla() {
     return '<tr style="' + (seleccionados.has(v._key)?'background:var(--accent-light)':'') + '">' +
       '<td class="mono" style="white-space:nowrap">' + fechaCorta + '</td>' +
       '<td><span class="badge badge-' + (v.asesor||'').toLowerCase() + '">' + (v.asesor||'') + '</span></td>' +
-      '<td style="font-size:11px;font-weight:600;color:' + cc + ';max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.canal||'') + '">' + (v.canal||'—') + '</td>' +
+      '<td style="padding:3px 6px">' +
+        '<select onchange="updateCanalInline(\'' + v._key + '\',this.value,this)" style="font-size:11px;font-weight:600;border:1.5px solid rgba(182,31,58,0.18);border-radius:6px;padding:2px 4px;background:transparent;color:' + cc + ';font-family:inherit;cursor:pointer;outline:none;max-width:105px">' +
+          '<option value=""' + (!v.canal?' selected':'') + '>—</option>' +
+          '<option value="Instagram"' + (v.canal==='Instagram'?' selected':'') + '>Instagram</option>' +
+          '<option value="WhatsApp"' + (v.canal==='WhatsApp'?' selected':'') + '>WhatsApp</option>' +
+          '<option value="IA/Web"' + (v.canal==='IA/Web'?' selected':'') + '>IA/Web</option>' +
+        '</select>' +
+      '</td>' +
       '<td class="mono" style="font-weight:600;color:var(--accent);white-space:nowrap">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
       '<td style="font-size:11px;color:var(--text2);white-space:nowrap">' + (v.montoLocal||'—') + '</td>' +
       '<td style="font-size:11px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.pago||'') + '">' + (v.pago||'—') + '</td>' +
@@ -2040,12 +2051,13 @@ function editarVenta(key) {
   var epPanel = document.getElementById('en-partes-panel');
   if (epChk) epChk.checked = !!v.enPartes;
   if (epPanel) epPanel.style.display = v.enPartes ? '' : 'none';
-  if (v.enPartes) {
-    document.getElementById('f-cuota-pagado').value   = v.cuotaPagado   || '';
-    document.getElementById('f-cuota-pendiente').value = v.cuotaPendiente || '';
-    document.getElementById('f-cuota-venc').value     = v.cuotaVenc     || '';
-    document.getElementById('f-cuota-nota').value     = v.cuotaNota     || '';
+  _cuotasForm = [];
+  if (v.enPartes && v.cuotas && v.cuotas.length) {
+    _cuotasForm = v.cuotas.filter(function(c){ return c.estado !== 'cobrado'; })
+      .map(function(c){ return { monto: c.monto||0, venc: c.venc||'', nota: c.nota||'', estado: 'pendiente' }; });
   }
+  if (v.enPartes && !_cuotasForm.length) _cuotasForm = [{ monto:0, venc:'', nota:'', estado:'pendiente' }];
+  renderCuotasForm();
   window._editKey = key;
   switchTab('cargar');
   actualizarCompletitud();
@@ -3839,125 +3851,191 @@ function buscarCurso(q) {
 function closeCursoList() { document.getElementById('curso-list').style.display='none'; }
 
 // ── VENTAS EN PARTES ──
+// ── VENTAS EN PARTES ──
 function toggleEnPartes() {
   var checked = document.getElementById('f-en-partes').checked;
   document.getElementById('en-partes-panel').style.display = checked ? '' : 'none';
-  if (checked) recalcCuotaPendiente();
-}
-function recalcCuotaPendiente() {
-  if (!document.getElementById('f-en-partes') || !document.getElementById('f-en-partes').checked) return;
-  var monto   = parseFloat(document.getElementById('f-monto').value) || 0;
-  var pagado  = parseFloat(document.getElementById('f-cuota-pagado').value) || 0;
-  var pendiente = Math.max(0, parseFloat((monto - pagado).toFixed(2)));
-  document.getElementById('f-cuota-pendiente').value = monto > 0 ? pendiente : '';
+  if (checked && !document.getElementById('cuotas-list').children.length) agregarCuota();
 }
 
-// ── ADMIN TABS (Ventas / Parciales) ──
-var adminSubTab = 'ventas';
-function switchAdminTab(tab) {
-  adminSubTab = tab;
-  ['ventas','parciales'].forEach(function(t) {
-    var btn = document.getElementById('admin-tab-' + t);
+// cuotas form state: array of {monto, venc, nota}
+var _cuotasForm = [];
+function renderCuotasForm() {
+  var list = document.getElementById('cuotas-list');
+  if (!list) return;
+  list.innerHTML = _cuotasForm.map(function(c, i) {
+    var label = _cuotasForm.length === 1 ? 'Pago pendiente' : 'Pago ' + (i + 1);
+    return '<div style="display:grid;grid-template-columns:120px 150px 1fr auto;gap:8px;align-items:end;margin-bottom:8px" id="cuota-row-' + i + '">' +
+      '<div><label class="form-label" style="font-size:11px">' + label + ' (USD)</label>' +
+        '<input type="number" class="form-input" placeholder="Ej: 62.50" min="0" step="0.01" value="' + (c.monto||'') + '" oninput="_cuotasForm[' + i + '].monto=parseFloat(this.value)||0"></div>' +
+      '<div><label class="form-label" style="font-size:11px">Fecha de cobro</label>' +
+        '<input type="date" class="form-input" value="' + (c.venc||'') + '" oninput="_cuotasForm[' + i + '].venc=this.value"></div>' +
+      '<div><label class="form-label" style="font-size:11px">Nota</label>' +
+        '<input type="text" class="form-input" placeholder="Ej: segunda cuota acordada" value="' + (c.nota||'').replace(/"/g,'&quot;') + '" oninput="_cuotasForm[' + i + '].nota=this.value"></div>' +
+      (_cuotasForm.length > 1 ? '<button type="button" onclick="eliminarCuota(' + i + ')" style="background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;margin-bottom:1px" title="Quitar">✕</button>' : '<div></div>') +
+    '</div>';
+  }).join('');
+}
+function agregarCuota() {
+  _cuotasForm.push({ monto: 0, venc: '', nota: '', estado: 'pendiente' });
+  renderCuotasForm();
+}
+function eliminarCuota(i) {
+  _cuotasForm.splice(i, 1);
+  renderCuotasForm();
+}
+function recalcCuotaPendiente() {} // kept for compatibility with f-monto oninput
+
+// ── VENTAS TAB (Lista / Cobros pendientes) ──
+var ventasSubTab = 'lista';
+function switchVentasTab(tab) {
+  ventasSubTab = tab;
+  ['lista','parciales'].forEach(function(t) {
+    var btn = document.getElementById('ventas-tab-' + t);
     if (btn) btn.classList.toggle('active', t === tab);
   });
-  var vPanel = document.getElementById('admin-ventas-panel');
-  var pPanel = document.getElementById('admin-parciales-panel');
-  if (vPanel) vPanel.style.display = tab === 'ventas' ? '' : 'none';
+  var lPanel = document.getElementById('ventas-lista-panel');
+  var pPanel = document.getElementById('ventas-parciales-panel');
+  if (lPanel) lPanel.style.display = tab === 'lista' ? '' : 'none';
   if (pPanel) pPanel.style.display = tab === 'parciales' ? '' : 'none';
   if (tab === 'parciales') renderParciales();
 }
 
 function actualizarBadgeParciales() {
-  var count = ventas.filter(function(v){ return v.enPartes && v.cuotaEstado !== 'cobrado'; }).length;
+  var count = 0;
+  ventas.forEach(function(v) {
+    if (!v.enPartes) return;
+    (v.cuotas || []).forEach(function(c) { if (c.estado !== 'cobrado') count++; });
+  });
   var badge = document.getElementById('parciales-badge');
   if (!badge) return;
   badge.textContent = count;
   badge.style.display = count ? '' : 'none';
 }
 
+function _vencInfo(venc) {
+  if (!venc) return { cls: '', label: '—' };
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var dv = new Date(venc); dv.setHours(0,0,0,0);
+  var diff = Math.round((dv - hoy) / 86400000);
+  if (diff < 0)        return { cls: 'venc-late', label: 'Vencido hace ' + Math.abs(diff) + 'd' };
+  if (diff === 0)      return { cls: 'venc-soon', label: 'Hoy' };
+  if (diff <= 7)       return { cls: 'venc-soon', label: 'En ' + diff + ' día' + (diff===1?'':'s') };
+  return { cls: 'venc-ok', label: 'En ' + diff + ' días' };
+}
+
 function renderParciales() {
   var el = document.getElementById('parciales-content');
   if (!el) return;
-  var parciales = ventas.filter(function(v){ return v.enPartes && v.cuotaEstado !== 'cobrado'; });
-  if (!parciales.length) {
+  // Flatten: one row per cuota pendiente
+  var rows = [];
+  ventas.forEach(function(v) {
+    if (!v.enPartes) return;
+    (v.cuotas || []).forEach(function(c, idx) {
+      if (c.estado === 'cobrado') return;
+      rows.push({ v: v, c: c, idx: idx });
+    });
+  });
+  if (!rows.length) {
     el.innerHTML = '<div style="padding:48px;text-align:center;color:var(--text3);font-size:15px">🎉 No hay cobros pendientes</div>';
     return;
   }
-  // Sort: vencidos primero, luego por fecha
-  var hoy = new Date(); hoy.setHours(0,0,0,0);
-  parciales.sort(function(a,b){
-    var da = a.cuotaVenc ? new Date(a.cuotaVenc) : new Date('9999-12-31');
-    var db = b.cuotaVenc ? new Date(b.cuotaVenc) : new Date('9999-12-31');
+  // Sort by venc date
+  rows.sort(function(a, b) {
+    var da = a.c.venc ? new Date(a.c.venc) : new Date('9999-12-31');
+    var db = b.c.venc ? new Date(b.c.venc) : new Date('9999-12-31');
     return da - db;
   });
-  var rows = parciales.map(function(v) {
-    var diasRestantes = '';
-    var vencClass = '';
-    if (v.cuotaVenc) {
-      var dv = new Date(v.cuotaVenc); dv.setHours(0,0,0,0);
-      var diff = Math.round((dv - hoy) / 86400000);
-      if (diff < 0)       { diasRestantes = 'Vencido hace ' + Math.abs(diff) + 'd'; vencClass = 'venc-late'; }
-      else if (diff === 0){ diasRestantes = 'Hoy'; vencClass = 'venc-soon'; }
-      else if (diff <= 7) { diasRestantes = 'En ' + diff + ' día' + (diff===1?'':'s'); vencClass = 'venc-soon'; }
-      else                { diasRestantes = 'En ' + diff + ' días'; vencClass = 'venc-ok'; }
-    }
-    var vencFmt = v.cuotaVenc ? v.cuotaVenc.split('-').reverse().join('/') : '—';
+  var totalPendiente = rows.reduce(function(s, r) { return s + (parseFloat(r.c.monto) || 0); }, 0);
+  var tableRows = rows.map(function(r) {
+    var v = r.v, c = r.c, idx = r.idx;
+    var vi = _vencInfo(c.venc);
+    var vencFmt = c.venc ? c.venc.split('-').reverse().join('/') : '—';
+    var totalCuotas = (v.cuotas||[]).length;
+    var cuotaLabel = totalCuotas > 1 ? 'Cuota ' + (idx+1) + '/' + totalCuotas : 'Pago pendiente';
     return '<tr>' +
-      '<td><strong>' + (v.nombre||'') + ' ' + (v.apellido||'') + '</strong><br><span style="font-size:11px;color:var(--text3)">' + (v.asesor||'') + ' · ' + (v.fecha||'').split('-').reverse().join('/') + '</span></td>' +
-      '<td style="max-width:160px;white-space:normal;font-size:12px">' + (v.curso||'—') + '</td>' +
-      '<td class="mono" style="font-weight:600">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
-      '<td class="mono" style="color:#2e7d32">$' + parseFloat(v.cuotaPagado||0).toLocaleString('en-US') + '</td>' +
-      '<td class="mono" style="color:var(--accent);font-weight:700">$' + parseFloat(v.cuotaPendiente||0).toLocaleString('en-US') + '</td>' +
-      '<td><input type="date" value="' + (v.cuotaVenc||'') + '" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;background:transparent;color:var(--text)" onchange="updateCuotaField(\'' + v._key + '\',\'cuotaVenc\',this.value)"></td>' +
-      '<td class="' + vencClass + '" style="white-space:nowrap;font-size:12px">' + diasRestantes + '</td>' +
-      '<td><input type="text" value="' + (v.cuotaNota||'').replace(/"/g,'&quot;') + '" placeholder="Nota..." style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;background:transparent;color:var(--text);width:150px" onchange="updateCuotaField(\'' + v._key + '\',\'cuotaNota\',this.value)"></td>' +
-      '<td><button onclick="marcarCuotaCobrada(\'' + v._key + '\')" style="background:var(--accent);color:#fff;border:none;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">✓ Cobrado</button></td>' +
+      '<td><strong>' + (v.nombre||'') + ' ' + (v.apellido||'') + '</strong>' +
+        '<br><span style="font-size:11px;color:var(--text3)">' + (v.asesor||'') + ' · ' + (v.fecha||'').split('-').reverse().join('/') + '</span></td>' +
+      '<td style="font-size:11px;max-width:140px;white-space:normal">' + (v.curso||'—') + '</td>' +
+      '<td style="font-size:11px;color:var(--text3);white-space:nowrap">' + cuotaLabel + '</td>' +
+      '<td class="mono" style="color:var(--accent);font-weight:700;white-space:nowrap">$' + parseFloat(c.monto||0).toLocaleString('en-US') + '</td>' +
+      '<td><input type="date" value="' + (c.venc||'') + '" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;background:transparent;color:var(--text)" onchange="updateCuotaVenc(\'' + v._key + '\',' + idx + ',this.value)"></td>' +
+      '<td class="' + vi.cls + '" style="white-space:nowrap;font-size:12px">' + vi.label + '</td>' +
+      '<td><input type="text" value="' + (c.nota||'').replace(/"/g,'&quot;') + '" placeholder="Nota..." style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;background:transparent;color:var(--text);width:140px" onchange="updateCuotaNota(\'' + v._key + '\',' + idx + ',this.value)"></td>' +
+      '<td><button onclick="iniciarCobroCuota(\'' + v._key + '\',' + idx + ')" style="background:var(--accent);color:#fff;border:none;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">💰 Cobrar</button></td>' +
     '</tr>';
   }).join('');
-  var totalPendiente = parciales.reduce(function(s,v){ return s + parseFloat(v.cuotaPendiente||0); }, 0);
   el.innerHTML =
     '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">' +
-      '<strong>' + parciales.length + '</strong> cobro' + (parciales.length!==1?'s':'') + ' pendiente' + (parciales.length!==1?'s':'') +
-      ' · Total pendiente: <strong style="color:var(--accent)">$' + totalPendiente.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD</strong>' +
+      '<strong>' + rows.length + '</strong> cobro' + (rows.length!==1?'s':'') + ' pendiente' + (rows.length!==1?'s':'') +
+      ' · <strong style="color:var(--accent)">$' + totalPendiente.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD</strong> por cobrar' +
     '</div>' +
     '<div class="table-wrap"><div class="table-scroll">' +
     '<table class="parciales-table"><thead><tr>' +
-      '<th>Alumna</th><th>Curso</th><th>Total</th><th>Cobrado</th><th>Pendiente</th><th>Fecha cobro</th><th>Días</th><th>Nota</th><th></th>' +
-    '</tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<th>Alumna</th><th>Curso</th><th>Cuota</th><th>Monto</th><th>Fecha cobro</th><th>Días</th><th>Nota</th><th></th>' +
+    '</tr></thead><tbody>' + tableRows + '</tbody></table>' +
     '</div></div>';
 }
 
-async function marcarCuotaCobrada(key) {
-  if (!confirm('¿Marcar el cobro restante como cobrado?')) return;
+// Pre-carga el formulario con los datos de la venta original para registrar el cobro
+function iniciarCobroCuota(ventaKey, cuotaIdx) {
+  var v = ventas.find(function(x){ return x._key === ventaKey; });
+  if (!v) return;
+  var c = (v.cuotas||[])[cuotaIdx];
+  if (!c) return;
+  window._cuotaOrigen = { ventaKey: ventaKey, cuotaIdx: cuotaIdx };
+  limpiarForm();
+  document.getElementById('f-asesor').value   = v.asesor   || '';
+  document.getElementById('f-fecha').valueAsDate = new Date();
+  document.getElementById('f-monto').value    = c.monto    || '';
+  document.getElementById('f-pago').value     = v.pago     || '';
+  document.getElementById('f-curso').value    = v.curso    || '';
+  document.getElementById('f-lead').value     = v.lead     || '';
+  document.getElementById('f-email').value    = v.email    || '';
+  document.getElementById('f-telefono').value = v.telefono || '';
+  document.getElementById('f-nombre').value   = v.nombre   || '';
+  document.getElementById('f-apellido').value = v.apellido || '';
+  document.getElementById('f-pais').value     = v.pais     || '';
+  document.querySelectorAll('input[name="canal"]').forEach(function(r){ r.checked = r.value === v.canal; });
+  var totalCuotas = (v.cuotas||[]).length;
+  document.getElementById('f-nota').value = c.nota
+    ? c.nota
+    : 'Cobro en partes — ' + (v.nombre||'') + ' ' + (v.apellido||'') + (totalCuotas > 1 ? ' (cuota ' + (cuotaIdx+1) + '/' + totalCuotas + ')' : '');
+  switchTab('cargar');
+  actualizarCompletitud();
+  showToast('📋 Datos precargados — adjuntá el comprobante y confirmá');
+}
+
+async function updateCuotaVenc(ventaKey, idx, value) {
   try {
-    var r = await fetch(DB_URL + '/.json' + _fbQ(), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ['ventas/' + key + '/cuotaEstado']: 'cobrado' })
-    });
+    var patch = {}; patch['ventas/' + ventaKey + '/cuotas/' + idx + '/venc'] = value;
+    var r = await fetch(DB_URL + '/.json' + _fbQ(), { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(patch) });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    var v = ventas.find(function(x){ return x._key === key; });
-    if (v) v.cuotaEstado = 'cobrado';
-    actualizarBadgeParciales();
+    var v = ventas.find(function(x){ return x._key === ventaKey; });
+    if (v && v.cuotas && v.cuotas[idx]) v.cuotas[idx].venc = value;
     renderParciales();
-    showToast('✓ Cobro marcado como cobrado');
   } catch(e) { showToast('Error: ' + e.message); }
 }
 
-async function updateCuotaField(key, field, value) {
+async function updateCuotaNota(ventaKey, idx, value) {
   try {
-    var patch = {};
-    patch['ventas/' + key + '/' + field] = value;
-    var r = await fetch(DB_URL + '/.json' + _fbQ(), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch)
-    });
+    var patch = {}; patch['ventas/' + ventaKey + '/cuotas/' + idx + '/nota'] = value;
+    var r = await fetch(DB_URL + '/.json' + _fbQ(), { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(patch) });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    var v = ventas.find(function(x){ return x._key === key; });
-    if (v) v[field] = value;
-    if (field === 'cuotaVenc') renderParciales(); // re-sort
-  } catch(e) { showToast('Error al guardar: ' + e.message); }
+    var v = ventas.find(function(x){ return x._key === ventaKey; });
+    if (v && v.cuotas && v.cuotas[idx]) v.cuotas[idx].nota = value;
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function _marcarCuotaCobradaEnFirebase(ventaKey, cuotaIdx) {
+  try {
+    var patch = {}; patch['ventas/' + ventaKey + '/cuotas/' + cuotaIdx + '/estado'] = 'cobrado';
+    var r = await fetch(DB_URL + '/.json' + _fbQ(), { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(patch) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var v = ventas.find(function(x){ return x._key === ventaKey; });
+    if (v && v.cuotas && v.cuotas[cuotaIdx]) v.cuotas[cuotaIdx].estado = 'cobrado';
+    actualizarBadgeParciales();
+  } catch(e) { showToast('Advertencia: no se pudo marcar la cuota como cobrada: ' + e.message); }
 }
 
 // comprobantes stored as base64 dataURLs in memory
@@ -4442,11 +4520,8 @@ function confirmarVenta() {
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   const enPartes = document.getElementById('f-en-partes').checked;
-  const cuotaPagado  = enPartes ? (parseFloat(document.getElementById('f-cuota-pagado').value)  || 0) : undefined;
-  const cuotaPendienteV = enPartes ? (parseFloat(document.getElementById('f-cuota-pendiente').value) || 0) : undefined;
-  const cuotaVenc    = enPartes ? (document.getElementById('f-cuota-venc').value || '') : undefined;
-  const cuotaNota    = enPartes ? (document.getElementById('f-cuota-nota').value.trim() || '') : undefined;
-  pendiente = { asesor:asesor, fecha:fecha, monto:monto, montoLocal:montoLocal||undefined, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombre, apellido:apellido, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'', comprobante2: comprobanteData2||'', enPartes: enPartes||undefined, cuotaPagado: cuotaPagado, cuotaPendiente: cuotaPendienteV, cuotaVenc: cuotaVenc, cuotaNota: cuotaNota, cuotaEstado: enPartes ? 'pendiente' : undefined };
+  const cuotasGuardar = enPartes ? _cuotasForm.filter(function(c){ return c.monto > 0 || c.venc || c.nota; }) : undefined;
+  pendiente = { asesor:asesor, fecha:fecha, monto:monto, montoLocal:montoLocal||undefined, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombre, apellido:apellido, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'', comprobante2: comprobanteData2||'', enPartes: enPartes||undefined, cuotas: cuotasGuardar };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
     '<strong>' + nombre + ' ' + apellido + '</strong> · ' +
@@ -4457,7 +4532,7 @@ function confirmarVenta() {
     (codigo ? ' · <span style="color:var(--text3)">' + codigo + '</span>' : '') +
     (email ? '<br><span style="color:var(--text3)">Email: ' + email + '</span>' : '') +
     (comprobanteData ? '<br><span style="color:var(--text3)">📎 ' + (comprobanteData2 ? '2 comprobantes adjuntos' : 'Comprobante adjunto') + '</span>' : '') +
-    (enPartes ? '<br><span style="color:#b61f3a;font-weight:600">💰 Cobro en partes · cobrado: $' + (cuotaPagado||0) + ' · pendiente: $' + (cuotaPendienteV||0) + (cuotaVenc ? ' para ' + cuotaVenc.split('-').reverse().join('/') : '') + '</span>' : '') +
+    (enPartes && cuotasGuardar && cuotasGuardar.length ? '<br><span style="color:#b61f3a;font-weight:600">💰 ' + cuotasGuardar.length + ' pago' + (cuotasGuardar.length!==1?'s':'') + ' pendiente' + (cuotasGuardar.length!==1?'s':'') + ' · $' + cuotasGuardar.reduce(function(s,c){return s+(c.monto||0);},0).toLocaleString('en-US') + ' USD por cobrar</span>' : '') +
     (nota ? '<br><em>' + nota + '</em>' : '');
   document.getElementById('modal-confirm').classList.add('show');
 }
@@ -4479,6 +4554,11 @@ async function guardarVenta() {
     // If was approved → log notification with diff
     if (eraAprobada) {
       await guardarNotificacionEdicion(ventaOriginal, pendiente);
+    }
+    // If this was a partial payment triggered from "Cobrar" → mark that cuota as cobrada
+    if (window._cuotaOrigen) {
+      await _marcarCuotaCobradaEnFirebase(window._cuotaOrigen.ventaKey, window._cuotaOrigen.cuotaIdx);
+      window._cuotaOrigen = null;
     }
     limpiarForm();
     seleccionados.clear();
@@ -4507,7 +4587,10 @@ function limpiarForm() {
   if (epChk) epChk.checked = false;
   var epPanel = document.getElementById('en-partes-panel');
   if (epPanel) epPanel.style.display = 'none';
-  ['f-cuota-pagado','f-cuota-pendiente','f-cuota-venc','f-cuota-nota'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  _cuotasForm = [];
+  var cl = document.getElementById('cuotas-list');
+  if (cl) cl.innerHTML = '';
+  window._cuotaOrigen = null;
   actualizarCompletitud();
 }
 
