@@ -1258,7 +1258,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.102</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.104</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -2340,15 +2340,18 @@ function renderStats() {
     '</div>';
 
   // Tab: Evolución mensual
+  var _ticketMes = topMes.map(function(e) {
+    return [e[0], { usd: e[1].n > 0 ? e[1].usd / e[1].n : 0, n: e[1].n }];
+  });
   var _tabEvolucion =
     '<div class="stats-grid" style="margin-bottom:16px">' +
       '<div class="chart-card">' +
-        '<div class="chart-title">Evolución mensual · últimos 6 meses</div>' +
+        '<div class="chart-title">Facturación mensual · últimos 6 meses</div>' +
         buildColChart(topMes, function(k){ return k===mesActualKey?'#b61f3a':'#3B6B9E'; }, 'mes', maxMes, function(k){ var p=k.split('-'); return MESES_ABR[parseInt(p[1],10)-1]||k; }) +
       '</div>' +
       '<div class="chart-card">' +
-        '<div class="chart-title">Cierres por día de la semana</div>' +
-        buildColChart([1,2,3,4,5,6,0].map(function(d){return [d,byDow[d]];}), function(d){return (d===0||d===6)?'#b61f3a':'#3B6B9E';}, null, maxDow, function(d){return DIAS_ES[d];}) +
+        '<div class="chart-title">Ticket promedio por mes</div>' +
+        buildColChart(_ticketMes, function(k){ return k===mesActualKey?'#9B5E9B':'#3D9B9B'; }, null, null, function(k){ var p=k.split('-'); return MESES_ABR[parseInt(p[1],10)-1]||k; }) +
       '</div>' +
     '</div>';
 
@@ -4535,37 +4538,49 @@ async function obtenerTCWise(key) {
 async function normalizarCursosExistentes() {
   if (!ventas.length) { showToast('No hay ventas cargadas'); return; }
 
-  // Calcular qué registros van a cambiar
+  // Leer estado real desde Firebase antes de calcular
+  showToast('Leyendo datos actuales...');
+  var dbData = await dbGet('/ventas');
+  if (!dbData) { showToast('Error al leer Firebase'); return; }
+
   var cambios = [];
-  ventas.forEach(function(v) {
+  Object.entries(dbData).forEach(function(entry) {
+    var key = entry[0], v = entry[1];
     if (!v.curso) return;
     var normalizado = _normalizarCurso(v.curso);
-    if (normalizado !== v.curso) cambios.push({ key: v._key, viejo: v.curso, nuevo: normalizado });
+    if (normalizado !== v.curso) cambios.push({ key: key, viejo: v.curso, nuevo: normalizado });
   });
 
   if (!cambios.length) { showToast('Todos los cursos ya están normalizados ✓'); return; }
 
-  // Mostrar preview antes de confirmar
   var lista = cambios.slice(0, 12).map(function(c) {
     return '"' + c.viejo + '" → ' + c.nuevo;
   }).join('\n') + (cambios.length > 12 ? '\n... y ' + (cambios.length - 12) + ' más' : '');
 
   if (!confirm('Se van a actualizar ' + cambios.length + ' ventas:\n\n' + lista + '\n\n¿Confirmar?')) return;
 
-  showToast('Actualizando ' + cambios.length + ' registros...');
-  var ok = 0, err = 0;
-  for (var i = 0; i < cambios.length; i++) {
-    var c = cambios[i];
-    try {
-      await dbSet('/ventas/' + c.key + '/curso', c.nuevo);
-      // Actualizar también el array local
+  // Un único PATCH — operación atómica en Firebase
+  var patch = {};
+  cambios.forEach(function(c) { patch['ventas/' + c.key + '/curso'] = c.nuevo; });
+
+  showToast('Actualizando ' + cambios.length + ' registros en un solo paso...');
+  try {
+    var r = await fetch(DB_URL + '/.json' + _fbQ(), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    // Sincronizar memoria local
+    cambios.forEach(function(c) {
       var v = ventas.find(function(x){ return x._key === c.key; });
       if (v) v.curso = c.nuevo;
-      ok++;
-    } catch(e) { err++; }
+    });
+    renderAdmin();
+    showToast('✓ ' + cambios.length + ' cursos actualizados de una vez');
+  } catch(e) {
+    showToast('Error al actualizar: ' + e.message);
   }
-  renderAdmin();
-  showToast('Cursos actualizados: ' + ok + (err ? ' · ' + err + ' errores' : '') + ' ✓');
 }
 
 function exportAdminCSV() {
