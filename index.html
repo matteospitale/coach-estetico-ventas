@@ -1264,7 +1264,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.111</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.112</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1900,7 +1900,8 @@ function toggleModoEdicion() {
   btn.style.borderColor = modoEdicion ? 'var(--accent-dark)' : '';
   btn.textContent = modoEdicion ? '✓ Salir de edición' : '✎ Editar / Eliminar';
   th.style.display = modoEdicion ? '' : 'none';
-  document.getElementById('barra-acciones').style.display = 'none';
+  if (modoEdicion) actualizarBarra();
+  else document.getElementById('barra-acciones').style.display = 'none';
   renderTabla();
 }
 function toggleCheckAll(el) {
@@ -1919,12 +1920,17 @@ function toggleCheck(el) {
 function actualizarBarra() {
   const n = seleccionados.size;
   const barra = document.getElementById('barra-acciones');
-  if (!n) { barra.style.display = 'none'; return; }
-  document.getElementById('barra-count').textContent = n + ' venta' + (n!==1?'s':'') + ' seleccionada' + (n!==1?'s':'');
+  if (!modoEdicion && !n) { barra.style.display = 'none'; return; }
+  document.getElementById('barra-count').textContent = n
+    ? n + ' venta' + (n!==1?'s':'') + ' seleccionada' + (n!==1?'s':'')
+    : 'Seleccioná una venta';
   barra.style.display = 'flex';
   const editBtn = barra.querySelector('button:first-of-type');
-  editBtn.style.opacity = n===1 ? '1' : '0.4';
+  const delBtn  = barra.querySelector('button:last-of-type');
+  editBtn.style.opacity = n===1 ? '1' : '0.35';
   editBtn.style.pointerEvents = n===1 ? 'auto' : 'none';
+  delBtn.style.opacity  = n ? '1' : '0.35';
+  delBtn.style.pointerEvents = n ? 'auto' : 'none';
 }
 function accionEditar() {
   if (seleccionados.size !== 1) return;
