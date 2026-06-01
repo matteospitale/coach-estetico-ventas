@@ -993,8 +993,9 @@ body::before {
           </div>
           <div class="plant-section-card" style="border-left:4px solid #2e7d32">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:18px">📚</span><div class="plant-section-label" style="margin:0">Nuevos Diplomados</div></div>
-            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="font-size:13px;font-weight:700;color:#2e7d32">Dermatocosmiátría</div></div>
-            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;margin-bottom:8px"><div style="font-size:13px;font-weight:700;color:#2e7d32">Crecimiento de Estéticas</div></div>
+            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="font-size:13px;font-weight:700;color:#2e7d32">Dermatocosmiatría Internacional</div></div>
+            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="font-size:13px;font-weight:700;color:#2e7d32">Crecimiento y Gestión de Emprendedores Estéticos</div></div>
+            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;margin-bottom:8px"><div style="font-size:13px;font-weight:700;color:#2e7d32">Combo Diplomado</div></div>
             <div style="font-size:12px;color:var(--text2)">🗓 Inician: <b>01/06</b><br>🎤 Presentación: <b>02/06</b><br>📣 Preview clase gratis: <b>28/05</b></div>
           </div>
           <div class="plant-section-card" style="border-left:4px solid #e65100">
@@ -1307,7 +1308,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.126</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.130</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3074,6 +3075,9 @@ function _normCurso(s) {
   return r.replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 }
 var _MAPA_FORMACIONES = {
+  'diplomado dermatocosm':{d:'profesional',a:'Cosmiatras, esteticistas y profesionales de la piel que deseen especializarse en dermatocosmiatría con criterio clínico internacional, integrando diagnóstico, protocolos y visión estético-funcional.'},
+  'diplomado crecimiento':{d:'avanzado',a:'Emprendedoras y profesionales estéticas que deseen potenciar la gestión y el crecimiento de su negocio de estética, combinando estrategia comercial, marketing y liderazgo en el sector.'},
+  'combo diplomado':{d:'profesional',a:'Profesionales que deseen acceder a dos diplomados en simultáneo, maximizando su formación clínica y de negocio con una propuesta de valor integral.'},
   'diplomado peeling':{d:'profesional',a:'Cosmiatras, dermatocosmiatras, esteticistas y médicos estéticos con experiencia que deseen ampliar sus competencias clínicas avanzadas en peelings y regeneración cutánea.'},
   'diplomado microneedling':{d:'profesional',a:'Cosmetólogas, cosmiatras y esteticistas con experiencia que deseen dominar el microneedling con criterio técnico avanzado, anatomía y protocolos clínicos de alto impacto.'},
   'cosmiatria profesional':{d:'iniciante',a:'Iniciantes que desean formarse como cosmiatras profesionales. También para cosmetólogos que quieren dominar técnicas estéticas seguras con criterio profesional e internacional.'},
@@ -3709,7 +3713,7 @@ async function abrirNuevaPlantilla() {
 }
 
 // ── VENTAS FORM ──
-const CURSOS = ['Club Coach','Lifetime','Migración','Saldo a favor','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
+const CURSOS = ['Club Coach','Lifetime','Migración','Saldo a favor','Diplomado Dermatocosmiatría Internacional','Diplomado Crecimiento y Gestión de Emprendedores Estéticos','Combo Diplomado','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
 
 // Mapea abreviaturas de Excel al nombre oficial.
 // Agrega aliases acá cuando aparezcan variantes nuevas de algún asesor.
@@ -3749,8 +3753,18 @@ const CURSO_ALIASES = {
   'diplo peeling':            'Diplomado Internacional en Peeling Químico: Ciencia y Maestría',
   'diplomado aparatologia':   'Diplomado Internacional Aparatología y Tecnologías Estéticas 2025',
   'diplo aparato':            'Diplomado Internacional Aparatología y Tecnologías Estéticas 2025',
-  'diplomado dermato':        'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
-  'diplo dermato':            'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
+  'diplomado dermato cef':    'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
+  'diplo dermato cef':        'Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional',
+  'diplomado dermato':        'Diplomado Dermatocosmiatría Internacional',
+  'diplo dermato':            'Diplomado Dermatocosmiatría Internacional',
+  'dermatocosm':              'Diplomado Dermatocosmiatría Internacional',
+  'diplomado crecimiento':    'Diplomado Crecimiento y Gestión de Emprendedores Estéticos',
+  'diplo crecimiento':        'Diplomado Crecimiento y Gestión de Emprendedores Estéticos',
+  'diplo creci':              'Diplomado Crecimiento y Gestión de Emprendedores Estéticos',
+  'crecimiento emprendedores':'Diplomado Crecimiento y Gestión de Emprendedores Estéticos',
+  'emprendedores esteticos':  'Diplomado Crecimiento y Gestión de Emprendedores Estéticos',
+  'combo diplomado':          'Combo Diplomado',
+  'combo diplo':              'Combo Diplomado',
   // Expert Trainings
   'acne expert':          'Acné Expert Training',
   'acne expert training': 'Acné Expert Training',
