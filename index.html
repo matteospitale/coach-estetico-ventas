@@ -1308,7 +1308,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.132</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.133</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -5428,10 +5428,15 @@ function switchMYF(asesor) {
 
 function renderMYF() {
   var hoy = new Date();
-  var diasMes = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0).getDate();
-  var diaActual = hoy.getDate();
+  var mesVal = getMesVal();
+  var mesKey = (mesVal && mesVal !== 'all')
+    ? mesVal
+    : (hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0'));
+  var mesParts = mesKey.split('-');
+  var mesYear = parseInt(mesParts[0]), mesMonth = parseInt(mesParts[1]);
+  var diasMes = new Date(mesYear, mesMonth, 0).getDate();
+  var diaActual = (mesYear === hoy.getFullYear() && mesMonth === hoy.getMonth()+1) ? hoy.getDate() : diasMes;
   var diasRestantes = diasMes - diaActual;
-  var mesKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
 
   var mesVentas = ventas.filter(function(v) {
     return (v.asesor||'') === myfAsesor && (v.estado||'Pendiente') !== 'Rechazada' && (v.fecha||'').startsWith(mesKey);
