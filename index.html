@@ -1308,7 +1308,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.134</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.154</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -5044,9 +5044,19 @@ function renderAll() {
   // Sync section-level month selects with header
   var _hMes = getMesVal();
   var _filMes = document.getElementById('fil-mes');
-  if (_filMes) { fillMesOptions('fil-mes'); if (_hMes) _filMes.value = _hMes; }
+  if (_filMes) {
+    var _curFilMes = _filMes.value;
+    fillMesOptions('fil-mes');
+    var _filMesHas = [].some.call(_filMes.options, function(o){ return o.value === _curFilMes; });
+    _filMes.value = (_curFilMes && _filMesHas) ? _curFilMes : (_hMes || 'all');
+  }
   var _admMes = document.getElementById('admin-fil-mes');
-  if (_admMes) { fillMesOptions('admin-fil-mes'); if (_hMes) _admMes.value = _hMes; }
+  if (_admMes) {
+    var _curAdmMes = _admMes.value;
+    fillMesOptions('admin-fil-mes');
+    var _admMesHas = [].some.call(_admMes.options, function(o){ return o.value === _curAdmMes; });
+    _admMes.value = (_curAdmMes && _admMesHas) ? _curAdmMes : (_hMes || 'all');
+  }
   renderResumen();
   const activeEl = document.querySelector('.section.active');
   const active = activeEl ? activeEl.id.replace('sec-','') : 'inicio';
