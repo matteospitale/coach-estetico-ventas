@@ -1308,7 +1308,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.154</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.155</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1621,16 +1621,20 @@ var _canalOverrides = {};
 async function updateCanalInline(key, val, el) {
   var v = ventas.find(function(x){ return x._key === key; });
   if (!v) return;
+  var prevCanal = v.canal;
   v.canal = val;
   _canalOverrides[key] = val; // hold value across re-renders while PUT is in-flight
   if (el) el.style.color = canalColor(val);
   try {
-    await dbSet('/ventas/' + key + '/canal', val);
+    var ok = await dbSet('/ventas/' + key + '/canal', val);
+    if (!ok) throw new Error('No se pudo guardar (revisá tu conexión o permisos)');
     showToast('✓ Canal actualizado');
     delete _canalOverrides[key]; // PUT confirmed — Firebase has the new value now
   } catch(e) {
+    v.canal = prevCanal; // PUT failed — revert local state instead of leaving a false "success"
     delete _canalOverrides[key];
     showToast('Error al guardar canal: ' + (e.message||e));
+    renderTabla();
   }
 }
 function showToast(msg) {
@@ -6610,7 +6614,7 @@ async function impAplicarKommoSiHayPreview() {
         if (!v.nombre)   v.nombre   = k.nombre;
         if (!v.apellido) v.apellido = k.apellido;
         if (!v.pais)     v.pais     = k.pais;
-        if (!v.canal || v.canal === 'Instagram') v.canal = k.canal;
+        if (!v.canal || v.canal === 'WhatsApp') v.canal = k.canal;
         if (!v.email)    v.email    = k.email;
         if (!v.telefono) v.telefono = k.telefono;
       });
@@ -6771,7 +6775,7 @@ async function procesarImportFiles() {
         montoNeto: parseFloat(monto.toFixed(2)),
         pago:      _normPago(pago),
         curso:     curso,
-        canal:     kommo.canal || 'Instagram',
+        canal:     kommo.canal || 'WhatsApp',
         lead:      lead,
         codigo:    '',
         email:     email || kommo.email || '',
