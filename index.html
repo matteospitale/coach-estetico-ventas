@@ -1325,7 +1325,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.175</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.182</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3755,6 +3755,11 @@ function _qn(s) {
 
 // Aliases: clave en minúsculas SIN acentos → nombre oficial exacto
 const CURSO_ALIASES = {
+  // Lifetime / Membresía LifeTime — mismo producto
+  'membresia lifetime':   'Lifetime',
+  'membresia life time':  'Lifetime',
+  'lifetime':             'Lifetime',
+  'life time':            'Lifetime',
   // Lámpara de Wood
   'lampara de wood pro':  'Lámpara de Wood PRO',
   'lampara de wood':      'Lámpara de Wood PRO',
@@ -3825,9 +3830,12 @@ function _normalizarCurso(raw) {
   // 1. Alias exacto (clave sin acentos)
   if (CURSO_ALIASES[r]) return CURSO_ALIASES[r];
 
-  // 2. Alias parcial (r contiene alguna clave de alias)
+  // 2. Alias parcial — la clave debe empezar en inicio de palabra, no en medio
+  // ("diplomado" contiene "ipl" como substring: un includes() acá mapeaba Diplomado → IPL).
+  // El final puede seguir en la misma palabra: hay aliases-prefijo a propósito (ej. 'dermatocosm').
   for (var ak in CURSO_ALIASES) {
-    if (r.includes(ak)) return CURSO_ALIASES[ak];
+    var akRe = new RegExp('(^|[^a-z0-9])' + ak.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    if (akRe.test(r)) return CURSO_ALIASES[ak];
   }
 
   // 3. Coincidencia exacta contra CURSOS (ambos normalizados sin acento)
@@ -4599,6 +4607,18 @@ function confirmarVenta() {
   const montoLocal = montoLocalRaw || 0;
   const requiereML = ['Venezuela','Argentina'].includes(paisVenta);
   if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombre||!apellido||!paisVenta||!email||!lead||!telefono||(requiereML&&!montoLocalRaw)) { showToast('Completá todos los campos obligatorios'); return; }
+  // El curso DEBE ser uno de la lista oficial — no se permite texto libre
+  if (!CURSOS.includes(curso)) {
+    const sugerido = _normalizarCurso(curso);
+    if (CURSOS.includes(sugerido) && sugerido !== curso) {
+      document.getElementById('f-curso').value = sugerido;
+      showToast('Curso corregido a "' + sugerido + '" — revisá y confirmá de nuevo');
+    } else {
+      showToast('⚠️ "' + curso + '" no es un curso del catálogo — elegilo de la lista desplegable');
+      document.getElementById('f-curso').focus();
+    }
+    return;
+  }
   const montoNeto = parseFloat(monto.toFixed(2));
   const ahora = new Date();
   const horaLocal = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
@@ -4606,6 +4626,17 @@ function confirmarVenta() {
   const cuotasGuardar = enPartes ? _cuotasForm.filter(function(c){ return c.monto > 0 || c.venc || c.nota; }) : undefined;
   const esCombo = document.getElementById('f-es-combo').checked;
   const cursoCombo = esCombo ? document.getElementById('f-curso-combo').value.trim() : '';
+  if (cursoCombo && !CURSOS.includes(cursoCombo)) {
+    const sugeridoCombo = _normalizarCurso(cursoCombo);
+    if (CURSOS.includes(sugeridoCombo) && sugeridoCombo !== cursoCombo) {
+      document.getElementById('f-curso-combo').value = sugeridoCombo;
+      showToast('Curso combo corregido a "' + sugeridoCombo + '" — revisá y confirmá de nuevo');
+    } else {
+      showToast('⚠️ "' + cursoCombo + '" no es un curso del catálogo — elegilo de la lista');
+      document.getElementById('f-curso-combo').focus();
+    }
+    return;
+  }
   pendiente = { asesor:asesor, fecha:fecha, monto:monto, montoLocal:montoLocal||undefined, descuento:0, montoNeto:montoNeto, pago:pago, curso:curso, canal:canal, lead:lead, codigo:codigo, email:email, telefono:telefono, nota:nota, nombre:nombre, apellido:apellido, pais:paisVenta, cargado:ahora.toISOString(), estado:'Pendiente', comprobante: comprobanteData||'', comprobante2: comprobanteData2||'', enPartes: enPartes||undefined, cuotas: cuotasGuardar, cursoCombo: cursoCombo||undefined };
   document.getElementById('modal-body').innerHTML =
     '<strong>' + asesor + '</strong> · ' + fecha.split('-').reverse().join('/') + ' · <span style="color:var(--text3)">' + horaLocal + '</span><br>' +
@@ -4693,11 +4724,10 @@ function nombreCompleto(v) {
   return v.apellido ? (v.nombre||'') + ' ' + v.apellido : (v.nombre||'');
 }
 
-// Helper: curso + curso combo (venta combinada) para display en tablas.
-// sep default '<br>' para que se vean en líneas separadas en HTML; pasar ' + ' para texto plano (CSV, exports).
+// Helper: curso + curso combo (venta combinada) para display en tablas — una sola línea.
 function cursoConCombo(v, sep) {
   if (!v) return '';
-  if (sep === undefined) sep = '<br>';
+  if (sep === undefined) sep = ' + ';
   return (v.curso||'') + (v.cursoCombo ? sep + v.cursoCombo : '');
 }
 
@@ -4980,8 +5010,14 @@ async function normalizarCursosExistentes() {
   Object.entries(dbData).forEach(function(entry) {
     var key = entry[0], v = entry[1];
     if (!v.curso) return;
-    var normalizado = _normalizarCurso(v.curso);
-    if (normalizado !== v.curso) cambios.push({ key: key, viejo: v.curso, nuevo: normalizado });
+    // Si el curso quedó pegado como "A + B" (venta combinada vieja), separar en curso + cursoCombo
+    var partes = v.curso.split('+').map(function(s){ return s.trim(); }).filter(Boolean);
+    var nuevoCurso = _normalizarCurso(partes[0] || v.curso);
+    var nuevoCombo = partes.length > 1 ? _normalizarCurso(partes.slice(1).join(' + ')) : (v.cursoCombo ? _normalizarCurso(v.cursoCombo) : '');
+    var comboActual = v.cursoCombo || '';
+    if (nuevoCurso !== v.curso || nuevoCombo !== comboActual) {
+      cambios.push({ key: key, viejo: v.curso + (comboActual ? ' [combo: ' + comboActual + ']' : ''), nuevo: nuevoCurso + (nuevoCombo ? ' [combo: ' + nuevoCombo + ']' : ''), curso: nuevoCurso, combo: nuevoCombo });
+    }
   });
 
   if (!cambios.length) { showToast('Todos los cursos ya están normalizados ✓'); return; }
@@ -4994,7 +5030,10 @@ async function normalizarCursosExistentes() {
 
   // Un único PATCH — operación atómica en Firebase
   var patch = {};
-  cambios.forEach(function(c) { patch['ventas/' + c.key + '/curso'] = c.nuevo; });
+  cambios.forEach(function(c) {
+    patch['ventas/' + c.key + '/curso'] = c.curso;
+    patch['ventas/' + c.key + '/cursoCombo'] = c.combo || null;
+  });
 
   showToast('Actualizando ' + cambios.length + ' registros en un solo paso...');
   try {
@@ -5007,7 +5046,7 @@ async function normalizarCursosExistentes() {
     // Sincronizar memoria local
     cambios.forEach(function(c) {
       var v = ventas.find(function(x){ return x._key === c.key; });
-      if (v) v.curso = c.nuevo;
+      if (v) { v.curso = c.curso; if (c.combo) v.cursoCombo = c.combo; else delete v.cursoCombo; }
     });
     renderAdmin();
     showToast('✓ ' + cambios.length + ' cursos actualizados de una vez');
@@ -6978,13 +7017,13 @@ function _checkImportReady() {
     return;
   }
   var incompletas = seleccionadas.filter(function(v) {
-    return !v.nombre || !v.pais || !v.email || !v.pago;
+    return !v.nombre || !v.pais || !v.email || !v.pago || !CURSOS.includes(v.curso) || (v.cursoCombo && !CURSOS.includes(v.cursoCombo));
   }).length;
   if (incompletas > 0) {
     btn.disabled = true;
     btn.style.opacity = '0.45';
     btn.style.cursor = 'not-allowed';
-    btn.textContent = '⚠️ ' + incompletas + ' fila' + (incompletas > 1 ? 's' : '') + ' seleccionada' + (incompletas > 1 ? 's' : '') + ' incompleta' + (incompletas > 1 ? 's' : '');
+    btn.textContent = '⚠️ ' + incompletas + ' fila' + (incompletas > 1 ? 's' : '') + ' con datos o curso inválido';
   } else {
     btn.disabled = false;
     btn.style.opacity = '';
@@ -7007,6 +7046,11 @@ function _renderImportPreview() {
   var iSelG  = iBase + 'border:1.5px solid rgba(74,140,92,0.6);color:var(--facundo);font-weight:600;';  // verde select (sin bg)
   var iErr   = iBase + 'border:1.5px solid var(--danger);background:rgba(192,57,43,0.08);color:var(--text);';
   var iSelE  = iBase + 'border:1.5px solid var(--danger);color:var(--text2);';                          // rojo select (sin bg)
+
+  // Mes dominante del lote — para marcar fechas sospechosas (ej. abril en un Excel de julio)
+  var mesCount = {};
+  _importRows.forEach(function(v){ var m=(v.fecha||'').substring(0,7); if(m) mesCount[m]=(mesCount[m]||0)+1; });
+  var mesDominante = Object.keys(mesCount).sort(function(a,b){ return mesCount[b]-mesCount[a]; })[0] || '';
 
   var cols = ['Fecha','Lead ID','Curso','$ USD','Pago','Nombre','Apellido','País','Canal','Email','Teléfono'];
   var html = '<div style="border-radius:8px;border:1px solid var(--border);overflow:auto;max-height:52vh">';
@@ -7080,14 +7124,22 @@ function _renderImportPreview() {
         'style="' + st + 'width:180px">' +
         '<datalist id="' + dlId + '">' + opts + '</datalist>' +
         '<input type="text" list="' + dlId + '" value="' + comboEsc + '" placeholder="+ combo (opcional)" ' +
-        'oninput="_importRows[' + i + '].cursoCombo=this.value" ' +
+        'oninput="_importRows[' + i + '].cursoCombo=this.value;_checkImportReady()" ' +
         'style="' + iBase + 'border:1px dashed var(--border);color:var(--text3);width:180px;margin-top:3px">' +
         '</td>';
     }
 
+    var mesFila = (v.fecha||'').substring(0,7);
+    var fechaSospechosa = mesDominante && mesFila && mesFila !== mesDominante;
+    var fechaSt = fechaSospechosa
+      ? iBase + 'border:1.5px solid #CF6C1E;background:rgba(207,108,30,0.1);color:#CF6C1E;font-weight:700;'
+      : iBase + 'border:1px solid var(--border);background:transparent;color:var(--text2);';
     html += '<tr style="' + rowBorder + ';background:' + bg + (v.seleccionada===false?';opacity:0.5':'') + '">';
     html += '<td style="padding:5px 6px;text-align:center"><input type="checkbox" ' + (v.seleccionada!==false?'checked':'') + ' onchange="_importRows[' + i + '].seleccionada=this.checked;_checkImportReady()" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer"></td>';
-    html += '<td style="padding:5px 10px;white-space:nowrap;color:var(--text2);font-size:11px">' + (v.fecha||'—') + '</td>';
+    html += '<td style="padding:3px 5px;white-space:nowrap">' +
+      '<input type="date" value="' + (v.fecha||'') + '" onchange="_importRows[' + i + '].fecha=this.value" style="' + fechaSt + 'width:118px;cursor:pointer">' +
+      (fechaSospechosa ? '<div style="font-size:10px;color:#CF6C1E;font-weight:700;white-space:nowrap">⚠ Fuera de ' + mesLabel(mesDominante) + '</div>' : '') +
+      '</td>';
     html += '<td style="padding:5px 10px;font-family:monospace;font-size:11px;color:var(--text3);white-space:nowrap">' + (v.lead||'—') +
       (v._duplicado ? '<div style="font-family:inherit;color:#9B5E9B;font-weight:700;font-size:10px;white-space:nowrap">⚠ Ya existe</div>' : '') + '</td>';
     html += cursoTd(v.curso);
@@ -7120,8 +7172,8 @@ function _renderImportPreview() {
 async function ejecutarImportExcel() {
   var aImportar = _importRows.filter(function(v){ return v.seleccionada !== false; });
   if (!aImportar.length) { showToast('No hay ventas seleccionadas para importar'); return; }
-  var incompletas = aImportar.filter(function(v){ return !v.nombre || !v.pais || !v.email || !v.pago; }).length;
-  if (incompletas > 0) { showToast('Completá los ' + incompletas + ' filas seleccionadas en rojo antes de importar'); return; }
+  var incompletas = aImportar.filter(function(v){ return !v.nombre || !v.pais || !v.email || !v.pago || !CURSOS.includes(v.curso) || (v.cursoCombo && !CURSOS.includes(v.cursoCombo)); }).length;
+  if (incompletas > 0) { showToast('Hay ' + incompletas + ' fila' + (incompletas>1?'s':'') + ' con campos vacíos o curso fuera del catálogo — corregilas antes de importar'); return; }
 
   var asesor   = document.getElementById('imp-asesor').value || usuarioActual || 'Matteo';
   var statusEl = document.getElementById('imp-status');
