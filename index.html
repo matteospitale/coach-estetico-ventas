@@ -1325,7 +1325,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.171</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.175</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1840,8 +1840,10 @@ function renderResumen() {
   if (inicioFiltro) filterDrill(inicioFiltro);
 
   const maxA = Math.max.apply(null, Object.values(byA).concat([1]));
+  const byCursoMap = {};
+  vf.forEach(v=>{ _acumularVentaCurso(byCursoMap, v); });
   const byCurso = {};
-  vf.forEach(v=>{ byCurso[v.curso] = (byCurso[v.curso]||0) + parseFloat(v.monto||0); });
+  Object.keys(byCursoMap).forEach(function(c){ byCurso[c] = byCursoMap[c].usd; });
   const topC = Object.entries(byCurso).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const maxC = topC.length ? topC[0][1] : 1;
   const aC = {Matteo:'#3B6B9E',Facundo:'#4A8C5C',Dianela:'#9B5E9B'};
@@ -1974,7 +1976,7 @@ function renderTabla() {
       '<td class="mono" style="font-weight:600;color:var(--accent);white-space:nowrap">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
       '<td style="font-size:11px;color:var(--text2);white-space:nowrap">' + (v.montoLocal||'—') + '</td>' +
       '<td style="font-size:11px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.pago||'') + '">' + (v.pago||'—') + '</td>' +
-      '<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (cursoConCombo(v)||'') + '">' + (cursoConCombo(v)||'—') + '</td>' +
+      '<td style="font-size:11px;max-width:140px" title="' + (cursoConCombo(v,' + ')||'') + '">' + (cursoConCombo(v)||'—') + '</td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">' + v.lead + '</a>' : '—') + '</td>' +
       '<td style="font-size:11px;white-space:nowrap">' + (v.telefono||'—') + '</td>' +
       '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.email||'') + '">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
@@ -2168,7 +2170,7 @@ function renderStats() {
   const topPago = Object.entries(byPago).sort((a,b)=>b[1].usd-a[1].usd);
 
   const byCurso = {};
-  vf.forEach(v=>{ const c=v.curso||'Sin curso'; byCurso[c]=(byCurso[c]||{n:0,usd:0}); byCurso[c].n++; byCurso[c].usd+=parseFloat(v.monto||0); });
+  vf.forEach(v=>{ _acumularVentaCurso(byCurso, v); });
   const topCurso = Object.entries(byCurso).sort((a,b)=>b[1].usd-a[1].usd).slice(0,8);
   const maxCurso = topCurso.length ? topCurso[0][1].usd : 1;
 
@@ -4691,10 +4693,32 @@ function nombreCompleto(v) {
   return v.apellido ? (v.nombre||'') + ' ' + v.apellido : (v.nombre||'');
 }
 
-// Helper: curso + curso combo (venta combinada) para display en tablas
-function cursoConCombo(v) {
+// Helper: curso + curso combo (venta combinada) para display en tablas.
+// sep default '<br>' para que se vean en líneas separadas en HTML; pasar ' + ' para texto plano (CSV, exports).
+function cursoConCombo(v, sep) {
   if (!v) return '';
-  return (v.curso||'') + (v.cursoCombo ? ' + ' + v.cursoCombo : '');
+  if (sep === undefined) sep = '<br>';
+  return (v.curso||'') + (v.cursoCombo ? sep + v.cursoCombo : '');
+}
+
+// Acumula una venta en un mapa {curso: {n, usd}} para stats.
+// Si es venta combinada (cursoCombo), reparte mitad y mitad entre los dos cursos —
+// así ambos quedan visibles en las stats sin duplicar la facturación total.
+function _acumularVentaCurso(map, v) {
+  var monto = parseFloat(v.monto||0);
+  if (v.cursoCombo) {
+    var mitad = monto / 2;
+    [v.curso||'Sin curso', v.cursoCombo].forEach(function(c) {
+      if (!map[c]) map[c] = { n: 0, usd: 0 };
+      map[c].n += 1;
+      map[c].usd += mitad;
+    });
+  } else {
+    var c = v.curso || 'Sin curso';
+    if (!map[c]) map[c] = { n: 0, usd: 0 };
+    map[c].n += 1;
+    map[c].usd += monto;
+  }
 }
 
 // Autocomplete de alumno al ingresar el mail
@@ -5041,7 +5065,7 @@ function exportAdminCSV() {
     xml += cell(v.pais||'');
     xml += cell(v.email||'');
     xml += cell(v.telefono||'');
-    xml += cell(cursoConCombo(v)||'');
+    xml += cell(cursoConCombo(v,' + ')||'');
     xml += cell(v.promocion||'');
     xml += cell(montoUSD, true);
     xml += cell(v.montoLocal||'');
@@ -5087,7 +5111,7 @@ function exportCSV() {
     xml += '<Row>' +
       cell(v.fecha||'') + cell(hora) + cell(v.asesor||'') + cell(v.canal||'') +
       cell(v.monto||'', true) + cell(v.montoLocal||'') + cell(v.pago||'') +
-      cell(cursoConCombo(v)||'') + cell(v.lead||'') + cell(v.telefono||'') +
+      cell(cursoConCombo(v,' + ')||'') + cell(v.lead||'') + cell(v.telefono||'') +
       cell(v.email||'') + cell(v.codigo||'') + cell(v.nota||'') +
     '</Row>\n';
   });
@@ -5301,8 +5325,19 @@ function _renderClienteDetalle(cl, body) {
   var fechas = cl.ventas.map(function(v){return v.fecha||'';}).filter(Boolean).sort();
   var primeraCompra = fechas[0]||'';
   var ultimaCompra = fechas[fechas.length-1]||'';
-  var cursosBought = new Set(cl.ventas.map(function(v){return v.curso||'';}).filter(Boolean));
-  var sugeridos = plantillas.filter(function(p){ return p.titulo && !cursosBought.has(p.titulo); });
+  // Cursos comprados (normalizados, sin acentos/mayúsculas) — incluye el curso combo de ventas combinadas
+  var cursosBought = new Set();
+  cl.ventas.forEach(function(v){
+    if (v.curso) cursosBought.add(_qn(v.curso));
+    if (v.cursoCombo) cursosBought.add(_qn(v.cursoCombo));
+  });
+  // Los títulos de plantillas suelen terminar en "– Info completa" — sacarlo antes de comparar
+  var sugeridos = plantillas.filter(function(p){
+    if (!p.titulo) return false;
+    var tituloBase = p.titulo.replace(/[\s–—-]*Info completa\s*$/i, '').trim();
+    if (!tituloBase || /^Plantilla (principal|de ventas)$/i.test(tituloBase)) return false;
+    return !cursosBought.has(_qn(tituloBase));
+  });
   var pagoCount = {};
   cl.ventas.forEach(function(v){ var p=v.pago||'Otro'; pagoCount[p]=(pagoCount[p]||0)+1; });
   var ini = (cl.nombre||cl.email||'?').charAt(0).toUpperCase();
@@ -5405,7 +5440,7 @@ function _renderClienteDetalle(cl, body) {
               return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--surface2)">' +
                 '<div style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px"></div>' +
                 '<div>' +
-                  '<div style="font-size:12px;color:var(--text);font-weight:500;line-height:1.3">' + p.titulo + '</div>' +
+                  '<div style="font-size:12px;color:var(--text);font-weight:500;line-height:1.3">' + p.titulo.replace(/[\s–—-]*Info completa\s*$/i, '').trim() + '</div>' +
                   (p.categoria ? '<div style="font-size:10px;color:var(--text3);text-transform:capitalize;margin-top:1px">' + p.categoria + '</div>' : '') +
                 '</div>' +
               '</div>';
@@ -6282,7 +6317,7 @@ function buildGeminiContext() {
     if (mv.length > 0) {
       lines.push('Ventas del mes:');
       mv.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(v){
-        lines.push('  '+(v.fecha||'?')+'|'+(v.nombre||'?')+' '+(v.apellido||'')+'|'+(cursoConCombo(v)||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|'+(v.pais||'?'));
+        lines.push('  '+(v.fecha||'?')+'|'+(v.nombre||'?')+' '+(v.apellido||'')+'|'+(cursoConCombo(v,' + ')||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|'+(v.pais||'?'));
       });
     }
     lines.push('');
@@ -6335,7 +6370,7 @@ function buildGeminiContext() {
   var byCanal={}, byCursoS={}, byPago={}, byMesS={};
   ventas.forEach(function(v){
     var can=v.canal||'Sin canal'; if(!byCanal[can]) byCanal[can]={n:0,usd:0}; byCanal[can].n++; byCanal[can].usd+=parseFloat(v.monto||0);
-    var cur=v.curso||'Sin curso'; if(!byCursoS[cur]) byCursoS[cur]={n:0,usd:0}; byCursoS[cur].n++; byCursoS[cur].usd+=parseFloat(v.monto||0);
+    _acumularVentaCurso(byCursoS, v);
     var pag=v.pago||'Sin pago'; if(!byPago[pag]) byPago[pag]={n:0,usd:0}; byPago[pag].n++; byPago[pag].usd+=parseFloat(v.monto||0);
     var mes=(v.fecha||'').substring(0,7); if(mes){if(!byMesS[mes]) byMesS[mes]={n:0,usd:0}; byMesS[mes].n++; byMesS[mes].usd+=parseFloat(v.monto||0);}
   });
@@ -6377,7 +6412,7 @@ function buildGeminiContext() {
     lines.push('  Email: '+(cl.email||'—')+' | Tel: '+(cl.telefono||'—')+' | Lead: '+(cl.lead||'—'));
     lines.push('  Asesor: '+(cl.asesor||'?')+' | Compras: '+cl.ventas.length+' ('+aprobadas+' aprobadas) | Total gastado: $'+total.toFixed(2)+' USD');
     cl.ventas.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(v){
-      lines.push('    '+(v.fecha||'?')+'|'+(cursoConCombo(v)||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|asesor:'+(v.asesor||'?'));
+      lines.push('    '+(v.fecha||'?')+'|'+(cursoConCombo(v,' + ')||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|asesor:'+(v.asesor||'?'));
     });
   });
   lines.push('');
