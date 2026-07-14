@@ -1308,7 +1308,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.156</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.157</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -6508,8 +6508,9 @@ function _canalDesdeUtm(utmSource, utmMedium) {
   var s = _normHdr(utmSource), m = _normHdr(utmMedium);
   if (s.includes('whatsapp') || m.includes('whatsapp')) return 'WhatsApp';
   if (s.includes('google') || m.includes('google') || s.includes('web') || m.includes('web') || s.includes('ia') || m.includes('ia')) return 'IA/Web';
-  // instagram, facebook, tiktok, etc → Instagram (único canal de redes sociales disponible)
-  return 'Instagram';
+  if (s.includes('instagram') || m.includes('instagram') || s.includes('facebook') || m.includes('facebook') || s.includes('fb') || m.includes('fb') || s.includes('tiktok') || m.includes('tiktok') || s.includes('ig')) return 'Instagram';
+  // sin UTM reconocible → WhatsApp (canal por defecto)
+  return 'WhatsApp';
 }
 
 function _splitNombre(fullName) {
