@@ -889,7 +889,7 @@ body::before {
             <option>Transferencia Argentina</option><option>Zelle</option>
             <option>Bolívares</option><option>Pesos Chilenos</option>
             <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
-            <option>Pesos Peruanos</option><option>PayPal</option>
+            <option>Pesos Peruanos</option><option>PayPal</option><option>Binance</option>
           </select>
           <select id="fil-estado" onchange="renderTabla()">
             <option value="all">Todos los estados</option>
@@ -1057,7 +1057,7 @@ body::before {
               <option>Transferencia Argentina</option><option>Zelle</option>
               <option>Bolívares</option><option>Pesos Chilenos</option>
               <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
-              <option>Pesos Peruanos</option><option>PayPal</option>
+              <option>Pesos Peruanos</option><option>PayPal</option><option>Binance</option>
             </select>
           </div>
           <!-- Fila 2: Valor oficial · Pago alumno local · Nombre · Apellido -->
@@ -1223,7 +1223,7 @@ body::before {
         </select>
         <select id="admin-fil-pago" onchange="renderAdmin()">
           <option value="all">Todos los métodos</option>
-          <option>Hotmart</option><option>Link Mercado Pago Argentina</option><option>Transferencia Argentina</option><option>Zelle</option><option>Bolívares</option><option>Pesos Chilenos</option><option>Pesos Dominicanos</option><option>Pesos Colombianos</option><option>Pesos Peruanos</option><option>PayPal</option>
+          <option>Hotmart</option><option>Link Mercado Pago Argentina</option><option>Transferencia Argentina</option><option>Zelle</option><option>Bolívares</option><option>Pesos Chilenos</option><option>Pesos Dominicanos</option><option>Pesos Colombianos</option><option>Pesos Peruanos</option><option>PayPal</option><option>Binance</option>
         </select>
         <input id="admin-fil-search" style="max-width:180px" placeholder="Buscar nombre o lead..." oninput="renderAdmin()">
       </div>
@@ -1325,7 +1325,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.182</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.192</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1619,7 +1619,7 @@ function filteredVentas(asesor, mes, pago, search, estado) {
     if (estado && estado!=='all' && (v.estado||'Pendiente')!==estado) return false;
     if (search) {
       const q = search.toLowerCase();
-      if (!(v.curso||'').toLowerCase().includes(q) && !(v.lead||'').includes(q)) return false;
+      if (!cursoConCombo(v).toLowerCase().includes(q) && !(v.lead||'').includes(q)) return false;
     }
     return true;
   }).sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
@@ -1778,7 +1778,7 @@ function filterDrill(asesor) {
           '<span style="font-family:inherit;font-weight:700;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</span>' +
         '</div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + ((v.fecha||'').split('-').reverse().join('/') || '—') + ' · ' + h + '</span></div>' +
-        '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (v.curso||'—') + '</span></div>' +
+        '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (cursoConCombo(v)||'—') + '</span></div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Pago</span><span class="venta-card-val">' + (v.pago||'—') + '</span></div>' +
         (v.lead ? '<div class="venta-card-row"><span class="venta-card-label">Lead</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent)">' + v.lead + '</a></span></div>' : '') +
       '</div>';
@@ -1976,7 +1976,7 @@ function renderTabla() {
       '<td class="mono" style="font-weight:600;color:var(--accent);white-space:nowrap">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
       '<td style="font-size:11px;color:var(--text2);white-space:nowrap">' + (v.montoLocal||'—') + '</td>' +
       '<td style="font-size:11px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.pago||'') + '">' + (v.pago||'—') + '</td>' +
-      '<td style="font-size:11px;max-width:140px" title="' + (cursoConCombo(v,' + ')||'') + '">' + (cursoConCombo(v)||'—') + '</td>' +
+      '<td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (cursoConCombo(v,' + ')||'') + '">' + (cursoConCombo(v)||'—') + '</td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">' + v.lead + '</a>' : '—') + '</td>' +
       '<td style="font-size:11px;white-space:nowrap">' + (v.telefono||'—') + '</td>' +
       '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.email||'') + '">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
@@ -2109,7 +2109,9 @@ function editarVenta(key) {
 function filterStats(campo, valor) {
   const mes = getMesVal();
   const base = mes==='all' ? ventas : ventas.filter(v=>(v.fecha||'').startsWith(mes));
-  const vf = campo==='mes' ? ventas.filter(v=>(v.fecha||'').startsWith(valor)) : base.filter(v=>(v[campo]||'Sin canal')===valor || v[campo]===valor);
+  const vf = campo==='mes' ? ventas.filter(v=>(v.fecha||'').startsWith(valor))
+    : campo==='curso' ? base.filter(v=>cursosDeVenta(v).indexOf(valor)!==-1 || (!cursosDeVenta(v).length && valor==='Sin curso'))
+    : base.filter(v=>(v[campo]||'Sin canal')===valor || v[campo]===valor);
   const total = vf.reduce((s,v)=>s+parseFloat(v.monto||0),0);
   document.getElementById('stats-drill-title').textContent = valor + ' — ' + vf.length + ' venta' + (vf.length!==1?'s':'') + ' · $' + total.toLocaleString('en-US') + ' USD';
   const isMobile = window.innerWidth <= 700;
@@ -4234,7 +4236,7 @@ function renderAdmin() {
     if (pais!=='all' && (v.pais||'')!==pais) return false;
     if (pago!=='all' && (v.pago||'')!==pago) return false;
     if (search) {
-      const haystack = [(v.nombre||''),(v.email||''),(v.lead||''),(v.curso||'')].join(' ').toLowerCase();
+      const haystack = [(v.nombre||''),(v.email||''),(v.lead||''),cursoConCombo(v)].join(' ').toLowerCase();
       if (!haystack.includes(search)) return false;
     }
     return true;
@@ -4724,31 +4726,34 @@ function nombreCompleto(v) {
   return v.apellido ? (v.nombre||'') + ' ' + v.apellido : (v.nombre||'');
 }
 
-// Helper: curso + curso combo (venta combinada) para display en tablas — una sola línea.
+// Devuelve los cursos de una venta como ARRAY — una venta combo tiene 2 elementos.
+// También separa registros viejos que quedaron con "A + B" pegado dentro de v.curso
+// (ningún nombre oficial de curso contiene '+', así que el split es seguro).
+function cursosDeVenta(v) {
+  if (!v) return [];
+  var arr = String(v.curso||'').split('+').map(function(s){ return s.trim(); }).filter(Boolean);
+  if (v.cursoCombo) arr.push(v.cursoCombo);
+  return arr;
+}
+
+// Helper: cursos de la venta unidos para display en una sola línea de tabla.
 function cursoConCombo(v, sep) {
-  if (!v) return '';
-  if (sep === undefined) sep = ' + ';
-  return (v.curso||'') + (v.cursoCombo ? sep + v.cursoCombo : '');
+  return cursosDeVenta(v).join(sep === undefined ? ' + ' : sep);
 }
 
 // Acumula una venta en un mapa {curso: {n, usd}} para stats.
-// Si es venta combinada (cursoCombo), reparte mitad y mitad entre los dos cursos —
-// así ambos quedan visibles en las stats sin duplicar la facturación total.
+// Una venta combo cuenta 1 unidad para CADA curso; el monto se reparte en partes
+// iguales para no duplicar la facturación total.
 function _acumularVentaCurso(map, v) {
   var monto = parseFloat(v.monto||0);
-  if (v.cursoCombo) {
-    var mitad = monto / 2;
-    [v.curso||'Sin curso', v.cursoCombo].forEach(function(c) {
-      if (!map[c]) map[c] = { n: 0, usd: 0 };
-      map[c].n += 1;
-      map[c].usd += mitad;
-    });
-  } else {
-    var c = v.curso || 'Sin curso';
+  var cursos = cursosDeVenta(v);
+  if (!cursos.length) cursos = ['Sin curso'];
+  var parte = monto / cursos.length;
+  cursos.forEach(function(c) {
     if (!map[c]) map[c] = { n: 0, usd: 0 };
     map[c].n += 1;
-    map[c].usd += monto;
-  }
+    map[c].usd += parte;
+  });
 }
 
 // Autocomplete de alumno al ingresar el mail
@@ -5247,7 +5252,7 @@ function fillClientesFilters() {
   fillSel('fil-cl-asesor', Array.from(new Set(ventas.map(function(v){return v.asesor||'';}).filter(Boolean))).sort(), 'Todos los asesores');
   fillSel('fil-cl-pais',   Array.from(new Set(ventas.map(function(v){return v.pais||'';}).filter(Boolean))).sort(), 'Todos los países');
   fillSel('fil-cl-pago',   Array.from(new Set(ventas.map(function(v){return v.pago||'';}).filter(Boolean))).sort(), 'Todas las formas de pago');
-  fillSel('fil-cl-curso',  Array.from(new Set(ventas.map(function(v){return v.curso||'';}).filter(Boolean))).sort(), 'Todos los cursos');
+  fillSel('fil-cl-curso',  Array.from(new Set(ventas.reduce(function(acc,v){ return acc.concat(cursosDeVenta(v)); }, []))).sort(), 'Todos los cursos');
   var meses = Array.from(new Set(ventas.map(function(v){return v.fecha?v.fecha.substring(0,7):'';}).filter(Boolean))).sort().reverse();
   var elM = document.getElementById('fil-cl-mes'); if (!elM) return;
   var curM = elM.value;
@@ -5297,7 +5302,7 @@ function renderClientes() {
     if (filPais !== 'all' && (cl.pais||'') !== filPais) return false;
     if (filAs   !== 'all' && !cl.ventas.some(function(v){ return v.asesor === filAs; })) return false;
     if (filPago !== 'all' && !cl.ventas.some(function(v){ return v.pago === filPago; })) return false;
-    if (filCurso!== 'all' && !cl.ventas.some(function(v){ return v.curso === filCurso; })) return false;
+    if (filCurso!== 'all' && !cl.ventas.some(function(v){ return cursosDeVenta(v).indexOf(filCurso) !== -1; })) return false;
     if (filMes  !== 'all' && !cl.ventas.some(function(v){ return (v.fecha||'').startsWith(filMes); })) return false;
     return true;
   }).sort(function(a,b){ return b.ventas.length - a.ventas.length; });
@@ -5327,7 +5332,7 @@ function renderClientes() {
       var fechas = cl.ventas.map(function(v){return v.fecha||'';}).filter(Boolean).sort();
       var ultima = fechas[fechas.length-1]||'';
       var ultimaCorta = ultima ? ultima.split('-').slice(-2).reverse().join('/') : '—';
-      var cursos = Array.from(new Set(cl.ventas.map(function(v){return v.curso||'';}).filter(Boolean)));
+      var cursos = Array.from(new Set(cl.ventas.reduce(function(acc,v){ return acc.concat(cursosDeVenta(v)); }, [])));
       var ini = (cl.nombre||cl.email||'?').charAt(0).toUpperCase();
       var asCount = {}; cl.ventas.forEach(function(v){ if(v.asesor) asCount[v.asesor]=(asCount[v.asesor]||0)+1; });
       var asesores = Object.keys(asCount).sort(function(a,b){ return asCount[b]-asCount[a]; });
@@ -5350,7 +5355,7 @@ function renderClientes() {
         '<div style="font-size:12px;color:var(--text3);white-space:nowrap">' + ultimaCorta + '</div>' +
         '<div style="text-align:right">' +
           '<div style="font-size:14px;font-weight:800;color:var(--accent)">$' + total.toLocaleString('en-US',{minimumFractionDigits:0}) + '</div>' +
-          '<div style="font-size:10px;color:var(--text3)">' + cl.ventas.length + ' compra' + (cl.ventas.length!==1?'s':'') + '</div>' +
+          '<div style="font-size:10px;color:var(--text3)">' + cursos.length + ' curso' + (cursos.length!==1?'s':'') + '</div>' +
         '</div>' +
       '</div>';
     }).join('') +
@@ -5364,18 +5369,24 @@ function _renderClienteDetalle(cl, body) {
   var fechas = cl.ventas.map(function(v){return v.fecha||'';}).filter(Boolean).sort();
   var primeraCompra = fechas[0]||'';
   var ultimaCompra = fechas[fechas.length-1]||'';
-  // Cursos comprados (normalizados, sin acentos/mayúsculas) — incluye el curso combo de ventas combinadas
+  // Cursos comprados (normalizados, sin acentos/mayúsculas) — una venta combo suma sus 2 cursos
   var cursosBought = new Set();
   cl.ventas.forEach(function(v){
-    if (v.curso) cursosBought.add(_qn(v.curso));
-    if (v.cursoCombo) cursosBought.add(_qn(v.cursoCombo));
+    cursosDeVenta(v).forEach(function(c){ cursosBought.add(_qn(c)); });
   });
-  // Los títulos de plantillas suelen terminar en "– Info completa" — sacarlo antes de comparar
+  // Los títulos de plantillas suelen terminar en "– Info completa" — sacarlo antes de comparar.
+  // Match por prefijo: "Anatomía del HIFU" (plantilla) debe matchear
+  // "Anatomía del HIFU: Más que un equipo" (nombre oficial en la venta).
   var sugeridos = plantillas.filter(function(p){
     if (!p.titulo) return false;
     var tituloBase = p.titulo.replace(/[\s–—-]*Info completa\s*$/i, '').trim();
     if (!tituloBase || /^Plantilla (principal|de ventas)$/i.test(tituloBase)) return false;
-    return !cursosBought.has(_qn(tituloBase));
+    var tb = _qn(tituloBase);
+    var yaLoTiene = false;
+    cursosBought.forEach(function(c){
+      if (c === tb || c.indexOf(tb) === 0 || tb.indexOf(c) === 0) yaLoTiene = true;
+    });
+    return !yaLoTiene;
   });
   var pagoCount = {};
   cl.ventas.forEach(function(v){ var p=v.pago||'Otro'; pagoCount[p]=(pagoCount[p]||0)+1; });
@@ -5407,10 +5418,14 @@ function _renderClienteDetalle(cl, body) {
             '<div style="font-size:22px;font-weight:800;color:var(--accent)">$' + total.toLocaleString('en-US',{minimumFractionDigits:0}) + '</div>' +
             '<div style="font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em">Total USD</div>' +
           '</div>' +
-          '<div style="background:rgba(255,255,255,0.55);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:70px">' +
-            '<div style="font-size:22px;font-weight:800;color:var(--text)">' + cl.ventas.length + '</div>' +
-            '<div style="font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em">Compra' + (cl.ventas.length!==1?'s':'') + '</div>' +
-          '</div>' +
+          (function(){
+            var nCursos = cl.ventas.reduce(function(s,v){ return s + Math.max(cursosDeVenta(v).length, 1); }, 0);
+            return '<div style="background:rgba(255,255,255,0.55);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:70px">' +
+              '<div style="font-size:22px;font-weight:800;color:var(--text)">' + nCursos + '</div>' +
+              '<div style="font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em">Curso' + (nCursos!==1?'s':'') + '</div>' +
+              (nCursos !== cl.ventas.length ? '<div style="font-size:9px;color:var(--text3)">' + cl.ventas.length + ' compra' + (cl.ventas.length!==1?'s':'') + '</div>' : '') +
+            '</div>';
+          })() +
           '<div style="background:rgba(255,255,255,0.55);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;text-align:center;min-width:85px">' +
             '<div style="font-size:18px;font-weight:800;color:var(--text)">' + (ultimaCompra ? ultimaCompra.split('-').slice(-2).reverse().join('/') : '—') + '</div>' +
             '<div style="font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em">Última</div>' +
@@ -5437,7 +5452,15 @@ function _renderClienteDetalle(cl, body) {
           var isLast = i === ventasOrd.length - 1;
           return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:11px 0;' + (isLast?'':'border-bottom:1px solid var(--border);') + 'gap:12px">' +
             '<div style="flex:1;min-width:0">' +
-              '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px">' + (cursoConCombo(v)||'—') + '</div>' +
+              (function(){
+                var cs = cursosDeVenta(v);
+                if (!cs.length) return '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px">—</div>';
+                return cs.map(function(c, ci){
+                  return '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:' + (ci === cs.length-1 ? '5' : '2') + 'px">' +
+                    (cs.length > 1 ? '<span style="display:inline-block;background:var(--accent-light);color:var(--accent);font-size:9px;font-weight:700;border-radius:20px;padding:1px 6px;margin-right:6px;vertical-align:middle">CURSO ' + (ci+1) + '</span>' : '') +
+                    c + '</div>';
+                }).join('');
+              })() +
               '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
                 '<span style="font-size:11px;color:var(--text3);font-family:inherit">' + fechaCorta + (hora ? ' · ' + hora : '') + '</span>' +
                 '<span style="font-size:11px;color:var(--border)">·</span>' +
@@ -6368,7 +6391,7 @@ function buildGeminiContext() {
   ventas.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(v){
     lines.push([
       v.fecha||'?', v.asesor||'?', v.nombre||'?', v.apellido||'',
-      v.pais||'?', v.curso||'?', '$'+parseFloat(v.monto||0).toFixed(2),
+      v.pais||'?', cursoConCombo(v)||'?', '$'+parseFloat(v.monto||0).toFixed(2),
       v.estado||'Pendiente', v.pago||'?', v.canal||'?',
       v.email||'', v.telefono||'', v.lead||'',
       v.montoLocal||'', v.adminTC||'', v.montoFinalARS||''
@@ -6698,6 +6721,7 @@ function _normPago(pago) {
   if (l.includes('hotmart'))   return 'Hotmart';
   if (l.includes('zelle'))     return 'Zelle';
   if (l.includes('paypal'))    return 'PayPal';
+  if (l.includes('binance') || l.includes('usdt') || l.includes('cripto') || l.includes('crypto')) return 'Binance';
   // Bolívares: "Pago Movil", "Pago Móvil", "Bs", "Bolivares"
   if (l.includes('pago movil') || l.includes('pago móvil') || l.includes('pagomovil') ||
       l.includes('bolivar') || l === 'bs' || l === 'bsd') return 'Bolívares';
@@ -7036,7 +7060,7 @@ function _renderImportPreview() {
   var wrap = document.getElementById('imp-preview-wrap');
   if (!_importRows.length) { wrap.style.display = 'none'; return; }
 
-  var PAGOS = ['Hotmart','Link Mercado Pago Argentina','Transferencia Argentina','Zelle','Bolívares','Pesos Chilenos','Pesos Dominicanos','Pesos Colombianos','Pesos Peruanos','PayPal'];
+  var PAGOS = ['Hotmart','Link Mercado Pago Argentina','Transferencia Argentina','Zelle','Bolívares','Pesos Chilenos','Pesos Dominicanos','Pesos Colombianos','Pesos Peruanos','PayPal','Binance'];
   var CANALES = ['Instagram','WhatsApp','IA/Web'];
 
   // Estilos base — selects no soportan background en todos los browsers, usamos border-color
