@@ -1325,7 +1325,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.160</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.164</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1943,7 +1943,7 @@ function renderTabla() {
         '</div>' +
       '</div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + fechaCorta + '</span></div>' +
-      '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (v.curso||'—') + '</span></div>' +
+      '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (cursoConCombo(v)||'—') + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Pago</span><span class="venta-card-val">' + (v.pago||'—') + (v.montoLocal?' · '+v.montoLocal:'') + '</span></div>' +
       '<div class="venta-card-row"><span class="venta-card-label">Estado</span><span class="venta-card-val"><span class="estado-select ' + estadoClass(est) + '">' + est + '</span></span></div>' +
       (v.lead ? '<div class="venta-card-row"><span class="venta-card-label">ID Lead</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);font-weight:600">' + v.lead + '</a></span></div>' : '') +
@@ -1974,7 +1974,7 @@ function renderTabla() {
       '<td class="mono" style="font-weight:600;color:var(--accent);white-space:nowrap">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
       '<td style="font-size:11px;color:var(--text2);white-space:nowrap">' + (v.montoLocal||'—') + '</td>' +
       '<td style="font-size:11px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.pago||'') + '">' + (v.pago||'—') + '</td>' +
-      '<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.curso||'') + '">' + (v.curso||'—') + '</td>' +
+      '<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (cursoConCombo(v)||'') + '">' + (cursoConCombo(v)||'—') + '</td>' +
       '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">' + v.lead + '</a>' : '—') + '</td>' +
       '<td style="font-size:11px;white-space:nowrap">' + (v.telefono||'—') + '</td>' +
       '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.email||'') + '">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
@@ -4691,6 +4691,12 @@ function nombreCompleto(v) {
   return v.apellido ? (v.nombre||'') + ' ' + v.apellido : (v.nombre||'');
 }
 
+// Helper: curso + curso combo (venta combinada) para display en tablas
+function cursoConCombo(v) {
+  if (!v) return '';
+  return (v.curso||'') + (v.cursoCombo ? ' + ' + v.cursoCombo : '');
+}
+
 // Autocomplete de alumno al ingresar el mail
 function autocompletarDesdeEmail() {
   var email = (document.getElementById('f-email').value||'').trim().toLowerCase();
@@ -5357,7 +5363,7 @@ function _renderClienteDetalle(cl, body) {
           var isLast = i === ventasOrd.length - 1;
           return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:11px 0;' + (isLast?'':'border-bottom:1px solid var(--border);') + 'gap:12px">' +
             '<div style="flex:1;min-width:0">' +
-              '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px">' + (v.curso||'—') + '</div>' +
+              '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px">' + (cursoConCombo(v)||'—') + '</div>' +
               '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
                 '<span style="font-size:11px;color:var(--text3);font-family:inherit">' + fechaCorta + (hora ? ' · ' + hora : '') + '</span>' +
                 '<span style="font-size:11px;color:var(--border)">·</span>' +
@@ -6518,6 +6524,7 @@ async function guardarGeminiKey() {
 // ── IMPORTAR VENTAS DESDE EXCEL ────────────────────────────────────────────
 var _importRows = [];
 var _importKommoMap = {};
+var _importSkippedRows = []; // filas del Excel descartadas por no tener Fecha/Monto válidos
 
 function abrirImportExcel() {
   _importRows = [];
@@ -6797,7 +6804,8 @@ async function procesarImportFiles() {
     var ahora  = new Date().toISOString();
 
     _importRows = [];
-    ventasRows.forEach(function(row) {
+    _importSkippedRows = [];
+    ventasRows.forEach(function(row, idx) {
       var lead = _rowGet(row, ['ID','id','Id']).replace(/\.0$/, '');
       var fechaRaw = _rowGet(row, ['Fecha','fecha']);
       // Si el valor raw es número (serial Excel), tomarlo del objeto raw
@@ -6827,8 +6835,14 @@ async function procesarImportFiles() {
         nota     = _rowGet(row, ['Link','link','Aclaraciones','aclaraciones','nota','Nota']);
       }
 
-      // Saltar filas sin datos clave
-      if (!fecha || !monto || monto <= 0) return;
+      // Saltar filas sin datos clave (pero dejar constancia de por qué, para no perderlas en silencio)
+      if (!fecha || !monto || monto <= 0) {
+        var motivos = [];
+        if (!fecha) motivos.push('Fecha inválida o vacía');
+        if (!monto || monto <= 0) motivos.push('Monto vacío o 0');
+        _importSkippedRows.push({ fila: idx + 2, lead: lead || '(sin ID)', motivo: motivos.join(' · ') });
+        return;
+      }
 
       var kommo = _importKommoMap[lead] || {};
       var venta = {
@@ -6857,7 +6871,8 @@ async function procesarImportFiles() {
     });
 
     if (!_importRows.length) {
-      statusEl.textContent = '⚠️ No se encontraron filas válidas (verificá que Fecha y Monto estén completos)';
+      statusEl.innerHTML = '⚠️ No se encontraron filas válidas (verificá que Fecha y Monto estén completos)' +
+        (_importSkippedRows.length ? '<ul style="margin:6px 0 0 18px;font-size:12px">' + _importSkippedRows.map(function(s){ return '<li>Fila ' + s.fila + ' (ID ' + s.lead + '): ' + s.motivo + '</li>'; }).join('') + '</ul>' : '');
       return;
     }
 
@@ -6890,6 +6905,13 @@ function _renderImportStatus(formato, tieneKommo) {
       html += ' &nbsp;·&nbsp; <span style="color:var(--facundo)">todos completos ✓</span>';
   } else {
     html += ' &nbsp;·&nbsp; <span style="color:var(--text3)">sin Kommo — completá los campos rojos manualmente</span>';
+  }
+  if (_importSkippedRows.length) {
+    html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(182,31,58,0.08);border:1px solid rgba(182,31,58,0.25);border-radius:8px;color:var(--danger);font-weight:600">' +
+      '⚠️ ' + _importSkippedRows.length + ' fila' + (_importSkippedRows.length!==1?'s':'') + ' del Excel NO se ' + (_importSkippedRows.length!==1?'importaron':'importó') + ' (no van a estar en las ' + total + '):' +
+      '<ul style="margin:6px 0 0 18px;font-weight:400;font-size:12px">' +
+        _importSkippedRows.map(function(s){ return '<li>Fila ' + s.fila + ' (ID ' + s.lead + '): ' + s.motivo + '</li>'; }).join('') +
+      '</ul></div>';
   }
   statusEl.innerHTML = html;
 }
