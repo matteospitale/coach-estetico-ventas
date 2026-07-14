@@ -1325,7 +1325,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.164</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.171</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1794,7 +1794,7 @@ function filterDrill(asesor) {
           '<td style="font-size:11px;font-weight:600;color:' + canalColor(v.canal) + '">' + (v.canal||'—') + '</td>' +
           '<td class="mono" style="font-weight:600;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
           '<td style="font-size:11px">' + (v.pago||'—') + '</td>' +
-          '<td style="font-size:11px">' + (v.curso||'—') + '</td>' +
+          '<td style="font-size:11px">' + (cursoConCombo(v)||'—') + '</td>' +
           '<td class="mono">' + (v.lead ? '<a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);font-weight:600">' + v.lead + '</a>' : '—') + '</td>' +
           '<td class="mono" style="color:var(--text3)">' + (v.codigo||'—') + '</td>' +
           '</tr>'
@@ -2130,7 +2130,7 @@ function filterStats(campo, valor) {
         '</div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Fecha</span><span class="venta-card-val">' + ((v.fecha||'').split('-').reverse().join('/')||'—') + '</span></div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Canal</span><span class="venta-card-val" style="color:' + canalColor(v.canal) + ';font-weight:600">' + (v.canal||'—') + '</span></div>' +
-        '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (v.curso||'—') + '</span></div>' +
+        '<div class="venta-card-row"><span class="venta-card-label">Curso</span><span class="venta-card-val">' + (cursoConCombo(v)||'—') + '</span></div>' +
         '<div class="venta-card-row"><span class="venta-card-label">Pago</span><span class="venta-card-val">' + (v.pago||'—') + '</span></div>' +
       '</div>';
     }).join('') : '<div class="empty-state">Sin ventas</div>';
@@ -2145,7 +2145,7 @@ function filterStats(campo, valor) {
           '<td style="font-size:11px;font-weight:600;color:' + canalColor(v.canal) + '">' + (v.canal||'—') + '</td>' +
           '<td class="mono" style="font-weight:600;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US') + '</td>' +
           '<td style="font-size:11px">' + (v.pago||'—') + '</td>' +
-          '<td style="font-size:11px">' + (v.curso||'—') + '</td>' +
+          '<td style="font-size:11px">' + (cursoConCombo(v)||'—') + '</td>' +
           '</tr>'
         ).join('')
       : '<tr><td colspan="6"><div class="empty-state" style="padding:20px">Sin ventas</div></td></tr>';
@@ -4033,7 +4033,7 @@ function renderParciales() {
     return '<tr>' +
       '<td><strong>' + (v.nombre||'') + ' ' + (v.apellido||'') + '</strong>' +
         '<br><span style="font-size:11px;color:var(--text3)">' + (v.asesor||'') + ' · ' + (v.fecha||'').split('-').reverse().join('/') + '</span></td>' +
-      '<td style="font-size:11px;max-width:140px;white-space:normal">' + (v.curso||'—') + '</td>' +
+      '<td style="font-size:11px;max-width:140px;white-space:normal">' + (cursoConCombo(v)||'—') + '</td>' +
       '<td style="font-size:11px;color:var(--text3);white-space:nowrap">' + cuotaLabel + '</td>' +
       '<td class="mono" style="color:var(--accent);font-weight:700;white-space:nowrap">$' + parseFloat(c.monto||0).toLocaleString('en-US') + '</td>' +
       '<td><input type="date" value="' + (c.venc||'') + '" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;background:transparent;color:var(--text)" onchange="updateCuotaVenc(\'' + v._key + '\',' + idx + ',this.value)"></td>' +
@@ -5041,7 +5041,7 @@ function exportAdminCSV() {
     xml += cell(v.pais||'');
     xml += cell(v.email||'');
     xml += cell(v.telefono||'');
-    xml += cell(v.curso||'');
+    xml += cell(cursoConCombo(v)||'');
     xml += cell(v.promocion||'');
     xml += cell(montoUSD, true);
     xml += cell(v.montoLocal||'');
@@ -5087,7 +5087,7 @@ function exportCSV() {
     xml += '<Row>' +
       cell(v.fecha||'') + cell(hora) + cell(v.asesor||'') + cell(v.canal||'') +
       cell(v.monto||'', true) + cell(v.montoLocal||'') + cell(v.pago||'') +
-      cell(v.curso||'') + cell(v.lead||'') + cell(v.telefono||'') +
+      cell(cursoConCombo(v)||'') + cell(v.lead||'') + cell(v.telefono||'') +
       cell(v.email||'') + cell(v.codigo||'') + cell(v.nota||'') +
     '</Row>\n';
   });
@@ -5646,7 +5646,7 @@ function renderMYF() {
         return '<tr style="border-bottom:1px solid var(--surface2)">' +
           '<td style="padding:6px 10px;color:var(--text3);white-space:nowrap">' + ((v.fecha||'—').split('-').reverse().join('/')) + '</td>' +
           '<td style="padding:6px 10px">' + (v.nombre||'—') + '</td>' +
-          '<td style="padding:6px 10px;color:var(--text2)">' + (v.curso||'—') + '</td>' +
+          '<td style="padding:6px 10px;color:var(--text2)">' + (cursoConCombo(v)||'—') + '</td>' +
           '<td style="padding:6px 10px;color:var(--text2)">' + (v.pago||'—') + '</td>' +
           '<td style="padding:6px 10px"><span style="font-size:11px;font-weight:700;background:'+estBg+';color:'+estColor+';border-radius:20px;padding:2px 8px">'+est+'</span></td>' +
           '<td style="padding:6px 10px;text-align:right;font-weight:600;color:var(--accent)">$' + parseFloat(v.monto||0).toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
@@ -6282,7 +6282,7 @@ function buildGeminiContext() {
     if (mv.length > 0) {
       lines.push('Ventas del mes:');
       mv.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(v){
-        lines.push('  '+(v.fecha||'?')+'|'+(v.nombre||'?')+' '+(v.apellido||'')+'|'+(v.curso||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|'+(v.pais||'?'));
+        lines.push('  '+(v.fecha||'?')+'|'+(v.nombre||'?')+' '+(v.apellido||'')+'|'+(cursoConCombo(v)||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|'+(v.pais||'?'));
       });
     }
     lines.push('');
@@ -6377,7 +6377,7 @@ function buildGeminiContext() {
     lines.push('  Email: '+(cl.email||'—')+' | Tel: '+(cl.telefono||'—')+' | Lead: '+(cl.lead||'—'));
     lines.push('  Asesor: '+(cl.asesor||'?')+' | Compras: '+cl.ventas.length+' ('+aprobadas+' aprobadas) | Total gastado: $'+total.toFixed(2)+' USD');
     cl.ventas.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(v){
-      lines.push('    '+(v.fecha||'?')+'|'+(v.curso||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|asesor:'+(v.asesor||'?'));
+      lines.push('    '+(v.fecha||'?')+'|'+(cursoConCombo(v)||'?')+'|$'+parseFloat(v.monto||0).toFixed(2)+'|'+(v.estado||'Pendiente')+'|'+(v.pago||'?')+'|asesor:'+(v.asesor||'?'));
     });
   });
   lines.push('');
@@ -6811,7 +6811,12 @@ async function procesarImportFiles() {
       // Si el valor raw es número (serial Excel), tomarlo del objeto raw
       var fechaVal = row['Fecha'] !== undefined ? row['Fecha'] : (row['fecha'] !== undefined ? row['fecha'] : fechaRaw);
       var fecha = _parseFechaImport(fechaVal !== '' ? fechaVal : fechaRaw);
-      var curso = _normalizarCurso(_rowGet(row, ['Que compro','Qué compro','que compro','que compró','Producto','producto','Curso','curso']));
+      // Venta combinada: si la celda trae "curso A + curso B", separar en curso principal + curso combo
+      // (no separar por "y" o "/" porque varios nombres oficiales ya los contienen, ej. "Crecimiento y Gestión")
+      var cursoCeldaRaw = _rowGet(row, ['Que compro','Qué compro','que compro','que compró','Producto','producto','Curso','curso']);
+      var cursoPartes = cursoCeldaRaw.split('+').map(function(s){ return s.trim(); }).filter(Boolean);
+      var curso = _normalizarCurso(cursoPartes[0] || cursoCeldaRaw);
+      var cursoComboImport = cursoPartes.length > 1 ? _normalizarCurso(cursoPartes.slice(1).join(' + ')) : '';
       var pago  = _rowGet(row, ['Forma de pago','forma de pago','Metodo de pago','método de pago','metodo de pago']);
 
       var monto = 0, montoLocal = 0, email = '', telefono = '', nota = '';
@@ -6867,6 +6872,11 @@ async function procesarImportFiles() {
         comprobante: ''
       };
       if (montoLocal > 0) venta.montoLocal = montoLocal;
+      if (cursoComboImport) venta.cursoCombo = cursoComboImport;
+      // Detectar si ese lead ya tiene una venta cargada (mismo día) — evita duplicar al re-importar el mismo Excel
+      var yaExiste = lead && ventas.some(function(ex){ return ex.lead === lead && ex.fecha === fecha; });
+      venta._duplicado = !!yaExiste;
+      venta.seleccionada = !yaExiste;
       _importRows.push(venta);
     });
 
@@ -6916,22 +6926,35 @@ function _renderImportStatus(formato, tieneKommo) {
   statusEl.innerHTML = html;
 }
 
+function _toggleTodasImport(checked) {
+  _importRows.forEach(function(v){ v.seleccionada = checked; });
+  _renderImportPreview();
+}
+
 function _checkImportReady() {
   var btn = document.getElementById('btn-importar-excel');
   if (!btn || !_importRows.length) return;
-  var incompletas = _importRows.filter(function(v) {
+  var seleccionadas = _importRows.filter(function(v){ return v.seleccionada !== false; });
+  if (!seleccionadas.length) {
+    btn.disabled = true;
+    btn.style.opacity = '0.45';
+    btn.style.cursor = 'not-allowed';
+    btn.textContent = 'Seleccioná al menos 1 venta';
+    return;
+  }
+  var incompletas = seleccionadas.filter(function(v) {
     return !v.nombre || !v.pais || !v.email || !v.pago;
   }).length;
   if (incompletas > 0) {
     btn.disabled = true;
     btn.style.opacity = '0.45';
     btn.style.cursor = 'not-allowed';
-    btn.textContent = '⚠️ ' + incompletas + ' fila' + (incompletas > 1 ? 's' : '') + ' incompleta' + (incompletas > 1 ? 's' : '');
+    btn.textContent = '⚠️ ' + incompletas + ' fila' + (incompletas > 1 ? 's' : '') + ' seleccionada' + (incompletas > 1 ? 's' : '') + ' incompleta' + (incompletas > 1 ? 's' : '');
   } else {
     btn.disabled = false;
     btn.style.opacity = '';
     btn.style.cursor = '';
-    btn.textContent = '⬆ Importar ' + _importRows.length + ' ventas';
+    btn.textContent = '⬆ Importar ' + seleccionadas.length + ' venta' + (seleccionadas.length!==1?'s':'') + (seleccionadas.length!==_importRows.length ? ' de ' + _importRows.length : '');
   }
 }
 
@@ -6954,6 +6977,7 @@ function _renderImportPreview() {
   var html = '<div style="border-radius:8px;border:1px solid var(--border);overflow:auto;max-height:52vh">';
   html += '<table style="border-collapse:collapse;font-size:12px;table-layout:auto">';
   html += '<thead><tr style="background:rgba(255,255,255,0.97);position:sticky;top:0;z-index:2">';
+  html += '<th style="padding:7px 6px;text-align:center;border-bottom:1.5px solid var(--border)"><input type="checkbox" id="imp-check-all" checked title="Seleccionar / deseleccionar todas" onchange="_toggleTodasImport(this.checked)" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer"></th>';
   cols.forEach(function(c) {
     html += '<th style="padding:7px 10px;font-weight:600;text-align:left;white-space:nowrap;color:var(--text2);border-bottom:1.5px solid var(--border)">' + c + '</th>';
   });
@@ -6965,9 +6989,11 @@ function _renderImportPreview() {
     // Fila roja entera = lead no encontrado en Kommo (sin nombre)
     // Celda roja individual = campo específico vacío dentro de un lead encontrado
     var sinKommo  = !v.nombre;
-    var bg        = sinKommo
-      ? 'rgba(192,57,43,0.07)'
-      : (i % 2 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)');
+    var bg        = v._duplicado
+      ? 'rgba(155,94,155,0.09)'
+      : (sinKommo
+        ? 'rgba(192,57,43,0.07)'
+        : (i % 2 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)'));
     var rowBorder = sinKommo ? 'border-bottom:1px solid rgba(192,57,43,0.18)' : 'border-bottom:1px solid rgba(200,185,175,0.14)';
 
     // Input editable: vacío → rojo, de Kommo → verde, propio → normal
@@ -7010,6 +7036,7 @@ function _renderImportPreview() {
       var escaped = (val||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
       var dlId = 'cdl' + i;
       var opts = CURSOS.map(function(c){ return '<option value="' + c.replace(/"/g,'&quot;') + '">'; }).join('');
+      var comboEsc = (v.cursoCombo||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
       return '<td style="padding:3px 5px;white-space:nowrap">' +
         '<input type="text" list="' + dlId + '" value="' + escaped + '" placeholder="Curso..." ' +
         'oninput="_importRows[' + i + '].curso=this.value;var ok=CURSOS.includes(this.value);' +
@@ -7017,12 +7044,17 @@ function _renderImportPreview() {
         'this.style.width=\'180px\';_checkImportReady()" ' +
         'style="' + st + 'width:180px">' +
         '<datalist id="' + dlId + '">' + opts + '</datalist>' +
+        '<input type="text" list="' + dlId + '" value="' + comboEsc + '" placeholder="+ combo (opcional)" ' +
+        'oninput="_importRows[' + i + '].cursoCombo=this.value" ' +
+        'style="' + iBase + 'border:1px dashed var(--border);color:var(--text3);width:180px;margin-top:3px">' +
         '</td>';
     }
 
-    html += '<tr style="' + rowBorder + ';background:' + bg + '">';
+    html += '<tr style="' + rowBorder + ';background:' + bg + (v.seleccionada===false?';opacity:0.5':'') + '">';
+    html += '<td style="padding:5px 6px;text-align:center"><input type="checkbox" ' + (v.seleccionada!==false?'checked':'') + ' onchange="_importRows[' + i + '].seleccionada=this.checked;_checkImportReady()" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer"></td>';
     html += '<td style="padding:5px 10px;white-space:nowrap;color:var(--text2);font-size:11px">' + (v.fecha||'—') + '</td>';
-    html += '<td style="padding:5px 10px;font-family:monospace;font-size:11px;color:var(--text3);white-space:nowrap">' + (v.lead||'—') + '</td>';
+    html += '<td style="padding:5px 10px;font-family:monospace;font-size:11px;color:var(--text3);white-space:nowrap">' + (v.lead||'—') +
+      (v._duplicado ? '<div style="font-family:inherit;color:#9B5E9B;font-weight:700;font-size:10px;white-space:nowrap">⚠ Ya existe</div>' : '') + '</td>';
     html += cursoTd(v.curso);
     html += '<td style="padding:5px 10px;text-align:right;font-weight:700;white-space:nowrap">$' + (v.monto||0).toLocaleString('en-US') + '</td>';
     html += pagoTd(v.pago);
@@ -7035,6 +7067,15 @@ function _renderImportPreview() {
     html += '</tr>';
   });
 
+  _importSkippedRows.forEach(function(s) {
+    html += '<tr style="background:rgba(192,57,43,0.1);border-bottom:1px solid rgba(192,57,43,0.18)">' +
+      '<td style="padding:5px 6px;text-align:center;color:var(--danger)">✗</td>' +
+      '<td colspan="' + cols.length + '" style="padding:5px 10px;color:var(--danger);font-size:11px">' +
+        '<strong>Fila ' + s.fila + '</strong> del Excel (ID ' + s.lead + ') — NO se importa: ' + s.motivo +
+      '</td>' +
+    '</tr>';
+  });
+
   html += '</tbody></table></div>';
   wrap.innerHTML = html;
   wrap.style.display = '';
@@ -7042,38 +7083,53 @@ function _renderImportPreview() {
 }
 
 async function ejecutarImportExcel() {
-  if (!_importRows.length) { showToast('No hay ventas para importar'); return; }
-  var incompletas = _importRows.filter(function(v){ return !v.nombre || !v.pais || !v.email || !v.pago; }).length;
-  if (incompletas > 0) { showToast('Completá los ' + incompletas + ' filas en rojo antes de importar'); return; }
+  var aImportar = _importRows.filter(function(v){ return v.seleccionada !== false; });
+  if (!aImportar.length) { showToast('No hay ventas seleccionadas para importar'); return; }
+  var incompletas = aImportar.filter(function(v){ return !v.nombre || !v.pais || !v.email || !v.pago; }).length;
+  if (incompletas > 0) { showToast('Completá los ' + incompletas + ' filas seleccionadas en rojo antes de importar'); return; }
 
   var asesor   = document.getElementById('imp-asesor').value || usuarioActual || 'Matteo';
   var statusEl = document.getElementById('imp-status');
   var btn      = document.getElementById('btn-importar-excel');
 
-  // Actualizar asesor en todas las filas (por si cambió después del preview)
-  _importRows.forEach(function(v) { v.asesor = asesor; });
+  // Actualizar asesor en todas las filas seleccionadas (por si cambió después del preview)
+  aImportar.forEach(function(v) { v.asesor = asesor; });
 
   btn.disabled = true;
   var ok = 0, fail = 0;
+  var fallidas = [];
+  var importadasOk = [];
 
-  for (var i = 0; i < _importRows.length; i++) {
-    statusEl.textContent = 'Importando ' + (i + 1) + ' de ' + _importRows.length + '...';
+  for (var i = 0; i < aImportar.length; i++) {
+    statusEl.textContent = 'Importando ' + (i + 1) + ' de ' + aImportar.length + '...';
+    // Limpiar flags de UI (_duplicado, seleccionada) antes de guardar — no son datos de la venta
+    var venta = Object.assign({}, aImportar[i]);
+    delete venta._duplicado;
+    delete venta.seleccionada;
     try {
-      var saved = await dbPush('/ventas', _importRows[i]);
-      if (saved) ok++; else fail++;
-    } catch(e) { fail++; }
+      var saved = await dbPush('/ventas', venta);
+      if (saved) { ok++; importadasOk.push(aImportar[i]); } else { fail++; fallidas.push(venta.lead||'(sin ID)'); }
+    } catch(e) { fail++; fallidas.push(venta.lead||'(sin ID)'); }
   }
 
   btn.disabled = false;
-  statusEl.textContent = '✅ ' + ok + ' ventas importadas' + (fail > 0 ? ' · ⚠️ ' + fail + ' errores' : '');
-  showToast(ok + ' ventas importadas correctamente');
-  _importRows = [];
-
-  cerrarImportExcel();
   await loadVentas();
   fillMesOptions('admin-fil-mes');
   renderAdmin();
   renderAll();
+
+  if (fail > 0) {
+    // Sacar de la lista las que sí se importaron, para no duplicarlas si reintentan
+    _importRows = _importRows.filter(function(v){ return importadasOk.indexOf(v) === -1; });
+    statusEl.innerHTML = '✅ ' + ok + ' ventas importadas · <span style="color:var(--danger);font-weight:600">⚠️ ' + fail + ' fallaron (lead: ' + fallidas.join(', ') + ') — reintentá con "Importar" de nuevo</span>';
+    showToast(ok + ' importadas · ' + fail + ' fallaron');
+    _renderImportPreview();
+    return; // dejar el modal abierto con las filas que fallaron, para reintentar
+  }
+
+  showToast(ok + ' ventas importadas correctamente');
+  _importRows = [];
+  cerrarImportExcel();
 }
 
 // Init
