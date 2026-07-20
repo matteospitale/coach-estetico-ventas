@@ -1325,7 +1325,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.193</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.200</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1465,9 +1465,14 @@ async function init() {
     initNavDropdown();
     await Promise.all([loadPlantillas(), loadPostVentaData(), loadNotificaciones(), loadGeminiKey()]);
     // Don't re-apply permisos here — would redirect user away from current tab
-    setInterval(refreshData, 15000);
-    setInterval(refreshPlantillas, 30000);
-    setInterval(loadNotificaciones, 60000);
+    // Polling: pausado cuando la pestaña está oculta para no gastar datos de fondo
+    setInterval(function(){ if (!document.hidden) refreshData(); }, 60000);
+    setInterval(function(){ if (!document.hidden) refreshPlantillas(); }, 300000);
+    setInterval(function(){ if (!document.hidden) loadNotificaciones(); }, 120000);
+    // Al volver a la pestaña, refrescar al instante
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshData(); });
+    // Migrar comprobantes embebidos al nodo /comprobantes (aliviana /ventas de ~9MB a ~0.5MB)
+    setTimeout(silentMigrateComprobantes, 3000);
   } catch(e) {
     document.getElementById('loading-state').innerHTML =
       '<div style="padding:40px;color:red;font-size:14px">' +
@@ -1654,6 +1659,47 @@ async function updateCanalInline(key, val, el) {
     renderTabla();
   }
 }
+// ── COMPROBANTES EN NODO SEPARADO ──
+// Las imágenes base64 viven en /comprobantes/{ventaKey}/{c1,c2}; en la venta queda
+// el marcador '@ref'. Así /ventas baja de ~9 MB a ~0.5 MB y no se re-descargan
+// las imágenes en cada refresh. La imagen se pide recién cuando alguien la abre.
+async function verComprobanteRef(key, n) {
+  showToast('Cargando comprobante...');
+  var d = await dbGet('/comprobantes/' + key + '/c' + n);
+  if (d) verComprobanteGrande(d);
+  else showToast('No se encontró el comprobante');
+}
+function verComprobanteVenta(key, n) {
+  var v = ventas.find(function(x){ return x._key === key; });
+  var val = v ? (n === 1 ? v.comprobante : v.comprobante2) : '';
+  if (val && val.indexOf('data:') === 0) verComprobanteGrande(val);
+  else verComprobanteRef(key, n);
+}
+// Thumbnail para tablas: imagen inline si el dato está embebido (legacy), 📎 si es referencia
+function compThumbHTML(v, n, maxH) {
+  var val = n === 1 ? v.comprobante : v.comprobante2;
+  if (!val) return '';
+  if (val.indexOf('data:') === 0) return '<img src="' + val + '" style="max-height:' + maxH + 'px;max-width:180px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="verComprobanteGrande(this.src)">';
+  return '<span onclick="verComprobanteRef(\'' + v._key + '\',' + n + ')" style="display:inline-block;cursor:zoom-in;font-size:' + (maxH > 60 ? 26 : 16) + 'px" title="Ver comprobante ' + n + '">📎</span>';
+}
+// Migración en segundo plano: mueve comprobantes embebidos al nodo /comprobantes.
+// Idempotente — si falla una, se reintenta en la próxima carga de la app.
+async function silentMigrateComprobantes() {
+  for (var i = 0; i < ventas.length; i++) {
+    var v = ventas[i];
+    var c1 = (v.comprobante || '').indexOf('data:') === 0 ? v.comprobante : '';
+    var c2 = (v.comprobante2 || '').indexOf('data:') === 0 ? v.comprobante2 : '';
+    if (!c1 && !c2) continue;
+    var body = {};
+    if (c1) body.c1 = c1;
+    if (c2) body.c2 = c2;
+    var ok = await dbSet('/comprobantes/' + v._key, body);
+    if (!ok) continue;
+    if (c1) { await dbSet('/ventas/' + v._key + '/comprobante', '@ref'); v.comprobante = '@ref'; }
+    if (c2) { await dbSet('/ventas/' + v._key + '/comprobante2', '@ref'); v.comprobante2 = '@ref'; }
+  }
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -1699,10 +1745,11 @@ function renderInicioDashboard() {
     var mv = ventas.filter(function(v){ return v.asesor===nombre && (v.estado||'Pendiente')!=='Rechazada' && (v.fecha||'').startsWith(mesKey); });
     var bruto = mv.reduce(function(s,v){ return s+parseFloat(v.monto||0); },0);
     var neto = bruto * 0.85;
-    var nivelActual = NIVELES.filter(function(n){ return neto >= n.usd; }).pop() || null;
-    var siguienteNivel = NIVELES.filter(function(n){ return neto < n.usd; })[0] || null;
-    var falta = siguienteNivel ? Math.max(0, siguienteNivel.usd - neto) : 0;
-    var pct = siguienteNivel ? Math.min(100, Math.round(neto / siguienteNivel.usd * 100)) : 100;
+    // Los niveles se calculan sobre el BRUTO (total vendido), no sobre el neto -15%
+    var nivelActual = NIVELES.filter(function(n){ return bruto >= n.usd; }).pop() || null;
+    var siguienteNivel = NIVELES.filter(function(n){ return bruto < n.usd; })[0] || null;
+    var falta = siguienteNivel ? Math.max(0, siguienteNivel.usd - bruto) : 0;
+    var pct = siguienteNivel ? Math.min(100, Math.round(bruto / siguienteNivel.usd * 100)) : 100;
     return { bruto:bruto, neto:neto, nivelActual:nivelActual, siguienteNivel:siguienteNivel, falta:falta, pct:pct, ventas:mv.length };
   }
 
@@ -1724,7 +1771,7 @@ function renderInicioDashboard() {
       (d.siguienteNivel ?
         '<div class="nivel-track"><div class="nivel-fill" style="width:' + d.pct + '%;background:' + color + '"></div></div>' +
         '<div class="nivel-row"><span>Hacia ' + d.siguienteNivel.label + ' ($' + d.siguienteNivel.usd.toLocaleString('en-US') + ')</span><b>' + d.pct + '%</b></div>' +
-        '<div style="font-size:12px;color:var(--text3);margin-top:2px">Falta <b style="color:var(--text)">$' + d.falta.toLocaleString('en-US',{maximumFractionDigits:0}) + '</b> neto</div>'
+        '<div style="font-size:12px;color:var(--text3);margin-top:2px">Falta <b style="color:var(--text)">$' + d.falta.toLocaleString('en-US',{maximumFractionDigits:0}) + '</b></div>'
       : '<div style="font-size:12px;color:#155724;font-weight:700;margin-top:8px">Nivel máximo alcanzado ✓</div>') +
     '</div>';
   }
@@ -1951,7 +1998,7 @@ function renderTabla() {
       (v.lead ? '<div class="venta-card-row"><span class="venta-card-label">ID Lead</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/detail/' + v.lead + '" target="_blank" style="color:var(--accent);font-weight:600">' + v.lead + '</a></span></div>' : '') +
       (v.telefono ? '<div class="venta-card-row"><span class="venta-card-label">Teléfono</span><span class="venta-card-val">' + v.telefono + '</span></div>' : '') +
       (v.email ? '<div class="venta-card-row"><span class="venta-card-label">Email</span><span class="venta-card-val"><a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent)">' + v.email + '</a></span></div>' : '') +
-      (v.comprobante ? '<div class="venta-card-row"><span class="venta-card-label">Comprobante</span><span class="venta-card-val"><a href="' + v.comprobante + '" target="_blank" style="color:var(--accent)">Ver imagen 1</a>' + (v.comprobante2 ? ' · <a href="' + v.comprobante2 + '" target="_blank" style="color:var(--accent)">Ver imagen 2</a>' : '') + '</span></div>' : '') +
+      (v.comprobante ? '<div class="venta-card-row"><span class="venta-card-label">Comprobante</span><span class="venta-card-val"><a href="#" onclick="event.preventDefault();verComprobanteVenta(\'' + v._key + '\',1)" style="color:var(--accent)">Ver imagen 1</a>' + (v.comprobante2 ? ' · <a href="#" onclick="event.preventDefault();verComprobanteVenta(\'' + v._key + '\',2)" style="color:var(--accent)">Ver imagen 2</a>' : '') + '</span></div>' : '') +
     '</div>';
   }).join('');
 
@@ -1982,7 +2029,7 @@ function renderTabla() {
       '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.email||'') + '">' + (v.email ? '<a href="https://coachestetico.kommo.com/leads/list/pipeline/4650404/?skip_filter=Y&term=' + encodeURIComponent(v.email) + '" target="_blank" style="color:var(--accent);text-decoration:none">' + v.email + '</a>' : '—') + '</td>' +
       '<td class="mono" style="color:var(--text3)">' + (v.codigo||'—') + '</td>' +
       '<td style="font-size:11px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (v.nota||'') + '">' + (v.nota||'—') + '</td>' +
-      '<td style="white-space:nowrap">' + (v.comprobante ? '<img src="' + v.comprobante + '" style="height:28px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="verComprobanteGrande(this.src)">' + (v.comprobante2 ? ' <img src="' + v.comprobante2 + '" style="height:28px;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;vertical-align:middle" onclick="verComprobanteGrande(this.src)">' : '') : '—') + '</td>' +
+      '<td style="white-space:nowrap">' + (v.comprobante ? compThumbHTML(v,1,28) + (v.comprobante2 ? ' ' + compThumbHTML(v,2,28) : '') : '—') + '</td>' +
       '<td><span class="estado-select ' + estadoClass(est) + '">' + est + '</span></td>' +
       chkTd +
       '</tr>';
@@ -2038,7 +2085,7 @@ function accionEditar() {
 async function accionEliminar() {
   const n = seleccionados.size;
   if (!confirm('¿Eliminar ' + n + ' venta' + (n!==1?'s':'') + '? No se puede deshacer.')) return;
-  for (const key of seleccionados) await dbDelete('/ventas/' + key);
+  for (const key of seleccionados) { await dbDelete('/ventas/' + key); dbDelete('/comprobantes/' + key).catch(function(){}); }
   seleccionados.clear();
   document.getElementById('barra-acciones').style.display = 'none';
   await loadVentas();
@@ -2048,6 +2095,7 @@ async function accionEliminar() {
 async function eliminarVenta(key) {
   if (!confirm('¿Eliminar esta venta?')) return;
   await dbDelete('/ventas/' + key);
+  dbDelete('/comprobantes/' + key).catch(function(){});
   await loadVentas();
   renderTabla();
   showToast('Venta eliminada');
@@ -2076,8 +2124,14 @@ function editarVenta(key) {
   document.querySelectorAll('input[name="canal"]').forEach(r => { r.checked = r.value===v.canal; });
   // Restaurar comprobantes existentes
   clearComprobante(1); clearComprobante(2);
-  if (v.comprobante) setComprobanteFromDataURL(v.comprobante, 1);
-  if (v.comprobante2) setComprobanteFromDataURL(v.comprobante2, 2);
+  if (v.comprobante) {
+    if (v.comprobante.indexOf('data:') === 0) setComprobanteFromDataURL(v.comprobante, 1);
+    else dbGet('/comprobantes/' + key + '/c1').then(function(d){ if (d) setComprobanteFromDataURL(d, 1); });
+  }
+  if (v.comprobante2) {
+    if (v.comprobante2.indexOf('data:') === 0) setComprobanteFromDataURL(v.comprobante2, 2);
+    else dbGet('/comprobantes/' + key + '/c2').then(function(d){ if (d) setComprobanteFromDataURL(d, 2); });
+  }
   // Restaurar en partes
   var epChk = document.getElementById('f-en-partes');
   var epPanel = document.getElementById('en-partes-panel');
@@ -4208,7 +4262,7 @@ function clearComprobante(slot) {
 
 function ventaComprobanteClick(event, v) {
   event.stopPropagation();
-  if (v && v.comprobante) verComprobanteGrande(v.comprobante);
+  if (v && v.comprobante) verComprobanteVenta(v._key, 1);
 }
 
 // ── ADMINISTRACIÓN ──
@@ -4394,8 +4448,8 @@ function renderAdmin() {
             '<div class="admin-field"><label class="form-label" style="font-size:11px">Comprobante</label>' +
               '<div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">' +
                 (v.comprobante
-                  ? '<img src="' + v.comprobante + '" style="max-height:120px;max-width:180px;border-radius:6px;border:1px solid var(--border);cursor:zoom-in" onclick="verComprobanteGrande(this.src)">' +
-                    (v.comprobante2 ? '<img src="' + v.comprobante2 + '" style="max-height:120px;max-width:180px;border-radius:6px;border:1px solid var(--border);cursor:zoom-in" onclick="verComprobanteGrande(this.src)">' : '')
+                  ? compThumbHTML(v,1,120) +
+                    (v.comprobante2 ? compThumbHTML(v,2,120) : '')
                   : '<span style="font-size:12px;color:var(--text3)">Sin comprobante</span>') +
               '</div></div>' +
             '<div class="admin-field" style="grid-column:1/-1"><label class="form-label" style="font-size:11px">Notas admin</label>' +
@@ -4664,12 +4718,23 @@ async function guardarVenta() {
     // pendiente always has estado:'Pendiente' — auto-reset is built in
     if (window._editKey) {
       await dbDelete('/ventas/' + window._editKey);
+      dbDelete('/comprobantes/' + window._editKey).catch(function(){});
       window._editKey = null;
       window._ventaOriginal = null;
       document.getElementById('btn-confirmar').textContent = 'Revisar y confirmar';
     }
+    // Los comprobantes van al nodo /comprobantes — en la venta queda solo '@ref'
+    var _blobC1 = '', _blobC2 = '';
+    if (pendiente.comprobante && pendiente.comprobante.indexOf('data:') === 0) { _blobC1 = pendiente.comprobante; pendiente.comprobante = '@ref'; }
+    if (pendiente.comprobante2 && pendiente.comprobante2.indexOf('data:') === 0) { _blobC2 = pendiente.comprobante2; pendiente.comprobante2 = '@ref'; }
     const saved = await dbPush('/ventas', pendiente);
     if (!saved) throw new Error('Firebase rechazó la escritura');
+    if (_blobC1 || _blobC2) {
+      var _cBody = {};
+      if (_blobC1) _cBody.c1 = _blobC1;
+      if (_blobC2) _cBody.c2 = _blobC2;
+      await dbSet('/comprobantes/' + saved.name, _cBody);
+    }
     // If was approved → log notification with diff
     if (eraAprobada) {
       await guardarNotificacionEdicion(ventaOriginal, pendiente);
@@ -5661,11 +5726,12 @@ function renderMYF() {
   var body = document.getElementById('myf-body');
   if (!body) return;
 
-  var nivelActual = NIVELES.filter(function(n){ return totalNeto >= n.usd; }).pop() || null;
-  var siguienteNivelMyf = NIVELES.find(function(n){ return totalNeto < n.usd; }) || null;
+  // Los niveles se calculan sobre el BRUTO (monto total vendido), no sobre el neto -15%
+  var nivelActual = NIVELES.filter(function(n){ return totalBruto >= n.usd; }).pop() || null;
+  var siguienteNivelMyf = NIVELES.find(function(n){ return totalBruto < n.usd; }) || null;
   var nivelActualLabel = nivelActual ? nivelActual.label + ' (' + nivelActual.pct + '%)' : 'Sin nivel aún';
   var comisionActual = nivelActual ? (totalNeto * nivelActual.pct / 100) : 0;
-  var faltaSiguiente = siguienteNivelMyf ? Math.max(0, siguienteNivelMyf.usd - totalNeto) : 0;
+  var faltaSiguiente = siguienteNivelMyf ? Math.max(0, siguienteNivelMyf.usd - totalBruto) : 0;
   var porDiaNecesario = siguienteNivelMyf && diasRestantes > 0 ? faltaSiguiente / diasRestantes : 0;
 
   var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px">' +
@@ -5677,7 +5743,7 @@ function renderMYF() {
     '<div class="form-card" style="text-align:center;padding:20px 12px">' +
       '<div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">FINAL (-15%)</div>' +
       '<div style="font-size:30px;font-weight:800;color:var(--text)">$' + totalNeto.toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>' +
-      '<div style="font-size:11px;color:var(--text3);margin-top:2px">Base para niveles</div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:2px">Base para comisiones</div>' +
     '</div>' +
     '<div class="form-card" style="text-align:center;padding:20px 12px">' +
       '<div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Nivel actual</div>' +
@@ -5688,7 +5754,7 @@ function renderMYF() {
       '<div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Por día necesario</div>' +
       (siguienteNivelMyf && diasRestantes > 0 ?
         '<div style="font-size:22px;font-weight:800;color:var(--text)">' + porDiaNecesario.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD</div>' +
-        '<div style="font-size:11px;color:var(--text3);margin-top:2px">neto/día · ' + siguienteNivelMyf.label + ' · ' + diasRestantes + ' días</div>'
+        '<div style="font-size:11px;color:var(--text3);margin-top:2px">vendido/día · ' + siguienteNivelMyf.label + ' · ' + diasRestantes + ' días</div>'
       :
         '<div style="font-size:22px;font-weight:800;color:#155724">✓</div>' +
         '<div style="font-size:11px;color:#155724;font-weight:600;margin-top:2px">Nivel máximo</div>'
@@ -5699,10 +5765,10 @@ function renderMYF() {
   // Niveles cards
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:20px">';
   NIVELES.forEach(function(n) {
-    var falta = Math.max(0, n.usd - totalNeto);
+    var falta = Math.max(0, n.usd - totalBruto);
     var porDia = diasRestantes > 0 ? falta / diasRestantes : 0;
     var comision = totalNeto * n.pct / 100;
-    var alcanzado = totalNeto >= n.usd;
+    var alcanzado = totalBruto >= n.usd;
     var borderColor = alcanzado ? '#155724' : 'var(--border)';
     var bg = alcanzado ? '#d4edda' : 'var(--surface)';
     html += '<div class="form-card" style="border-top:3px solid ' + borderColor + ';background:' + bg + '">' +
@@ -6351,7 +6417,7 @@ function buildGeminiContext() {
   lines.push('');
 
   // ── COACH SALES POR ASESOR (mes actual) ──
-  var niveles = typeof NIVELES !== 'undefined' ? NIVELES : [{usd:7500,pct:10,label:'Nivel 1'},{usd:9000,pct:12,label:'Nivel 2'},{usd:11120,pct:14,label:'Nivel 3'}];
+  var niveles = typeof NIVELES !== 'undefined' ? NIVELES : [{usd:7300,pct:10,label:'Nivel 1'},{usd:8625,pct:12,label:'Nivel 2'},{usd:11213,pct:14,label:'Nivel 3'}];
   var tcArs = typeof TC_ARS !== 'undefined' ? TC_ARS : 1430;
   ['Matteo','Facundo'].forEach(function(asesor) {
     var mv = ventas.filter(function(v){
@@ -6359,10 +6425,10 @@ function buildGeminiContext() {
     });
     var bruto = mv.reduce(function(s,v){return s+parseFloat(v.monto||0);},0);
     var neto = bruto * 0.85;
-    var nivelAct = niveles.filter(function(n){return neto>=n.usd;}).pop()||null;
-    var sigNivel = niveles.find(function(n){return neto<n.usd;})||null;
+    var nivelAct = niveles.filter(function(n){return bruto>=n.usd;}).pop()||null;
+    var sigNivel = niveles.find(function(n){return bruto<n.usd;})||null;
     var comision = nivelAct ? neto*nivelAct.pct/100 : 0;
-    var falta = sigNivel ? Math.max(0,sigNivel.usd-neto) : 0;
+    var falta = sigNivel ? Math.max(0,sigNivel.usd-bruto) : 0;
     var porDia = sigNivel && diasRestantes>0 ? falta/diasRestantes : 0;
     lines.push('=== COACH SALES — '+asesor.toUpperCase()+' ('+mesKey+') ===');
     lines.push('Ventas del mes: '+mv.length);
@@ -6371,8 +6437,8 @@ function buildGeminiContext() {
     lines.push('Nivel actual: '+(nivelAct ? nivelAct.label+' ('+nivelAct.pct+'%)' : 'Sin nivel aun'));
     lines.push('Comision actual: $'+comision.toFixed(2)+' USD | $'+(comision*tcArs).toLocaleString('es-AR',{maximumFractionDigits:0})+' ARS (estimado tc '+tcArs+')');
     if (sigNivel) {
-      lines.push('Siguiente nivel: '+sigNivel.label+' (requiere $'+sigNivel.usd+' USD neto) | Falta: $'+falta.toFixed(2)+' USD neto');
-      lines.push('Dias restantes en el mes: '+diasRestantes+' | Necesario por dia: $'+porDia.toFixed(2)+' USD neto/dia');
+      lines.push('Siguiente nivel: '+sigNivel.label+' (requiere $'+sigNivel.usd+' USD vendidos) | Falta: $'+falta.toFixed(2)+' USD');
+      lines.push('Dias restantes en el mes: '+diasRestantes+' | Necesario por dia: $'+porDia.toFixed(2)+' USD/dia');
     } else {
       lines.push('Nivel maximo alcanzado!');
     }
