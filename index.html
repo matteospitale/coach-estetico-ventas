@@ -1254,7 +1254,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.209</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.210</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -6912,8 +6912,14 @@ async function procesarImportFiles() {
       };
       if (montoLocal > 0) venta.montoLocal = montoLocal;
       if (cursoComboImport) venta.cursoCombo = cursoComboImport;
-      // Detectar si ese lead ya tiene una venta cargada (mismo día) — evita duplicar al re-importar el mismo Excel
-      var yaExiste = lead && ventas.some(function(ex){ return ex.lead === lead && ex.fecha === fecha; });
+      // Detectar si ese lead ya tiene ESTA MISMA venta cargada (mismo día + mismo curso + mismo monto).
+      // OJO: comparar solo lead+fecha marcaba como duplicado la segunda compra legítima de una
+      // persona que compró dos cursos distintos el mismo día (ej. Diplomado + Zona Intima).
+      var yaExiste = lead && ventas.some(function(ex){
+        return ex.lead === lead && ex.fecha === fecha &&
+          _qn(ex.curso) === _qn(curso) &&
+          Math.abs(parseFloat(ex.monto||0) - monto) < 0.01;
+      });
       venta._duplicado = !!yaExiste;
       venta.seleccionada = !yaExiste;
       _importRows.push(venta);
