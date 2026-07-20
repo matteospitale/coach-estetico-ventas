@@ -1254,7 +1254,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.210</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.211</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -6912,13 +6912,18 @@ async function procesarImportFiles() {
       };
       if (montoLocal > 0) venta.montoLocal = montoLocal;
       if (cursoComboImport) venta.cursoCombo = cursoComboImport;
-      // Detectar si ese lead ya tiene ESTA MISMA venta cargada (mismo día + mismo curso + mismo monto).
-      // OJO: comparar solo lead+fecha marcaba como duplicado la segunda compra legítima de una
-      // persona que compró dos cursos distintos el mismo día (ej. Diplomado + Zona Intima).
+      // Detectar si ese lead ya tiene ESTA MISMA venta cargada (mismo día + mismos cursos + mismo monto).
+      // OJO 1: comparar solo lead+fecha marcaba como duplicado la segunda compra legítima de una
+      //   persona que compró dos cursos distintos el mismo día (ej. Diplomado + Zona Intima).
+      // OJO 2: en combos hay que comparar el CONJUNTO de cursos, sin importar el orden ni si en la
+      //   venta vieja quedaron pegados en un solo campo ("HIFU + Diplomado" vs "Diplomado + HIFU").
+      var _cursosFilaKey = [curso].concat(cursoComboImport ? [cursoComboImport] : [])
+        .map(function(c){ return _qn(_normalizarCurso(c)); }).sort().join('|');
       var yaExiste = lead && ventas.some(function(ex){
-        return ex.lead === lead && ex.fecha === fecha &&
-          _qn(ex.curso) === _qn(curso) &&
-          Math.abs(parseFloat(ex.monto||0) - monto) < 0.01;
+        if (ex.lead !== lead || ex.fecha !== fecha) return false;
+        if (Math.abs(parseFloat(ex.monto||0) - monto) >= 0.01) return false;
+        var cursosEx = cursosDeVenta(ex).map(function(c){ return _qn(_normalizarCurso(c)); }).sort().join('|');
+        return cursosEx === _cursosFilaKey;
       });
       venta._duplicado = !!yaExiste;
       venta.seleccionada = !yaExiste;
