@@ -789,7 +789,6 @@ body::before {
         <button onclick="switchTab('plantillas');switchCoachTab('plantillas')"><span>📚</span>Formaciones</button>
         <button onclick="switchTab('plantillas');switchCoachTab('postventa')"><span>💬</span>Post-Venta</button>
         <button onclick="switchTab('plantillas');switchCoachTab('calendario')"><span>📅</span>Calendario</button>
-        <button onclick="switchTab('plantillas');switchCoachTab('aniversario')"><span>🎉</span>Aniversario</button>
       </div>
     </div>
     <button class="pill" id="nav-ventas" onclick="switchTab('ventas')">Ventas</button>
@@ -818,7 +817,6 @@ body::before {
   <button class="pill" style="padding-left:28px;font-size:12px;opacity:0.75" onclick="switchTab('plantillas');switchCoachTab('postventa');closeMobDrawer()">↳ Post-Venta</button>
   <button class="pill" style="padding-left:28px;font-size:12px;opacity:0.75" onclick="switchTab('plantillas');switchCoachTab('calendario');closeMobDrawer()">↳ Calendario</button>
   <button class="pill" id="mnav-ventas" onclick="switchTab('ventas');closeMobDrawer()">Ventas</button>
-  <button class="pill" style="padding-left:28px;font-size:12px;opacity:0.75" onclick="switchTab('plantillas');switchCoachTab('aniversario');closeMobDrawer()">↳ Aniversario</button>
   <button class="pill" id="mnav-myf" onclick="switchTab('myf');closeMobDrawer()">Coach Sales</button>
   <button class="pill" id="mnav-stats" onclick="switchTab('stats');closeMobDrawer()">Stats</button>
   <button class="pill" id="mnav-clientes" onclick="switchTab('clientes');closeMobDrawer()">Alumnos</button>
@@ -897,6 +895,11 @@ body::before {
             <option value="Pendiente">🔵 Pendiente</option>
             <option value="Rechazada">🔴 Rechazada</option>
           </select>
+          <select id="fil-comprobante" onchange="renderTabla()">
+            <option value="all">Comprobante: todos</option>
+            <option value="con">📎 Con comprobante</option>
+            <option value="sin">⚠️ Sin comprobante</option>
+          </select>
           <input id="fil-search" placeholder="Buscar curso o lead..." oninput="renderTabla()">
         </div>
         <div class="table-wrap">
@@ -930,7 +933,6 @@ body::before {
         <button class="coach-subtab active" id="cst-plantillas" onclick="switchCoachTab('plantillas')">Formaciones</button>
         <button class="coach-subtab" id="cst-postventa" onclick="switchCoachTab('postventa')">Post-Venta</button>
         <button class="coach-subtab" id="cst-calendario" onclick="switchCoachTab('calendario')">Calendario</button>
-        <button class="coach-subtab" id="cst-aniversario" onclick="switchCoachTab('aniversario')">🎉 Aniversario</button>
       </div>
       <!-- FORMACIONES PANEL -->
       <div id="coach-panel-plantillas">
@@ -976,49 +978,6 @@ body::before {
           </div>
         </div>
         <div id="calendario-body"></div>
-      </div>
-      <!-- ANIVERSARIO PANEL -->
-      <div id="coach-panel-aniversario" style="display:none">
-        <div style="background:linear-gradient(135deg,#b61f3a 0%,#8a0020 100%);border-radius:16px;padding:20px 24px;margin-bottom:20px;color:#fff;position:relative;overflow:hidden">
-          <div style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin-bottom:4px">🎉 Mes Aniversario</div>
-          <div style="font-size:14px;opacity:0.85">Junio 2026 — Estrategia de contenidos, lanzamientos y descuentos</div>
-          <div style="position:absolute;right:24px;top:50%;transform:translateY(-50%);font-size:64px;opacity:0.12">🎂</div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px">
-          <div class="plant-section-card" style="border-left:4px solid #b61f3a">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:18px">💰</span><div class="plant-section-label" style="margin:0">Descuentos Hotmart</div></div>
-            <div style="background:#fff3f5;border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="font-size:20px;font-weight:800;color:#b61f3a">30% OFF</div><div style="font-size:11px;color:var(--text2)">No alumnos</div></div>
-            <div style="background:#fff3f5;border-radius:8px;padding:8px 12px;margin-bottom:8px"><div style="font-size:20px;font-weight:800;color:#b61f3a">40% OFF</div><div style="font-size:11px;color:var(--text2)">Alumnos (compraron antes del 01/06)</div></div>
-            <div style="font-size:12px;color:var(--text3)">⏱ Códigos vencen en <b>24hs</b><br>🚫 Excluidos: Express y Masterclasses<br>📌 Dirigir a la <b>Vitrina Hotmart</b></div>
-          </div>
-          <div class="plant-section-card" style="border-left:4px solid #2e7d32">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:18px">📚</span><div class="plant-section-label" style="margin:0">Nuevos Diplomados</div></div>
-            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="font-size:13px;font-weight:700;color:#2e7d32">Dermatocosmiatría Internacional</div></div>
-            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="font-size:13px;font-weight:700;color:#2e7d32">Crecimiento y Gestión de Emprendedores Estéticos</div></div>
-            <div style="background:#e8f5e9;border-radius:8px;padding:8px 12px;margin-bottom:8px"><div style="font-size:13px;font-weight:700;color:#2e7d32">Combo Diplomado</div></div>
-            <div style="font-size:12px;color:var(--text2)">🗓 Inician: <b>01/06</b><br>🎤 Presentación: <b>02/06</b><br>📣 Preview clase gratis: <b>28/05</b></div>
-          </div>
-          <div class="plant-section-card" style="border-left:4px solid #e65100">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:18px">🎫</span><div class="plant-section-label" style="margin:0">Evento VIP — 09/06</div></div>
-            <div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:6px"><div style="font-size:13px;font-weight:700;color:#e65100">🎟 Golden Ticket</div><div style="font-size:11px;color:var(--text2);margin-top:3px">Pase digital para todas las alumnas elegibles al evento VIP online</div></div>
-            <div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:8px"><div style="font-size:13px;font-weight:700;color:#e65100">⭐ Membresía Lifetime</div><div style="font-size:11px;color:var(--text2);margin-top:3px">Lanzamiento exclusivo con cupos limitados y urgencia</div></div>
-            <div style="font-size:12px;color:var(--text3)">Canales: Redes · Hotmart Club · Email a toda la base</div>
-          </div>
-        </div>
-        <div class="plant-section-card" style="margin-bottom:20px;border-left:4px solid #4527a0">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:18px">📋</span><div class="plant-section-label" style="margin:0">Estrategias para el Área Comercial</div></div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px">
-            <div style="background:#f3f0fa;border-radius:8px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:#4527a0;margin-bottom:4px">🎟 Golden Ticket en seguimientos</div><div style="font-size:12px;color:var(--text2)">Preguntar si revisaron correo o muro de Hotmart. Si no lo tienen, enviar el link de participación.</div></div>
-            <div style="background:#f3f0fa;border-radius:8px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:#4527a0;margin-bottom:4px">🛒 Vitrina Hotmart</div><div style="font-size:12px;color:var(--text2)">Al entregar el código, dirigir a la vitrina. Recordar que vence en <b>24hs</b> para crear urgencia.</div></div>
-            <div style="background:#f3f0fa;border-radius:8px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:#4527a0;margin-bottom:4px">✅ Validar Antigüedad</div><div style="font-size:12px;color:var(--text2)">Para el 40% OFF verificar que el alumno haya comprado antes del 01/06.</div></div>
-            <div style="background:#f3f0fa;border-radius:8px;padding:10px 12px"><div style="font-size:12px;font-weight:700;color:#4527a0;margin-bottom:4px">📣 Impulsar Diplomados</div><div style="font-size:12px;color:var(--text2)">Desde la clase gratis del 28/05 nombrar los lanzamientos para generar expectativa.</div></div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div style="font-size:16px;font-weight:700;color:var(--text)">Recursos del equipo</div>
-          <button class="btn btn-accent" id="btn-nueva-aniv" onclick="abrirNuevoAniversario()" style="display:none">+ Agregar</button>
-        </div>
-        <div id="aniv-recursos-grid" style="display:flex;flex-direction:column;gap:10px"></div>
       </div>
     </section>
 
@@ -1281,36 +1240,6 @@ body::before {
   </div>
 </div>
 
-<!-- ANIVERSARIO MODAL -->
-<div class="modal-overlay" id="aniv-modal">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-title">Agregar recurso</div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <div class="form-group" style="margin:0"><label class="form-label">Tipo</label>
-        <select class="form-select" id="aniv-f-tipo">
-          <option value="nota">📝 Nota</option>
-          <option value="link">🔗 Enlace</option>
-          <option value="material">🎨 Material de diseño</option>
-          <option value="anuncio">📣 Anuncio</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin:0"><label class="form-label">Título *</label>
-        <input class="form-input" id="aniv-f-titulo" placeholder="Título del recurso...">
-      </div>
-      <div class="form-group" style="margin:0"><label class="form-label">Descripción</label>
-        <textarea class="form-input" id="aniv-f-descripcion" placeholder="Descripción opcional..." style="min-height:80px;resize:vertical"></textarea>
-      </div>
-      <div class="form-group" style="margin:0"><label class="form-label">URL / Enlace</label>
-        <input class="form-input" id="aniv-f-url" placeholder="https://...">
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="cerrarAniversarioModal()">Cancelar</button>
-      <button class="btn btn-accent" onclick="guardarAniversario()">Agregar</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL CONFIRMAR -->
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal">
@@ -1325,7 +1254,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.200</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.209</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1339,6 +1268,7 @@ let ventas = [], plantillas = [], pendiente = null, cierres = {};
 let inicioFiltro = null, modoEdicion = false, seleccionados = new Set(), prevTab = 'inicio';
 let catActual = 'todos', plantillasInicializadas = false;
 let plantillaDetalleKey = null, plantillaTextosArr = [], plantillaTextosIdx = 0;
+let _seccionMesInicializado = false;
 
 // ── FIREBASE ANONYMOUS AUTH ──
 var _fbToken = null, _fbRefreshToken = null, _fbTokenExpiry = 0;
@@ -1500,7 +1430,7 @@ const TITLES = { inicio:'Inicio', ventas:'Ventas', plantillas:'Coach', stats:'Es
 var coachSubTab = 'plantillas';
 function switchCoachTab(sub) {
   coachSubTab = sub;
-  ['plantillas','postventa','calendario','aniversario'].forEach(function(p) {
+  ['plantillas','postventa','calendario'].forEach(function(p) {
     var el = document.getElementById('coach-panel-'+p);
     if (el) el.style.display = p === sub ? '' : 'none';
     var tab = document.getElementById('cst-'+p);
@@ -1509,7 +1439,6 @@ function switchCoachTab(sub) {
   if (sub === 'calendario') renderCalendario();
   if (sub === 'plantillas') renderPlantillas();
   if (sub === 'postventa') renderPostVenta();
-  if (sub === 'aniversario') renderAniversario();
 }
 
 function switchTab(t) {
@@ -1581,14 +1510,16 @@ function syncMes(src) {
   if (document.getElementById('sec-myf').classList.contains('active')) renderMYF();
 }
 
+var _mesInicializado = false;
 function fillHeaderMes() {
+  const now = new Date();
+  const curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   ['header-mes-sel','header-mes-sel-mob'].forEach(id => {
     const sel = document.getElementById(id);
     const cur = sel.value;
     while (sel.options.length > 1) sel.remove(1);
     const allMeses = new Set(ventas.map(v => v.fecha && v.fecha.substring(0,7)).filter(Boolean));
-    const now = new Date();
-    allMeses.add(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+    allMeses.add(curM);
     [...allMeses].sort().reverse().forEach(m => {
       const o = document.createElement('option');
       o.value = m;
@@ -1599,12 +1530,15 @@ function fillHeaderMes() {
       o.text = noms[mo-1] + ' ' + y + '  (1/' + mo + ' — ' + dias + '/' + mo + ')';
       sel.appendChild(o);
     });
-    if (cur) sel.value = cur;
-    else {
-      const curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    // Primera carga: arrancar en el mes actual (no en "Todos los meses").
+    // Después respetar lo que el usuario eligió.
+    if (!_mesInicializado) {
       sel.value = allMeses.has(curM) ? curM : 'all';
+    } else {
+      sel.value = cur;
     }
   });
+  _mesInicializado = true;
 }
 
 // ── HELPERS ──
@@ -1616,12 +1550,17 @@ function mesLabel(ym) {
   const m = parseInt(parts[1]);
   return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][m-1]+' '+parts[0];
 }
-function filteredVentas(asesor, mes, pago, search, estado) {
+function filteredVentas(asesor, mes, pago, search, estado, comprobante) {
   return ventas.filter(v => {
     if (asesor && asesor!=='all' && v.asesor!==asesor) return false;
     if (mes && mes!=='all' && !(v.fecha||'').startsWith(mes)) return false;
     if (pago && pago!=='all' && v.pago!==pago) return false;
     if (estado && estado!=='all' && (v.estado||'Pendiente')!==estado) return false;
+    if (comprobante && comprobante!=='all') {
+      const tiene = !!v.comprobante;
+      if (comprobante==='con' && !tiene) return false;
+      if (comprobante==='sin' && tiene) return false;
+    }
     if (search) {
       const q = search.toLowerCase();
       if (!cursoConCombo(v).toLowerCase().includes(q) && !(v.lead||'').includes(q)) return false;
@@ -1926,7 +1865,8 @@ function renderTabla() {
   const pago = document.getElementById('fil-pago').value;
   const search = document.getElementById('fil-search').value;
   const estado = document.getElementById('fil-estado').value;
-  const vf = filteredVentas(asesor, mes, pago, search, estado);
+  const comprobante = (document.getElementById('fil-comprobante')||{}).value || 'all';
+  const vf = filteredVentas(asesor, mes, pago, search, estado, comprobante);
   const total = vf.reduce((s,v)=>s+parseFloat(v.monto||0),0);
   document.getElementById('ventas-title').textContent = vf.length + ' venta' + (vf.length!==1?'s':'') + ' · $' + total.toLocaleString('en-US') + ' USD';
   // Resumen por asesor
@@ -2774,6 +2714,11 @@ function renderPlantillas() {
 
   const q = (document.getElementById('plant-search') ? document.getElementById('plant-search').value : '').toLowerCase().trim();
 
+  // Los chips de categoría solo se muestran cuando ya estás dentro de una categoría (o buscando).
+  // En la vista de portadas ("Todos" sin búsqueda) las categorías se eligen desde las fotos.
+  var catTabs = document.getElementById('cat-tabs');
+  if (catTabs) catTabs.style.display = (catActual === 'todos' && !q) ? 'none' : '';
+
   if (catActual === 'todos' && !q) {
     if (countEl) countEl.textContent = '';
     lista.innerHTML = '<div class="cat-covers-grid">' +
@@ -3305,78 +3250,6 @@ async function loadPostVentaData() {
   var data = await dbGet('/post_venta');
   postVentaData = [];
   if (data) Object.entries(data).forEach(function(e){ postVentaData.push(Object.assign({_key:e[0]},e[1])); });
-}
-
-// ── ANIVERSARIO ──
-var aniversarioRecursos = [];
-function renderAniversario() {
-  var u = USUARIOS_CONFIG[usuarioActual];
-  var btn = document.getElementById('btn-nueva-aniv');
-  if (btn) btn.style.display = (u && !u.adminRO) ? '' : 'none';
-  loadAniversario();
-}
-async function loadAniversario() {
-  var data = await dbGet('/aniversario');
-  aniversarioRecursos = data ? Object.entries(data).map(function(kv){ var o=kv[1]; o._key=kv[0]; return o; }).sort(function(a,b){ return (b.created||0)-(a.created||0); }) : [];
-  renderAniversarioGrid();
-}
-function renderAniversarioGrid() {
-  var el = document.getElementById('aniv-recursos-grid');
-  if (!el) return;
-  var u = USUARIOS_CONFIG[usuarioActual];
-  var canEdit = u && !u.adminRO;
-  if (!aniversarioRecursos.length) { el.innerHTML = '<div class="empty-state">No hay recursos cargados aún.</div>'; return; }
-  var icons = {link:'🔗', nota:'📝', anuncio:'📣', material:'🎨'};
-  var colors = {link:'#1565c0', nota:'#2e7d32', anuncio:'#b61f3a', material:'#6a1b9a'};
-  var bgs = {link:'#e3f2fd', nota:'#e8f5e9', anuncio:'#fce4ec', material:'#f3e5f5'};
-  el.innerHTML = aniversarioRecursos.map(function(r) {
-    var tipo = r.tipo || 'nota';
-    var col = colors[tipo]||'#888'; var bg = bgs[tipo]||'#f5f5f5';
-    return '<div class="pv-card" style="border-left:4px solid '+col+'">'+
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
-        '<div style="display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0">'+
-          '<span style="font-size:18px;margin-top:1px">'+( icons[tipo]||'📄')+'</span>'+
-          '<div style="flex:1;min-width:0">'+
-            '<div style="font-weight:700;font-size:14px;color:var(--text)">'+escHtml(r.titulo||'Sin título')+'</div>'+
-            (r.descripcion ? '<div style="font-size:13px;color:var(--text2);margin-top:4px;white-space:pre-wrap">'+escHtml(r.descripcion)+'</div>' : '')+
-            (r.url ? '<a href="'+escHtml(r.url)+'" target="_blank" style="font-size:12px;color:var(--accent);font-weight:600;margin-top:6px;display:inline-block">↗ Abrir enlace</a>' : '')+
-          '</div>'+
-        '</div>'+
-        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">'+
-          '<span style="font-size:10px;background:'+bg+';color:'+col+';border-radius:99px;padding:2px 8px;font-weight:600">'+tipo+'</span>'+
-          '<span style="font-size:11px;color:var(--text3)">'+escHtml(r.autor||'')+'</span>'+
-          '<span style="font-size:10px;color:var(--text3)">'+( r.created ? new Date(r.created).toLocaleDateString('es-AR') : '')+'</span>'+
-          (canEdit ? '<button class="p-btn p-btn-delete" style="margin-top:4px" onclick="eliminarAniversario(\'' + r._key + '\')">✕</button>' : '')+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-}
-function abrirNuevoAniversario() {
-  document.getElementById('aniv-modal').classList.add('show');
-  document.getElementById('aniv-f-titulo').value = '';
-  document.getElementById('aniv-f-descripcion').value = '';
-  document.getElementById('aniv-f-url').value = '';
-  document.getElementById('aniv-f-tipo').value = 'nota';
-}
-function cerrarAniversarioModal() {
-  document.getElementById('aniv-modal').classList.remove('show');
-}
-async function guardarAniversario() {
-  var titulo = document.getElementById('aniv-f-titulo').value.trim();
-  if (!titulo) { showToast('El título es requerido'); return; }
-  var data = { tipo: document.getElementById('aniv-f-tipo').value||'nota', titulo: titulo,
-    descripcion: document.getElementById('aniv-f-descripcion').value.trim(),
-    url: document.getElementById('aniv-f-url').value.trim(),
-    autor: usuarioActual||'', created: Date.now() };
-  await dbPush('/aniversario', data);
-  cerrarAniversarioModal(); showToast('Recurso agregado ✓');
-  await loadAniversario();
-}
-async function eliminarAniversario(key) {
-  if (!confirm('¿Eliminar este recurso?')) return;
-  await dbDelete('/aniversario/'+key);
-  showToast('Eliminado'); await loadAniversario();
 }
 
 function renderPostVenta() {
@@ -5254,15 +5127,17 @@ function renderAll() {
     var _curFilMes = _filMes.value;
     fillMesOptions('fil-mes');
     var _filMesHas = [].some.call(_filMes.options, function(o){ return o.value === _curFilMes; });
-    _filMes.value = (_curFilMes && _filMesHas) ? _curFilMes : (_hMes || 'all');
+    // Primera carga: alinear con el mes del header (mes actual). Después respetar la elección del usuario.
+    _filMes.value = (!_seccionMesInicializado ? (_hMes || 'all') : ((_curFilMes && _filMesHas) ? _curFilMes : (_hMes || 'all')));
   }
   var _admMes = document.getElementById('admin-fil-mes');
   if (_admMes) {
     var _curAdmMes = _admMes.value;
     fillMesOptions('admin-fil-mes');
     var _admMesHas = [].some.call(_admMes.options, function(o){ return o.value === _curAdmMes; });
-    _admMes.value = (_curAdmMes && _admMesHas) ? _curAdmMes : (_hMes || 'all');
+    _admMes.value = (!_seccionMesInicializado ? (_hMes || 'all') : ((_curAdmMes && _admMesHas) ? _curAdmMes : (_hMes || 'all')));
   }
+  _seccionMesInicializado = true;
   renderResumen();
   const activeEl = document.querySelector('.section.active');
   const active = activeEl ? activeEl.id.replace('sec-','') : 'inicio';
