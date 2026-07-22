@@ -1254,7 +1254,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.212</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.214</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -6912,24 +6912,8 @@ async function procesarImportFiles() {
       };
       if (montoLocal > 0) venta.montoLocal = montoLocal;
       if (cursoComboImport) venta.cursoCombo = cursoComboImport;
-      // Detectar si ese lead ya tiene ESTA MISMA venta cargada (mismo día + mismos cursos + mismo monto).
-      // OJO 1: comparar solo lead+fecha marcaba como duplicado la segunda compra legítima de una
-      //   persona que compró dos cursos distintos el mismo día (ej. Diplomado + Zona Intima).
-      // OJO 2: en combos hay que comparar el CONJUNTO de cursos, sin importar el orden ni si en la
-      //   venta vieja quedaron pegados en un solo campo ("HIFU + Diplomado" vs "Diplomado + HIFU").
-      var _cursosFila = [curso].concat(cursoComboImport ? [cursoComboImport] : [])
-        .map(function(c){ return _qn(_normalizarCurso(c)); });
-      var yaExiste = lead && ventas.some(function(ex){
-        if (ex.lead !== lead || ex.fecha !== fecha) return false;
-        if (Math.abs(parseFloat(ex.monto||0) - monto) >= 0.01) return false;
-        var cursosEx = cursosDeVenta(ex).map(function(c){ return _qn(_normalizarCurso(c)); });
-        // Duplicado si los cursos del registro existente están todos en la fila del Excel.
-        // Cubre también registros viejos incompletos: los imports previos a la función de
-        // combos guardaban solo el primer curso de "A + B" (perdían el segundo).
-        return cursosEx.length > 0 && cursosEx.every(function(c){ return _cursosFila.indexOf(c) !== -1; });
-      });
-      venta._duplicado = !!yaExiste;
-      venta.seleccionada = !yaExiste;
+      _marcarDuplicadoImport(venta);
+      venta.seleccionada = !venta._duplicado;
       _importRows.push(venta);
     });
 
@@ -6977,6 +6961,48 @@ function _renderImportStatus(formato, tieneKommo) {
       '</ul></div>';
   }
   statusEl.innerHTML = html;
+}
+
+// Marca si una fila del preview ya está cargada en el hub (mismo lead + fecha + monto + cursos).
+// OJO 1: comparar solo lead+fecha marcaba como duplicado la segunda compra legítima de una
+//   persona que compró dos cursos distintos el mismo día (ej. Diplomado + Zona Intima).
+// OJO 2: en combos hay que comparar el CONJUNTO de cursos, sin importar el orden ni si en la
+//   venta vieja quedaron pegados en un solo campo ("HIFU + Diplomado" vs "Diplomado + HIFU").
+function _marcarDuplicadoImport(v) {
+  var cursosFila = cursosDeVenta(v).map(function(c){ return _qn(_normalizarCurso(c)); });
+  v._duplicado = !!(v.lead && ventas.some(function(ex){
+    if (ex.lead !== v.lead || ex.fecha !== v.fecha) return false;
+    if (Math.abs(parseFloat(ex.monto||0) - parseFloat(v.monto||0)) >= 0.01) return false;
+    var cursosEx = cursosDeVenta(ex).map(function(c){ return _qn(_normalizarCurso(c)); });
+    // Duplicado si los cursos del registro existente están todos en la fila del Excel.
+    // Cubre también registros viejos incompletos: los imports previos a la función de
+    // combos guardaban solo el primer curso de "A + B" (perdían el segundo).
+    return cursosEx.length > 0 && cursosEx.every(function(c){ return cursosFila.indexOf(c) !== -1; });
+  }));
+  return v._duplicado;
+}
+
+// Re-evaluar una fila después de editar un campo que afecta la detección de duplicados
+// (lead o fecha). Si cambió el veredicto, se re-tilda sola y se redibuja la tabla.
+function _revalidarFilaImport(i) {
+  var v = _importRows[i];
+  if (!v) return;
+  var eraDup = v._duplicado;
+  _marcarDuplicadoImport(v);
+  if (v._duplicado !== eraDup) {
+    v.seleccionada = !v._duplicado;
+    _renderImportPreview();
+  } else {
+    _checkImportReady();
+  }
+}
+
+// Editar el ID de lead en el preview (para ventas viejas cuyo lead ya cambió en Kommo).
+function _actualizarLeadImport(i, val) {
+  var v = _importRows[i];
+  if (!v) return;
+  v.lead = String(val||'').trim().replace(/\.0$/, '');
+  _revalidarFilaImport(i);
 }
 
 function _toggleTodasImport(checked) {
@@ -7116,11 +7142,16 @@ function _renderImportPreview() {
     html += '<tr style="' + rowBorder + ';background:' + bg + (v.seleccionada===false?';opacity:0.5':'') + '">';
     html += '<td style="padding:5px 6px;text-align:center"><input type="checkbox" ' + (v.seleccionada!==false?'checked':'') + ' onchange="_importRows[' + i + '].seleccionada=this.checked;_checkImportReady()" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer"></td>';
     html += '<td style="padding:3px 5px;white-space:nowrap">' +
-      '<input type="date" value="' + (v.fecha||'') + '" onchange="_importRows[' + i + '].fecha=this.value" style="' + fechaSt + 'width:118px;cursor:pointer">' +
+      '<input type="date" value="' + (v.fecha||'') + '" onchange="_importRows[' + i + '].fecha=this.value;_revalidarFilaImport(' + i + ')" style="' + fechaSt + 'width:118px;cursor:pointer">' +
       (fechaSospechosa ? '<div style="font-size:10px;color:#CF6C1E;font-weight:700;white-space:nowrap">⚠ Fuera de ' + mesLabel(mesDominante) + '</div>' : '') +
       '</td>';
-    html += '<td style="padding:5px 10px;font-family:monospace;font-size:11px;color:var(--text3);white-space:nowrap">' + (v.lead||'—') +
-      (v._duplicado ? '<div style="font-family:inherit;color:#9B5E9B;font-weight:700;font-size:10px;white-space:nowrap">⚠ Ya existe</div>' : '') + '</td>';
+    html += '<td style="padding:3px 5px;white-space:nowrap">' +
+      '<input type="text" value="' + String(v.lead||'').replace(/"/g,'&quot;') + '" placeholder="ID lead" ' +
+        'oninput="_importRows[' + i + '].lead=this.value.trim()" ' +
+        'onchange="_actualizarLeadImport(' + i + ',this.value)" ' +
+        'style="' + iOk + 'font-family:monospace;width:94px">' +
+      (v._duplicado ? '<div style="color:#9B5E9B;font-weight:700;font-size:10px;white-space:nowrap;margin-top:2px">⚠ Ya existe</div>' : '') +
+      '</td>';
     html += cursoTd(v.curso);
     html += '<td style="padding:5px 10px;text-align:right;font-weight:700;white-space:nowrap">$' + (v.monto||0).toLocaleString('en-US') + '</td>';
     html += pagoTd(v.pago);
