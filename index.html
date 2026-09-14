@@ -1254,7 +1254,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.214</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.354</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1352,7 +1352,7 @@ async function loadPlantillas() {
     await loadPlantillas();
   } else {
     // Auto-fill missing dificultad/alumno_ideal silently in background
-    setTimeout(silentMigrateFormaciones, 800);
+    setTimeout(async function(){ await asegurarFormacionesNuevas(); silentMigrateFormaciones(); }, 800);
   }
 }
 
@@ -1502,6 +1502,8 @@ function syncMes(src) {
   if (filMes) filMes.value = val;
   var adminFilMes = document.getElementById('admin-fil-mes');
   if (adminFilMes) adminFilMes.value = val;
+  // Elegir un mes en el header manda: descarta el rango por fechas de Stats
+  statsRango = null;
   renderResumen();
   renderInicioDashboard();
   if (document.getElementById('sec-stats').classList.contains('active')) renderStats();
@@ -2101,8 +2103,8 @@ function editarVenta(key) {
 
 // ── ESTADÍSTICAS ──
 function filterStats(campo, valor) {
-  const mes = getMesVal();
-  const base = mes==='all' ? ventas : ventas.filter(v=>(v.fecha||'').startsWith(mes));
+  // Mismo período que los gráficos (rango si hay uno, si no el mes del header)
+  const base = ventasPeriodoStats();
   const vf = campo==='mes' ? ventas.filter(v=>(v.fecha||'').startsWith(valor))
     : campo==='curso' ? base.filter(v=>cursosDeVenta(v).indexOf(valor)!==-1 || (!cursosDeVenta(v).length && valor==='Sin curso'))
     : base.filter(v=>(v[campo]||'Sin canal')===valor || v[campo]===valor);
@@ -2153,9 +2155,71 @@ function filterStats(campo, valor) {
 var statsTab = 'resumen';
 function switchStatsTab(tab) { statsTab = tab; renderStats(); }
 
+// ── FILTRO DE PERÍODO EN STATS ──
+// null = usar el mes del selector del header (comportamiento por defecto).
+// Con rango: { desde:'YYYY-MM-DD', hasta:'YYYY-MM-DD', preset:'...', label:'...' }
+var statsRango = null;
+
+function _isoHoy() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function _isoMasDias(iso, n) {
+  var p = iso.split('-');
+  var d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+  d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+// Lunes de la semana a la que pertenece esa fecha
+function _isoLunes(iso) {
+  var p = iso.split('-');
+  var d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+  return _isoMasDias(iso, -((d.getDay() + 6) % 7)); // getDay(): 0=domingo → 0=lunes
+}
+function _fechaCorta(iso) { var p = iso.split('-'); return p[2] + '/' + p[1]; }
+
+function setStatsRangoPreset(preset) {
+  var hoy = _isoHoy();
+  if (preset === 'mes') {
+    statsRango = null;
+  } else if (preset === 'semana') {
+    var l = _isoLunes(hoy);
+    statsRango = { desde: l, hasta: _isoMasDias(l, 6), preset: preset, label: 'Esta semana' };
+  } else if (preset === 'semana-ant') {
+    var la = _isoMasDias(_isoLunes(hoy), -7);
+    statsRango = { desde: la, hasta: _isoMasDias(la, 6), preset: preset, label: 'Semana pasada' };
+  } else if (preset === '7') {
+    statsRango = { desde: _isoMasDias(hoy, -6), hasta: hoy, preset: preset, label: 'Últimos 7 días' };
+  } else if (preset === '30') {
+    statsRango = { desde: _isoMasDias(hoy, -29), hasta: hoy, preset: preset, label: 'Últimos 30 días' };
+  }
+  renderStats();
+}
+
+function setStatsRangoCustom() {
+  var d = (document.getElementById('stats-desde')||{}).value || '';
+  var h = (document.getElementById('stats-hasta')||{}).value || '';
+  if (!d || !h) return;                     // falta una punta: esperar a que complete la otra
+  if (d > h) { var t = d; d = h; h = t; }   // si las invirtió, ordenarlas
+  statsRango = { desde: d, hasta: h, preset: 'custom', label: _fechaCorta(d) + ' — ' + _fechaCorta(h) };
+  renderStats();
+}
+
+// Ventas del período elegido en Stats: el rango si hay uno, si no el mes del header
+function ventasPeriodoStats() {
+  if (statsRango) {
+    return ventas.filter(function(v) {
+      var f = v.fecha || '';
+      return f && f >= statsRango.desde && f <= statsRango.hasta;
+    });
+  }
+  var mes = getMesVal();
+  return mes === 'all' ? ventas : ventas.filter(function(v){ return (v.fecha||'').startsWith(mes); });
+}
+
 function renderStats() {
   const mes = getMesVal();
-  const vf = mes==='all' ? ventas : ventas.filter(v=>(v.fecha||'').startsWith(mes));
+  const vf = ventasPeriodoStats();
 
   // ── Agregaciones ──
   const byCanal = {};
@@ -2220,17 +2284,28 @@ function renderStats() {
   vf.forEach(v=>{ if(!v.asesor) return; if(!tAsesor[v.asesor]) tAsesor[v.asesor]={n:0,usd:0}; tAsesor[v.asesor].n++; tAsesor[v.asesor].usd+=parseFloat(v.monto||0); });
   const topTkCurso = Object.entries(byCurso).filter(([,d])=>d.n>=2).map(([k,d])=>({nombre:k,avg:d.usd/d.n,n:d.n})).sort((a,b)=>b.avg-a.avg).slice(0,5);
 
-  // ── KPI trend vs mes anterior ──
+  // ── KPI trend vs período anterior ──
+  // Con rango: contra el período inmediatamente anterior de la misma duración.
+  // Con mes: contra el mes anterior.
   let kpiTrendHtml = '';
-  if (mes && mes !== 'all') {
+  let prevTotal = null;
+  if (statsRango) {
+    const msDia = 86400000;
+    const dDesde = new Date(statsRango.desde), dHasta = new Date(statsRango.hasta);
+    const dias = Math.round((dHasta - dDesde) / msDia) + 1;
+    const prevHasta = _isoMasDias(statsRango.desde, -1);
+    const prevDesde = _isoMasDias(prevHasta, -(dias - 1));
+    prevTotal = ventas.filter(v => { const f = v.fecha||''; return f && f >= prevDesde && f <= prevHasta; })
+      .reduce((s,v)=>s+parseFloat(v.monto||0),0);
+  } else if (mes && mes !== 'all') {
     const pp = mes.split('-');
     const pd = new Date(+pp[0], +pp[1]-2, 1);
     const prevMesKey = pd.getFullYear() + '-' + String(pd.getMonth()+1).padStart(2,'0');
-    const prevTotal = ventas.filter(v=>(v.fecha||'').startsWith(prevMesKey)).reduce((s,v)=>s+parseFloat(v.monto||0),0);
-    if (prevTotal > 0) {
-      const d = Math.round((totalUSD - prevTotal) / prevTotal * 100);
-      kpiTrendHtml = ' <span style="font-size:10px;font-weight:700;color:' + (d>=0?'#155724':'var(--danger)') + ';background:' + (d>=0?'rgba(21,87,36,0.1)':'rgba(192,57,43,0.1)') + ';border-radius:20px;padding:2px 7px">' + (d>=0?'+':'') + d + '% vs ant.</span>';
-    }
+    prevTotal = ventas.filter(v=>(v.fecha||'').startsWith(prevMesKey)).reduce((s,v)=>s+parseFloat(v.monto||0),0);
+  }
+  if (prevTotal > 0) {
+    const d = Math.round((totalUSD - prevTotal) / prevTotal * 100);
+    kpiTrendHtml = ' <span style="font-size:10px;font-weight:700;color:' + (d>=0?'#155724':'var(--danger)') + ';background:' + (d>=0?'rgba(21,87,36,0.1)':'rgba(192,57,43,0.1)') + ';border-radius:20px;padding:2px 7px">' + (d>=0?'+':'') + d + '% vs ant.</span>';
   }
 
   // ── Configs visuales ──
@@ -2408,8 +2483,44 @@ function renderStats() {
 
   // ── HTML OUTPUT ──
 
+  // Filtro de período — presets rápidos + rango personalizado
+  var _rangoHtml = (function() {
+    var presetActual = statsRango ? statsRango.preset : 'mes';
+    var presets = [
+      { id:'mes',        label: (mes && mes !== 'all') ? mesLabel(mes) : 'Todos los meses' },
+      { id:'semana',     label:'Esta semana' },
+      { id:'semana-ant', label:'Semana pasada' },
+      { id:'7',          label:'Últimos 7 días' },
+      { id:'30',         label:'Últimos 30 días' }
+    ];
+    var btns = presets.map(function(p) {
+      var act = presetActual === p.id;
+      return '<button onclick="setStatsRangoPreset(\'' + p.id + '\')" style="' +
+        'padding:5px 13px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;' +
+        'border:1px solid ' + (act ? 'var(--accent-dark)' : 'var(--border)') + ';' +
+        'background:' + (act ? 'var(--accent)' : 'var(--glass)') + ';' +
+        'color:' + (act ? '#fff' : 'var(--text2)') + '">' + p.label + '</button>';
+    }).join('');
+    var inpSt = 'border:1px solid ' + (presetActual === 'custom' ? 'var(--accent-dark)' : 'var(--border)') +
+      ';border-radius:8px;padding:4px 8px;font-size:12px;font-family:inherit;background:var(--glass);color:var(--text);outline:none';
+    return '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px">' +
+        btns +
+        '<div style="display:flex;align-items:center;gap:6px;margin-left:4px">' +
+          '<span style="font-size:12px;color:var(--text3)">Del</span>' +
+          '<input type="date" id="stats-desde" value="' + (statsRango ? statsRango.desde : '') + '" onchange="setStatsRangoCustom()" style="' + inpSt + '">' +
+          '<span style="font-size:12px;color:var(--text3)">al</span>' +
+          '<input type="date" id="stats-hasta" value="' + (statsRango ? statsRango.hasta : '') + '" onchange="setStatsRangoCustom()" style="' + inpSt + '">' +
+        '</div>' +
+        (statsRango
+          ? '<span style="font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-light);border-radius:999px;padding:4px 12px">' +
+              statsRango.label + ' · ' + vf.length + ' venta' + (vf.length!==1?'s':'') +
+            '</span>'
+          : '') +
+      '</div>';
+  })();
+
   // KPIs — siempre visibles
-  var _kpiHtml =
+  var _kpiHtml = _rangoHtml +
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px">' +
       '<div class="chart-card" style="padding:16px 18px">' +
         '<div class="chart-title" style="margin-bottom:8px">Total USD</div>' +
@@ -2657,6 +2768,7 @@ const PLANTILLAS_DEFAULT = [
   {titulo:"Rebrote Acneico – Info completa",categoria:"masterclass",texto:"🚀 Rebrote Acneico – Masterclass\n\n💡 Lo que vas a dominar\n✅ Por qué el acné vuelve y cómo controlarlo\n✅ El manejo integral del acné persistente\n\n📥 Qué incluye\n🎓 1 clase intensiva (3-4 horas)\n📘 PDF descargable\n🔓 Acceso ilimitado al campus virtual"},
   {titulo:"Reestructuración de Pieles – Info completa",categoria:"masterclass",texto:"🚀 Reestructuración de Pieles – Masterclass\n\n💡 Lo que vas a dominar\n✅ Cómo recuperar la integridad cutánea después de un procedimiento\n✅ Técnicas y principios activos para restaurar pieles reactivas\n\n📥 Qué incluye\n🎓 1 clase intensiva (3-4 horas)\n📘 PDF descargable\n🔓 Acceso ilimitado al campus virtual"},
   {titulo:"Diagnóstico 0 – Pre Peeling – Info completa",categoria:"masterclass",texto:"🚀 Diagnóstico 0 – Pre Peeling\n\n💡 Lo que vas a dominar\n✅ Cómo realizar un diagnóstico clínico antes de aplicar un peeling\n✅ Peelings combinados, multicapas y técnicas avanzadas\n\n📥 Qué incluye\n🎓 9 clases en vivo + grabaciones\n📘 PDFs descargables\n🔓 Acceso ilimitado al campus virtual"},
+  {titulo:"ABC del Microneedling – Info completa",categoria:"masterclass",texto:""},
   {titulo:"Altafrecuencia – Info completa",categoria:"express",texto:"🚀 Altafrecuencia – Curso Express\n\n💡 Lo que vas a dominar\n✅ Los fundamentos reales de la Altafrecuencia\n✅ Las técnicas: con gasa, sin gasa y fulguración\n\n📥 Qué incluye\n🎓 Clase técnica de 3 horas\n📘 Material de apoyo incluido\n🔓 Acceso ilimitado al campus virtual"},
   {titulo:"IPL – Luz Pulsada Intensa – Info completa",categoria:"express",texto:"🚀 IPL – Luz Pulsada Intensa: Bases\n\n💡 Lo que vas a dominar\n✅ Los principios físicos del IPL\n✅ Cómo seleccionar filtros y parámetros según objetivo\n\n📥 Qué incluye\n🎓 Clase técnica con fundamento clínico\n📘 Material de apoyo incluido\n🔓 Acceso ilimitado al campus virtual"},
   {titulo:"Microneedling en Cuero Cabelludo – Info completa",categoria:"express",texto:"🚀 Microneedling en Cuero Cabelludo – Curso Express\n\n💡 Lo que vas a dominar\n✅ La fisiología y el ciclo de crecimiento capilar\n✅ Los parámetros y técnicas correctas de microneedling capilar\n\n📥 Qué incluye\n🎓 Clase técnica intensiva de 3 horas\n📘 +5 materiales descargables\n🔓 Acceso ilimitado al campus virtual"},
@@ -3146,6 +3258,7 @@ var _MAPA_FORMACIONES = {
   'quimica cosmetica':{d:'intermedio',a:'Profesionales de la estética que desean entender la base química de los cosméticos y sus principios activos, para elegirlos con criterio científico y clínico en lugar de por marca.'},
   'reestructuracion de pieles':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el abordaje de pieles sensibilizadas, reactivas o lesionadas, aplicando protocolos clínicos de recuperación tisular.'},
   'diagnostico 0':{d:'intermedio',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el diagnóstico clínico completo de la piel antes de aplicar un peeling, comprendiendo biotipo, fototipo y barrera cutánea.'},
+  'abc del microneedling':{d:'iniciante',a:'Cosmetólogas, cosmiatras y profesionales de la estética que desean iniciarse en el microneedling con bases sólidas: fundamentos, seguridad, profundidades y técnica correcta antes de avanzar a protocolos clínicos.'},
   'dermaplaning':{d:'iniciante',a:'Cosmetólogas, cosmiatras y profesionales de la estética que buscan incorporar el dermaplaning de forma segura, profesional y rentable, comprendiendo su base clínica y ejecución paso a paso.'},
   'microdermoabrasion':{d:'iniciante',a:'Cosmetólogas, cosmiatras y profesionales que aplican o desean reentrenar la microdermoabrasión, comprendiendo su base clínica, variaciones e integración con otros procedimientos.'},
   'microneedling capilar':{d:'intermedio',a:'Cosmetólogas, cosmiatras, tricólogos y profesionales de la estética que deseen dominar el microneedling capilar para fortalecer, regenerar y estimular el cuero cabelludo.'},
@@ -3154,6 +3267,27 @@ var _MAPA_FORMACIONES = {
   'acidos 360':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el uso integral de los ácidos desde una perspectiva clínica 360°, con criterio diagnóstico y protocolos avanzados.'},
   'especializacion acidos':{d:'avanzado',a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el uso integral de los ácidos desde una perspectiva clínica 360°, con criterio diagnóstico y protocolos avanzados.'},
 };
+// Formaciones nuevas que se crean solas en el HUB la primera vez.
+// El flag en /config/formaciones_seed evita recrearlas si después se borran a mano.
+var FORMACIONES_NUEVAS = [
+  { flag:'mc_abc_microneedling', titulo:'ABC del Microneedling', categoria:'masterclass', palabras:['abc','microneedling'] },
+];
+async function asegurarFormacionesNuevas() {
+  var creadas = 0;
+  for (var i = 0; i < FORMACIONES_NUEVAS.length; i++) {
+    var f = FORMACIONES_NUEVAS[i];
+    var existe = plantillas.some(function(p){
+      var norm = _normCurso(p.titulo||'');
+      return f.palabras.every(function(w){ return norm.indexOf(w) !== -1; });
+    });
+    if (existe) continue;
+    if (await dbGet('/config/formaciones_seed/'+f.flag)) continue;
+    if (!await dbSet('/config/formaciones_seed/'+f.flag, true)) continue;
+    var res = await dbPush('/plantillas', { titulo:f.titulo, categoria:f.categoria });
+    if (res && res.name) { plantillas.push({ _key:res.name, titulo:f.titulo, categoria:f.categoria }); creadas++; }
+  }
+  if (creadas) renderPlantillas();
+}
 async function silentMigrateFormaciones() {
   var keys = Object.keys(_MAPA_FORMACIONES);
   for (var i = 0; i < plantillas.length; i++) {
@@ -3211,6 +3345,7 @@ async function migrarDatosFormaciones() {
     'quimica cosmetica': {d:'intermedio', a:'Profesionales de la estética que desean entender la base química de los cosméticos y sus principios activos, para elegirlos con criterio científico y clínico en lugar de por marca.'},
     'reestructuracion de pieles': {d:'avanzado', a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el abordaje de pieles sensibilizadas, reactivas o lesionadas, aplicando protocolos clínicos de recuperación tisular.'},
     'diagnostico 0': {d:'intermedio', a:'Cosmetólogas, cosmiatras y profesionales que desean dominar el diagnóstico clínico completo de la piel antes de aplicar un peeling, comprendiendo biotipo, fototipo, barrera y afecciones activas.'},
+    'abc del microneedling': {d:'iniciante', a:'Cosmetólogas, cosmiatras y profesionales de la estética que desean iniciarse en el microneedling con bases sólidas: fundamentos, seguridad, profundidades y técnica correcta antes de avanzar a protocolos clínicos.'},
     'dermaplaning': {d:'iniciante', a:'Cosmetólogas, cosmiatras y profesionales de la estética que buscan incorporar el dermaplaning de forma segura, profesional y rentable, comprendiendo su base clínica y ejecución paso a paso.'},
     'microdermoabrasion': {d:'iniciante', a:'Cosmetólogas, cosmiatras y profesionales de la estética que aplican o desean reentrenar la microdermoabrasión, comprendiendo su base clínica, variaciones e integración con otros procedimientos.'},
     'microneedling capilar': {d:'intermedio', a:'Cosmetólogas, cosmiatras, tricólogos y profesionales de la estética que deseen dominar el microneedling capilar para fortalecer, regenerar y estimular el cuero cabelludo.'},
@@ -3673,7 +3808,7 @@ async function abrirNuevaPlantilla() {
 }
 
 // ── VENTAS FORM ──
-const CURSOS = ['Club Coach','Lifetime','Migración','Saldo a favor','Diplomado Crecimiento y Gestión de Emprendedores Estéticos','Combo Diplomado','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','Zona Intima','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
+const CURSOS = ['Club Coach','Lifetime','Migración','Saldo a favor','Diplomado Crecimiento y Gestión de Emprendedores Estéticos','Combo Diplomado','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','MC ABC del Microneedling','Zona Intima','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
 
 // Mapea abreviaturas de Excel al nombre oficial.
 // Agrega aliases acá cuando aparezcan variantes nuevas de algún asesor.
@@ -3697,6 +3832,11 @@ const CURSO_ALIASES = {
   'mc tecnicas':          'MC Técnicas de Aplicación con Peeling Químico Actualización 2026',
   'mc tecnicas de aplicacion con peeling quimico': 'MC Técnicas de Aplicación con Peeling Químico Actualización 2026',
   'tecnicas de aplicacion': 'MC Técnicas de Aplicación con Peeling Químico Actualización 2026',
+  // MC ABC del Microneedling (con o sin año, con o sin "del Microneedling")
+  'mc abc':               'MC ABC del Microneedling',
+  'masterclass abc':      'MC ABC del Microneedling',
+  'abc del microneedling':'MC ABC del Microneedling',
+  'abc microneedling':    'MC ABC del Microneedling',
   // Plasma Pen
   'plasmapen':            'Plasma Pen',
   'plasma pen':           'Plasma Pen',
