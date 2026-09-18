@@ -1254,7 +1254,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.390</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.391</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -4733,6 +4733,36 @@ function avisarSlack(payload) {
     }).catch(function(){});
   } catch(e) {}
 }
+// Comprobantes → canal de comprobantes (vía /api/slack-comprobante). Se achican a JPG para no pasar
+// el límite de 4.5 MB por pedido de Vercel. Fire-and-forget igual que avisarSlack.
+function _achicarImagen(dataURL) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var max = 1600, w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      try { resolve(c.toDataURL('image/jpeg', 0.85)); } catch(e) { resolve(dataURL); }
+    };
+    img.onerror = function() { resolve(dataURL); };
+    img.src = dataURL;
+  });
+}
+async function avisarSlackComprobante(v, blobs, tipo) {
+  try {
+    var archivos = [];
+    for (var i = 0; i < blobs.length; i++) if (blobs[i]) archivos.push(await _achicarImagen(blobs[i]));
+    if (!archivos.length) return;
+    var d = _ventaParaSlack(v);
+    ['lead','codigo','email','telefono','pais','canal','fecha','nota','montoLocal'].forEach(function(k){ d[k] = v[k]; });
+    fetch('/api/slack-comprobante', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: tipo, venta: d, archivos: archivos })
+    }).catch(function(){});
+  } catch(e) {}
+}
 function _ventaParaSlack(v) {
   var pendientes = (v.cuotas || []).filter(function(c){ return c && c.estado !== 'cobrado'; }).length;
   return { nombre:v.nombre, apellido:v.apellido, pais:v.pais, curso:v.curso, cursoCombo:v.cursoCombo,
@@ -4770,7 +4800,10 @@ async function guardarVenta() {
       await guardarNotificacionEdicion(ventaOriginal, pendiente);
     }
     // Aviso en Slack solo para ventas nuevas o cuotas cobradas; una edición no se anuncia
-    if (!esEdicion) avisarSlack({ tipo: window._cuotaOrigen ? 'cuota' : 'venta', venta: _ventaParaSlack(pendiente) });
+    if (!esEdicion) {
+      avisarSlack({ tipo: window._cuotaOrigen ? 'cuota' : 'venta', venta: _ventaParaSlack(pendiente) });
+      if (_blobC1 || _blobC2) avisarSlackComprobante(pendiente, [_blobC1, _blobC2], window._cuotaOrigen ? 'cuota' : 'venta');
+    }
     // If this was a partial payment triggered from "Cobrar" → mark that cuota as cobrada
     if (window._cuotaOrigen) {
       await _marcarCuotaCobradaEnFirebase(window._cuotaOrigen.ventaKey, window._cuotaOrigen.cuotaIdx);
