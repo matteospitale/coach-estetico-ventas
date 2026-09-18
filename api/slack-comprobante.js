@@ -3,11 +3,12 @@
 // Los webhooks de Slack no aceptan archivos, así que esto usa el token del bot de la app "Hub Coach".
 // Variables de entorno en Vercel (Project → Settings → Environment Variables):
 //   SLACK_BOT_TOKEN          → token del bot (empieza con xoxb-), con permisos files:write y chat:write
-//   SLACK_CANAL_COMPROBANTES → ID del canal (ej: C0123ABCD). El bot tiene que estar agregado al canal.
-// Si falta alguna, responde ok sin hacer nada, así el Hub nunca se rompe por Slack.
+//   SLACK_CANAL_COMPROBANTES → opcional: ID de otro canal. Por defecto usa 🔒#comprobantes (C0C2SB6UH8B).
+// El bot tiene que estar agregado al canal. Si falta el token, responde ok sin hacer nada,
+// así el Hub nunca se rompe por Slack.
 
 const TOKEN = process.env.SLACK_BOT_TOKEN || '';
-const CANAL = process.env.SLACK_CANAL_COMPROBANTES || '';
+const CANAL = process.env.SLACK_CANAL_COMPROBANTES || 'C0C2SB6UH8B';
 
 function esc(s, max) {
   return String(s == null ? '' : s).slice(0, max || 200)
@@ -51,7 +52,7 @@ async function slack(method, params, json) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!TOKEN || !CANAL) return res.status(200).json({ ok: true, skipped: 'Faltan SLACK_BOT_TOKEN o SLACK_CANAL_COMPROBANTES' });
+  if (!TOKEN) return res.status(200).json({ ok: true, skipped: 'Falta SLACK_BOT_TOKEN' });
 
   var b = req.body || {};
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
