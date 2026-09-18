@@ -1254,7 +1254,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.354</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.390</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -4723,9 +4723,26 @@ function confirmarVenta() {
   document.getElementById('modal-confirm').classList.add('show');
 }
 
+// Aviso a Slack (#ventas-cierres) vía /api/slack-venta. Fire-and-forget: si falla, el Hub sigue igual.
+function avisarSlack(payload) {
+  try {
+    fetch('/api/slack-venta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function(){});
+  } catch(e) {}
+}
+function _ventaParaSlack(v) {
+  var pendientes = (v.cuotas || []).filter(function(c){ return c && c.estado !== 'cobrado'; }).length;
+  return { nombre:v.nombre, apellido:v.apellido, pais:v.pais, curso:v.curso, cursoCombo:v.cursoCombo,
+    monto:v.monto, pago:v.pago, asesor:v.asesor, comprobante:!!v.comprobante, enPartes:!!v.enPartes, cuotasPendientes:pendientes };
+}
+
 async function guardarVenta() {
   closeModal();
   try {
+    var esEdicion = !!window._editKey;
     var ventaOriginal = window._ventaOriginal || null;
     var eraAprobada = ventaOriginal && (ventaOriginal.estado||'Pendiente') === 'Aprobado';
     // pendiente always has estado:'Pendiente' — auto-reset is built in
@@ -4752,6 +4769,8 @@ async function guardarVenta() {
     if (eraAprobada) {
       await guardarNotificacionEdicion(ventaOriginal, pendiente);
     }
+    // Aviso en Slack solo para ventas nuevas o cuotas cobradas; una edición no se anuncia
+    if (!esEdicion) avisarSlack({ tipo: window._cuotaOrigen ? 'cuota' : 'venta', venta: _ventaParaSlack(pendiente) });
     // If this was a partial payment triggered from "Cobrar" → mark that cuota as cobrada
     if (window._cuotaOrigen) {
       await _marcarCuotaCobradaEnFirebase(window._cuotaOrigen.ventaKey, window._cuotaOrigen.cuotaIdx);
@@ -7350,6 +7369,7 @@ async function ejecutarImportExcel() {
   }
 
   btn.disabled = false;
+  if (importadasOk.length) avisarSlack({ tipo: 'import', asesor: asesor, ventas: importadasOk.map(_ventaParaSlack) });
   await loadVentas();
   fillMesOptions('admin-fil-mes');
   renderAdmin();
