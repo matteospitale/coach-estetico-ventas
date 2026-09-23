@@ -14,6 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
 :root {
   --bg-from: #fdf8f5; --bg-to: #d4857a;
@@ -1232,7 +1234,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.394</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.398</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1248,39 +1250,91 @@ let catActual = 'todos', plantillasInicializadas = false;
 let plantillaDetalleKey = null, plantillaTextosArr = [], plantillaTextosIdx = 0;
 let _seccionMesInicializado = false;
 
-// ── FIREBASE ANONYMOUS AUTH ──
+// ── ACCESO CON GOOGLE ──
+// Estas cuentas entran siempre y pueden aprobar a los demás desde Usuarios → Acceso.
+const ADMIN_EMAILS = ['ventascoach5@gmail.com', 'spitalematteo10@gmail.com'];
 var _fbToken = null, _fbRefreshToken = null, _fbTokenExpiry = 0;
+var _fbUser = null, _miembro = null;
 
-async function fbEnsureAuth() {
-  if (!FB_WEB_API_KEY || FB_WEB_API_KEY === 'PEGAR-AQUI-TU-FIREBASE-WEB-API-KEY') return;
-  if (_fbToken && Date.now() < _fbTokenExpiry - 300000) return; // token valido por 5+ min
+firebase.initializeApp({
+  apiKey: FB_WEB_API_KEY,
+  authDomain: 'coach-estetico-ventas.firebaseapp.com',
+  databaseURL: DB_URL,
+  projectId: 'coach-estetico-ventas'
+});
+var _auth = firebase.auth();
+_auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+
+function esAdminEmail(mail) { return ADMIN_EMAILS.indexOf(String(mail||'').toLowerCase()) !== -1; }
+
+async function entrarConGoogle() {
+  var err = document.getElementById('login-error');
+  if (err) err.textContent = '';
   try {
-    if (_fbRefreshToken) {
-      // Renovar token existente
-      var rr = await fetch('https://securetoken.googleapis.com/v1/token?key=' + FB_WEB_API_KEY, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(_fbRefreshToken)
-      });
-      if (rr.ok) {
-        var rd = await rr.json();
-        _fbToken = rd.id_token; _fbRefreshToken = rd.refresh_token;
-        _fbTokenExpiry = Date.now() + parseInt(rd.expires_in || 3600) * 1000;
-        return;
-      }
+    var prov = new firebase.auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: 'select_account' });
+    await _auth.signInWithPopup(prov);
+  } catch(e) {
+    if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) {
+      try { await _auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); return; } catch(e2) {}
     }
-    // Login anonimo inicial
-    var rs = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + FB_WEB_API_KEY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ returnSecureToken: true })
-    });
-    if (rs.ok) {
-      var sd = await rs.json();
-      _fbToken = sd.idToken; _fbRefreshToken = sd.refreshToken;
-      _fbTokenExpiry = Date.now() + parseInt(sd.expiresIn || 3600) * 1000;
-    }
-  } catch(e) { console.warn('Firebase anon auth error:', e); }
+    if (e && e.code === 'auth/popup-closed-by-user') return;
+    if (err) err.textContent = 'No se pudo entrar: ' + (e && e.message ? e.message : e);
+  }
+}
+
+async function salirDeGoogle() {
+  try { await _auth.signOut(); } catch(e) {}
+  location.reload();
+}
+
+// Busca qué usuario del Hub (Matteo, Dianela, ...) le corresponde a este email.
+function usuarioPorEmail(mail) {
+  mail = String(mail||'').toLowerCase();
+  var found = null;
+  Object.keys(USUARIOS_CONFIG).forEach(function(nombre) {
+    var u = USUARIOS_CONFIG[nombre];
+    if (u && String(u.email||'').toLowerCase() === mail) found = nombre;
+  });
+  return found;
+}
+
+function mostrarPantallaLogin(pendiente) {
+  var ov = document.getElementById('login-overlay');
+  if (ov) { ov.style.display = ''; ov.classList.remove('fade-out'); }
+  var g = document.getElementById('login-google-wrap');
+  var p = document.getElementById('login-pendiente');
+  if (g) g.style.display = pendiente ? 'none' : 'flex';
+  if (p) p.style.display = pendiente ? 'block' : 'none';
+  if (pendiente) {
+    var m = document.getElementById('login-pend-mail');
+    if (m) m.textContent = (_fbUser && _fbUser.email) || '';
+  }
+  var ls = document.getElementById('loading-state');
+  if (ls) ls.style.display = 'none';
+}
+
+// Registra/lee /members/{uid} y decide si la persona puede entrar.
+async function resolverAcceso() {
+  var uid = _fbUser.uid, mail = (_fbUser.email||'').toLowerCase();
+  var m = await dbGet('/members/' + uid);
+  var admin = esAdminEmail(mail);
+  if (!m) {
+    m = { email: mail, nombre: _fbUser.displayName || mail, foto: _fbUser.photoURL || '',
+          usuario: admin ? 'Matteo' : (usuarioPorEmail(mail) || ''), aprobado: admin, at: new Date().toISOString() };
+    await dbSet('/members/' + uid, m);
+  } else if (admin && !m.aprobado) {
+    m.aprobado = true; await dbSet('/members/' + uid + '/aprobado', true);
+  }
+  _miembro = m;
+  var nombre = m.usuario || usuarioPorEmail(mail);
+  if (!m.aprobado || !nombre || !USUARIOS_CONFIG[nombre]) return null;
+  return nombre;
+}
+
+// El token lo mantiene el SDK de Firebase (se renueva solo). Cada pedido a la base lo manda en ?auth=
+async function fbEnsureAuth() {
+  try { if (_auth.currentUser) _fbToken = await _auth.currentUser.getIdToken(); } catch(e) {}
 }
 
 function _fbQ() { return _fbToken ? '?auth=' + encodeURIComponent(_fbToken) : ''; }
@@ -1376,18 +1430,32 @@ async function refreshPlantillas() {
 }
 
 // ── INIT ──
+// Arranque: primero la sesión de Google. Sin sesión aprobada no se carga ningún dato.
+var _hubIniciado = false;
+_auth.onIdTokenChanged(async function(user) {
+  _fbUser = user;
+  if (!user) { _fbToken = null; usuarioActual = null; _hubIniciado = false; mostrarPantallaLogin(false); return; }
+  try { _fbToken = await user.getIdToken(); } catch(e) {}
+  if (_hubIniciado) return; // solo fue una renovación de token
+  try {
+    await cargarUsuariosConfig();
+    var nombre = await resolverAcceso();
+    if (!nombre) { mostrarPantallaLogin(true); return; }
+    usuarioActual = nombre;
+    _hubIniciado = true;
+    init();
+  } catch(e) {
+    var err = document.getElementById('login-error');
+    if (err) err.textContent = 'Error al entrar: ' + (e && e.message ? e.message : e);
+    mostrarPantallaLogin(false);
+  }
+});
+
 async function init() {
   try {
-    fbEnsureAuth().catch(function(){}); // en segundo plano, no bloquea la carga
-    await cargarUsuariosConfig();
-    if (!checkSession()) {
-      renderLoginUsuarios();
-    } else {
-      const overlay = document.getElementById('login-overlay');
-      if (overlay) overlay.style.display = 'none';
-      // Apply UI permissions immediately so greeting/nav/FAB show at once
-      if (usuarioActual) aplicarPermisos(false);
-    }
+    const overlay = document.getElementById('login-overlay');
+    if (overlay) overlay.style.display = 'none';
+    aplicarPermisos(false);
     await Promise.all([loadVentas(), loadCierres(), loadCalendarioConfig()]);
     document.getElementById('loading-state').style.display = 'none';
     renderAll();
@@ -5957,6 +6025,7 @@ function guardarSession(nombre) {
 
 function logout() {
   localStorage.removeItem(SESSION_KEY);
+  try { _auth.signOut(); } catch(e) {}
   usuarioActual = null; loginPinBuffer = ''; loginNombreSel = '';
   document.body.classList.remove('admin-ro');
   const greetEl = document.getElementById('nav-hola-nombre');
@@ -6240,6 +6309,66 @@ const ALL_SECS = [
 
 var _editandoUsuario = undefined; // undefined = sin editor abierto, null = nuevo, string = nombre
 
+// ── ACCESO (aprobar cuentas de Google) ──
+async function renderAcceso() {
+  var wrap = document.getElementById('acceso-wrap');
+  if (!wrap) return;
+  if (!_fbUser || !esAdminEmail(_fbUser.email)) { wrap.innerHTML = ''; return; }
+  var ms = await dbGet('/members') || {};
+  var uids = Object.keys(ms);
+  var pend = uids.filter(function(u){ return !ms[u].aprobado; });
+  var ok = uids.filter(function(u){ return ms[u].aprobado; });
+  var opciones = Object.keys(USUARIOS_CONFIG).map(function(n){ return '<option value="' + n + '">' + n + '</option>'; }).join('');
+
+  function fila(uid, aprobado) {
+    var m = ms[uid];
+    var sel = '<select id="acc-sel-' + uid + '" class="form-select" style="font-size:12px;padding:5px 8px;max-width:130px">' +
+      '<option value="">— asignar —</option>' + opciones + '</select>';
+    return '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border)">' +
+      '<div style="min-width:200px">' +
+        '<div style="font-size:13px;font-weight:600">' + escHtml(m.nombre || '') + '</div>' +
+        '<div style="font-size:12px;color:var(--text3)">' + escHtml(m.email || '') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        (aprobado
+          ? '<span class="estado-select estado-aprobado" style="font-size:12px;padding:3px 10px">' + escHtml(m.usuario || 'sin asignar') + '</span>' +
+            '<button class="btn btn-danger" style="font-size:12px" onclick="quitarAcceso(\'' + uid + '\')">Quitar acceso</button>'
+          : sel +
+            '<button class="btn btn-accent" style="font-size:12px" onclick="aprobarMiembro(\'' + uid + '\')">Aprobar</button>' +
+            '<button class="btn btn-danger" style="font-size:12px" onclick="quitarAcceso(\'' + uid + '\')">Rechazar</button>') +
+      '</div></div>';
+  }
+
+  var html = '<div style="border-top:1px solid var(--border);padding-top:20px">';
+  html += '<div style="font-size:13px;font-weight:700;margin-bottom:4px">Acceso — cuentas de Google</div>';
+  html += '<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Quien entra por primera vez queda pendiente. Al aprobarlo, elegí con qué usuario del Hub trabaja (de ahí salen su rol y sus secciones).</div>';
+  html += '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-top:14px">Pendientes (' + pend.length + ')</div>';
+  html += pend.length ? pend.map(function(u){ return fila(u, false); }).join('') : '<div style="font-size:12px;color:var(--text3);padding:8px 0">No hay solicitudes pendientes.</div>';
+  html += '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-top:18px">Con acceso (' + ok.length + ')</div>';
+  html += ok.map(function(u){ return fila(u, true); }).join('');
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+async function aprobarMiembro(uid) {
+  var sel = document.getElementById('acc-sel-' + uid);
+  var nombre = sel ? sel.value : '';
+  if (!nombre) { showToast('Elegí con qué usuario del Hub entra'); return; }
+  var m = await dbGet('/members/' + uid);
+  await dbSet('/members/' + uid, Object.assign({}, m, { usuario: nombre, aprobado: true }));
+  if (m && m.email) await dbSet('/config/usuarios/' + nombre + '/email', String(m.email).toLowerCase());
+  await cargarUsuariosConfig();
+  showToast('Acceso aprobado para ' + nombre);
+  renderUsuarios();
+}
+
+async function quitarAcceso(uid) {
+  if (!confirm('¿Sacarle el acceso a esta cuenta? Va a tener que pedirlo de nuevo.')) return;
+  await dbDelete('/members/' + uid);
+  showToast('Acceso quitado');
+  renderUsuarios();
+}
+
 function renderUsuarios() {
   var el = document.getElementById('usuarios-content');
   if (!el) return;
@@ -6271,7 +6400,9 @@ function renderUsuarios() {
   html += '</div>';
   html += '<div id="usuario-editor" style="margin-top:20px"></div>';
   html += '<div style="margin-top:18px"><button class="btn btn-accent" onclick="abrirEditorUsuario(null)">+ Nuevo usuario</button></div>';
+  html += '<div id="acceso-wrap" style="margin-top:28px"></div>';
   el.innerHTML = html;
+  renderAcceso();
   if (_editandoUsuario !== undefined) {
     abrirEditorUsuario(_editandoUsuario);
   }
@@ -7049,9 +7180,8 @@ async function ejecutarImportExcel() {
   cerrarImportExcel();
 }
 
-// Init
+// Init: no se llama a init() acá. Lo dispara onIdTokenChanged cuando hay sesión de Google aprobada.
 document.getElementById('f-fecha').valueAsDate = new Date();
-init();
 </script>
 
 <!-- MODAL NOTIFICACIONES -->
@@ -7182,25 +7312,18 @@ init();
       <div id="login-sub">Hub de ventas</div>
     </div>
     <div id="login-right">
-      <div id="login-right-title">Tu PIN</div>
-      <div id="login-pin-dots">
-        <div class="pin-dot" id="pd-0"></div>
-        <div class="pin-dot" id="pd-1"></div>
-        <div class="pin-dot" id="pd-2"></div>
+      <div id="login-right-title">Acceso del equipo</div>
+      <div id="login-google-wrap" style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:10px">
+        <button id="btn-google" onclick="entrarConGoogle()" style="display:flex;align-items:center;gap:10px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:999px;padding:11px 20px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.12)">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.2l7.8 6.1C12.2 13.2 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.4c-.5 2.9-2.2 5.3-4.7 6.9l7.3 5.7c4.3-3.9 6.8-9.8 6.8-16.9z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C.9 16.3 0 20 0 24s.9 7.7 2.5 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.7c-2.1 1.4-4.8 2.2-8.6 2.2-6.4 0-11.8-3.7-13.7-8.9l-7.8 6.1C6.4 42.6 14.6 48 24 48z"/></svg>
+          Entrar con Google
+        </button>
+        <div style="font-size:12px;color:var(--text2);text-align:center;max-width:250px;line-height:1.5">Usá la cuenta de Google que te asignó el equipo. La sesión queda guardada en este navegador.</div>
       </div>
-      <div id="login-numpad">
-        <button class="numpad-btn" onclick="pinKey('1')">1</button>
-        <button class="numpad-btn" onclick="pinKey('2')">2</button>
-        <button class="numpad-btn" onclick="pinKey('3')">3</button>
-        <button class="numpad-btn" onclick="pinKey('4')">4</button>
-        <button class="numpad-btn" onclick="pinKey('5')">5</button>
-        <button class="numpad-btn" onclick="pinKey('6')">6</button>
-        <button class="numpad-btn" onclick="pinKey('7')">7</button>
-        <button class="numpad-btn" onclick="pinKey('8')">8</button>
-        <button class="numpad-btn" onclick="pinKey('9')">9</button>
-        <button class="numpad-btn" onclick="pinKey('del')">⌫</button>
-        <button class="numpad-btn" onclick="pinKey('0')">0</button>
-        <button class="numpad-btn empty"></button>
+      <div id="login-pendiente" style="display:none;margin-top:14px;text-align:center;max-width:280px">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Solicitud enviada ⏳</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6">Tu cuenta <span id="login-pend-mail" style="font-weight:600"></span> quedó pendiente de aprobación. Avisale a Matteo o a Dianela para que te habiliten.</div>
+        <button onclick="salirDeGoogle()" style="margin-top:14px;background:none;border:1px solid var(--border);border-radius:999px;padding:7px 16px;font-size:12px;font-family:inherit;color:var(--text2);cursor:pointer">Salir</button>
       </div>
       <div id="login-error"></div>
     </div>
