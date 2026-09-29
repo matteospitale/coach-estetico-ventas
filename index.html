@@ -1234,7 +1234,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.398</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.399</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3875,7 +3875,7 @@ async function abrirNuevaPlantilla() {
 }
 
 // ── VENTAS FORM ──
-const CURSOS = ['Club Coach','Lifetime','Migración','Saldo a favor','Diplomado Crecimiento y Gestión de Emprendedores Estéticos','Combo Diplomado','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','MC ABC del Microneedling','Zona Intima','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
+const CURSOS = ['Club Coach','Lifetime','Suscripción Life+','Migración','Saldo a favor','Diplomado Crecimiento y Gestión de Emprendedores Estéticos','Combo Diplomado','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','MC ABC del Microneedling','Zona Intima','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
 
 // Mapea abreviaturas de Excel al nombre oficial.
 // Agrega aliases acá cuando aparezcan variantes nuevas de algún asesor.
@@ -3886,6 +3886,15 @@ function _qn(s) {
 
 // Aliases: clave en minúsculas SIN acentos → nombre oficial exacto
 const CURSO_ALIASES = {
+  // Suscripción Life+ — va ANTES de Lifetime: si no, "lifetime+" lo agarraría el alias 'lifetime'
+  'suscripcion life+':    'Suscripción Life+',
+  'suscripcion life':     'Suscripción Life+',
+  'membresia life+':      'Suscripción Life+',
+  'membresia life +':     'Suscripción Life+',
+  'lifetime+':            'Suscripción Life+',
+  'lifetime +':           'Suscripción Life+',
+  'life+':                'Suscripción Life+',
+  'life +':               'Suscripción Life+',
   // Lifetime / Membresía LifeTime — mismo producto
   'membresia lifetime':   'Lifetime',
   'membresia life time':  'Lifetime',
@@ -6315,6 +6324,7 @@ async function renderAcceso() {
   if (!wrap) return;
   if (!_fbUser || !esAdminEmail(_fbUser.email)) { wrap.innerHTML = ''; return; }
   var ms = await dbGet('/members') || {};
+  await sincronizarPermisosMiembros(ms);
   var uids = Object.keys(ms);
   var pend = uids.filter(function(u){ return !ms[u].aprobado; });
   var ok = uids.filter(function(u){ return ms[u].aprobado; });
@@ -6350,12 +6360,32 @@ async function renderAcceso() {
   wrap.innerHTML = html;
 }
 
+// ¿Este usuario del Hub puede ver datos de ventas? De acá sale el permiso en la base de datos:
+// sin esto, las reglas de Firebase rechazan leer /ventas y /comprobantes.
+function puedeVerVentas(nombre) {
+  var secs = ((USUARIOS_CONFIG[nombre] || {}).secciones) || [];
+  return ['ventas','clientes','cargar','admin'].some(function(s){ return secs.indexOf(s) !== -1; });
+}
+
+// Mantiene los permisos de la base alineados con las secciones de cada usuario.
+async function sincronizarPermisosMiembros(ms) {
+  try {
+    ms = ms || (await dbGet('/members')) || {};
+    for (var uid in ms) {
+      var m = ms[uid];
+      if (!m || !m.aprobado || !m.usuario) continue;
+      var debe = puedeVerVentas(m.usuario);
+      if (m.ver_ventas !== debe) await dbSet('/members/' + uid + '/ver_ventas', debe);
+    }
+  } catch(e) {}
+}
+
 async function aprobarMiembro(uid) {
   var sel = document.getElementById('acc-sel-' + uid);
   var nombre = sel ? sel.value : '';
   if (!nombre) { showToast('Elegí con qué usuario del Hub entra'); return; }
   var m = await dbGet('/members/' + uid);
-  await dbSet('/members/' + uid, Object.assign({}, m, { usuario: nombre, aprobado: true }));
+  await dbSet('/members/' + uid, Object.assign({}, m, { usuario: nombre, aprobado: true, ver_ventas: puedeVerVentas(nombre) }));
   if (m && m.email) await dbSet('/config/usuarios/' + nombre + '/email', String(m.email).toLowerCase());
   await cargarUsuariosConfig();
   showToast('Acceso aprobado para ' + nombre);
@@ -6490,6 +6520,7 @@ async function guardarUsuario() {
   USUARIOS_CONFIG[nombreNuevo] = { pin:pin, rol:rol, secciones:secciones, adminRO:adminRO };
   try {
     await dbSet('/config/usuarios', USUARIOS_CONFIG);
+    await sincronizarPermisosMiembros(); // si cambiaron las secciones, actualiza el permiso en la base
     showToast('✓ Guardado');
     _editandoUsuario = undefined;
     renderUsuarios();
