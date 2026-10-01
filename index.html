@@ -318,8 +318,9 @@ tbody tr:hover td { background: rgba(255,255,255,0.45); }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
 /* ── TOAST ── */
-.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(12,9,7,0.92); backdrop-filter: blur(16px); color: rgba(255,255,255,0.95); padding: 12px 24px; border-radius: 999px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 999; white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,0.22); }
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(12,9,7,0.92); backdrop-filter: blur(16px); color: rgba(255,255,255,0.95); padding: 12px 24px; border-radius: 999px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 10001; white-space: normal; max-width: min(92vw, 560px); text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.22); }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.toast-alto { bottom: 96px; }
 
 /* ── EMPTY ── */
 .empty-state { padding: 48px 24px; text-align: center; color: var(--text3); font-size: 14px; }
@@ -1234,7 +1235,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.399</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.421</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -1340,27 +1341,39 @@ async function fbEnsureAuth() {
 function _fbQ() { return _fbToken ? '?auth=' + encodeURIComponent(_fbToken) : ''; }
 
 // ── REST API HELPERS ──
+var _fbLastError = '';
+async function _fbFallo(r, que) {
+  var txt = '';
+  try { txt = (await r.text()).substring(0, 180); } catch(e) {}
+  _fbLastError = que + ' → HTTP ' + r.status + (txt ? ' · ' + txt : '');
+  try { console.error('[Firebase] ' + _fbLastError); } catch(e) {}
+  return null;
+}
 async function dbGet(path) {
   const r = await fetch(DB_URL + path + '.json' + _fbQ());
-  return r.ok ? r.json() : null;
+  if (!r.ok) return _fbFallo(r, 'GET ' + path);
+  return r.json();
 }
 async function dbPush(path, data) {
   const r = await fetch(DB_URL + path + '.json' + _fbQ(), {
     method: 'POST',
     body: JSON.stringify(data)
   });
-  return r.ok ? r.json() : null;
+  if (!r.ok) return _fbFallo(r, 'POST ' + path);
+  return r.json();
 }
 async function dbSet(path, data) {
   const r = await fetch(DB_URL + path + '.json' + _fbQ(), {
     method: 'PUT',
     body: JSON.stringify(data)
   });
-  return r.ok;
+  if (!r.ok) { await _fbFallo(r, 'PUT ' + path); return false; }
+  return true;
 }
 async function dbDelete(path) {
   const r = await fetch(DB_URL + path + '.json' + _fbQ(), { method: 'DELETE' });
-  return r.ok;
+  if (!r.ok) { await _fbFallo(r, 'DELETE ' + path); return false; }
+  return true;
 }
 
 // ── LOAD DATA ──
@@ -1708,10 +1721,17 @@ async function silentMigrateComprobantes() {
   }
 }
 
-function showToast(msg) {
+function showToast(msg, ms) {
   const t = document.getElementById('toast');
+  // Si la barra de acciones esta abajo, el toast sube para no quedar tapado
+  const barra = document.getElementById('barra-acciones');
+  const barraVisible = !!(barra && barra.style.display && barra.style.display !== 'none');
+  t.classList.toggle('toast-alto', barraVisible);
   t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  var esError = /error|rechaz|no se pudo|fall|advertencia/i.test(msg);
+  if (esError) try { console.error('[Hub] ' + msg); } catch(e) {}
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), ms || (esError ? 9000 : 3000));
 }
 
 // ── MOBILE NAV ──
@@ -2162,6 +2182,9 @@ function editarVenta(key) {
   if (comboCurso) comboCurso.value = v.cursoCombo || '';
   window._editKey = key;
   switchTab('cargar');
+  // La barra flotante de seleccion se esconde: tapaba los avisos del formulario
+  var _barraSel = document.getElementById('barra-acciones');
+  if (_barraSel) _barraSel.style.display = 'none';
   actualizarCompletitud();
   const wasApproved = (v.estado||'Pendiente') === 'Aprobado';
   document.getElementById('btn-confirmar').textContent = wasApproved ? '⚠️ Guardar y volver a Pendiente' : 'Guardar cambios';
@@ -4751,7 +4774,21 @@ function confirmarVenta() {
   const montoLocalRaw = parseFloat(document.getElementById('f-monto-local').value);
   const montoLocal = montoLocalRaw || 0;
   const requiereML = ['Venezuela','Argentina'].includes(paisVenta);
-  if (!asesor||!fecha||!monto||!pago||!curso||!canal||!nombre||!apellido||!paisVenta||!email||!lead||!telefono||(requiereML&&!montoLocalRaw)) { showToast('Completá todos los campos obligatorios'); return; }
+  var _faltan = [];
+  if (!asesor) _faltan.push('Asesor');
+  if (!fecha) _faltan.push('Fecha');
+  if (!monto) _faltan.push('Monto USD');
+  if (!pago) _faltan.push('Forma de pago');
+  if (!curso) _faltan.push('Curso');
+  if (!canal) _faltan.push('Canal');
+  if (!nombre) _faltan.push('Nombre');
+  if (!apellido) _faltan.push('Apellido');
+  if (!paisVenta) _faltan.push('País');
+  if (!email) _faltan.push('Email');
+  if (!lead) _faltan.push('ID Lead');
+  if (!telefono) _faltan.push('Teléfono');
+  if (requiereML && !montoLocalRaw) _faltan.push('Monto local (obligatorio en ' + paisVenta + ')');
+  if (_faltan.length) { showToast('Falta completar: ' + _faltan.join(', ')); return; }
   // El curso DEBE ser uno de la lista oficial — no se permite texto libre
   if (!CURSOS.includes(curso)) {
     const sugerido = _normalizarCurso(curso);
@@ -4852,19 +4889,23 @@ async function guardarVenta() {
     var ventaOriginal = window._ventaOriginal || null;
     var eraAprobada = ventaOriginal && (ventaOriginal.estado||'Pendiente') === 'Aprobado';
     // pendiente always has estado:'Pendiente' — auto-reset is built in
-    if (window._editKey) {
-      await dbDelete('/ventas/' + window._editKey);
-      dbDelete('/comprobantes/' + window._editKey).catch(function(){});
-      window._editKey = null;
-      window._ventaOriginal = null;
-      document.getElementById('btn-confirmar').textContent = 'Revisar y confirmar';
-    }
+    // La venta vieja se borra DESPUES de guardar la nueva: si Firebase rechaza
+    // la escritura, la original sigue intacta y no se pierde la venta.
+    var _viejaKey = window._editKey || null;
     // Los comprobantes van al nodo /comprobantes — en la venta queda solo '@ref'
     var _blobC1 = '', _blobC2 = '';
     if (pendiente.comprobante && pendiente.comprobante.indexOf('data:') === 0) { _blobC1 = pendiente.comprobante; pendiente.comprobante = '@ref'; }
     if (pendiente.comprobante2 && pendiente.comprobante2.indexOf('data:') === 0) { _blobC2 = pendiente.comprobante2; pendiente.comprobante2 = '@ref'; }
     const saved = await dbPush('/ventas', pendiente);
-    if (!saved) throw new Error('Firebase rechazó la escritura');
+    if (!saved) throw new Error('Firebase rechazo la escritura — ' + (_fbLastError || 'sin detalle'));
+    // Recien ahora, con la nueva venta ya guardada, se borra la version vieja
+    if (_viejaKey) {
+      await dbDelete('/ventas/' + _viejaKey);
+      dbDelete('/comprobantes/' + _viejaKey).catch(function(){});
+      window._editKey = null;
+      window._ventaOriginal = null;
+      document.getElementById('btn-confirmar').textContent = 'Revisar y confirmar';
+    }
     if (_blobC1 || _blobC2) {
       var _cBody = {};
       if (_blobC1) _cBody.c1 = _blobC1;
@@ -5342,7 +5383,7 @@ function exportCSV() {
   const search = document.getElementById('fil-search').value;
   const vf = filteredVentas(asesor, mes, pago, search);
   if (!vf.length) { showToast('No hay ventas para exportar'); return; }
-  const headers = ['Fecha','Hora','Asesor','Canal','Monto USD','Monto Local','Forma de pago','Curso','ID Lead','Teléfono','Email','Código','Aclaración'];
+  const headers = ['Fecha','Hora','Asesor','Canal','Monto USD','Monto Local','Forma de pago','Curso','ID Lead','Teléfono','Email','Código'];
   function esc(v) { return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function cell(val, isNum) {
     if (isNum && val !== '' && !isNaN(parseFloat(val))) return '<Cell ss:StyleID="normal"><Data ss:Type="Number">' + parseFloat(val) + '</Data></Cell>';
@@ -5352,7 +5393,7 @@ function exportCSV() {
   xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
   xml += '<Styles>\n<Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#B61F3A" ss:Pattern="Solid"/></Style>\n<Style ss:ID="normal"><Alignment ss:WrapText="0"/></Style>\n</Styles>\n';
   xml += '<Worksheet ss:Name="Ventas">\n<Table>\n';
-  [80,60,80,80,80,110,130,190,80,120,190,80,170].forEach(function(w){ xml += '<Column ss:Width="' + w + '"/>'; });
+  [80,60,80,80,80,110,130,190,80,120,190,80].forEach(function(w){ xml += '<Column ss:Width="' + w + '"/>'; });
   xml += '<Row ss:Height="20">';
   headers.forEach(function(h){ xml += '<Cell ss:StyleID="header"><Data ss:Type="String">' + esc(h) + '</Data></Cell>'; });
   xml += '</Row>\n';
@@ -5362,7 +5403,7 @@ function exportCSV() {
       cell(v.fecha||'') + cell(hora) + cell(v.asesor||'') + cell(v.canal||'') +
       cell(v.monto||'', true) + cell(v.montoLocal||'') + cell(v.pago||'') +
       cell(cursoConCombo(v,' + ')||'') + cell(v.lead||'') + cell(v.telefono||'') +
-      cell(v.email||'') + cell(v.codigo||'') + cell(v.nota||'') +
+      cell(v.email||'') + cell(v.codigo||'') +
     '</Row>\n';
   });
   xml += '</Table>\n</Worksheet>\n</Workbook>';
