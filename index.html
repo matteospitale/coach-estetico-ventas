@@ -1235,7 +1235,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.421</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.451</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -6890,7 +6890,7 @@ async function procesarImportFiles() {
         montoLocal = _parseNum(realStr);
         email    = _rowGet(row, ['mail','Mail','email','Email','correo','Correo']);
         telefono = _rowGet(row, ['telefono','teléfono','Telefono','Teléfono']);
-        nota     = _rowGet(row, ['aclaraciones','Aclaraciones','nota','Nota','notas','Notas']);
+        // Las aclaraciones del Excel NO se importan: son comentarios internos sobre las clientas.
       } else {
         var montoUSD = _rowGet(row, ['Monto USD','monto usd']);
         monto = _parseNum(montoUSD);
@@ -6898,7 +6898,7 @@ async function procesarImportFiles() {
         montoLocal = _parseNum(montoLocStr);
         email    = _rowGet(row, ['Correo','correo','Email','email','mail','Mail']);
         telefono = _rowGet(row, ['Telefono','Teléfono','telefono','teléfono']);
-        nota     = _rowGet(row, ['Link','link','Aclaraciones','aclaraciones','nota','Nota']);
+        // Ni las aclaraciones ni la columna Link se importan: no entran comentarios al Hub.
       }
 
       // Saltar filas sin datos clave (pero dejar constancia de por qué, para no perderlas en silencio)
@@ -6924,7 +6924,7 @@ async function procesarImportFiles() {
         codigo:    '',
         email:     email || kommo.email || '',
         telefono:  _normTelefono(telefono || kommo.telefono || ''),
-        nota:      nota,
+        nota:      '',
         nombre:    kommo.nombre || '',
         apellido:  kommo.apellido || '',
         pais:      kommo.pais || '',
