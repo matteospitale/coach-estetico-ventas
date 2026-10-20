@@ -1235,7 +1235,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.470</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.471</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -6778,6 +6778,7 @@ async function eliminarUsuario(nombre) {
 
 // ── IMPORTAR VENTAS DESDE EXCEL ────────────────────────────────────────────
 var _importRows = [];
+var _importTieneColAsesor = false; // el Excel trae columna Asesor (libro general)
 var _importKommoMap = {};
 var _importSkippedRows = []; // filas del Excel descartadas por no tener Fecha/Monto válidos
 
@@ -6902,6 +6903,21 @@ function _normPago(pago) {
   if (l.includes('colom') || l.includes('cop')) return 'Pesos Colombianos';
   if (l.includes('peru') || l.includes('perú')) return 'Pesos Peruanos';
   return p; // no reconocido → queda en rojo para selección manual
+}
+
+// El Excel general de Jaz trae la columna Asesor con los mismos nombres del Hub.
+// Se acepta cualquier variante razonable; si no se reconoce, devuelve '' y manda el selector.
+var ASESORES_HUB = ['Matteo','Facundo','Dianela','Automatizacion'];
+function _normAsesor(txt) {
+  var l = String(txt || '').trim().toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/\s+/g,' ');
+  if (!l) return '';
+  if (l.indexOf('mat') === 0 || l.indexOf('mate') !== -1 || l.indexOf('matt') !== -1) return 'Matteo';
+  if (l.indexOf('fac') === 0 || l.indexOf('facu') !== -1) return 'Facundo';
+  if (l.indexOf('dia') === 0 || l.indexOf('diane') !== -1) return 'Dianela';
+  if (l.indexOf('auto') !== -1 || l.indexOf('bot') === 0) return 'Automatizacion';
+  return '';
 }
 
 // Si ya hay un preview cargado y se agrega el Kommo después, lo aplica sin rehacer todo
@@ -7058,12 +7074,22 @@ async function procesarImportFiles() {
     var formato = 'Matteo'; // default
     if (headers.some(function(h){ return h === 'monto usd' || h.includes('monto usd'); })) formato = 'Facundo';
 
-    var asesor = document.getElementById('imp-asesor').value || usuarioActual || 'Matteo';
+    // Asesor: si el Excel trae la columna (el libro general de Jaz), manda la columna,
+    // fila por fila. Si no la trae (un libro de un solo asesor), vale el selector.
+    var asesorFallback = document.getElementById('imp-asesor').value || usuarioActual || 'Matteo';
+    _importTieneColAsesor = headers.some(function(h){
+      return h === 'asesor' || h === 'asesora' || h === 'vendedor' || h === 'vendedora' || h === 'responsable';
+    });
     var ahora  = new Date().toISOString();
 
     _importRows = [];
     _importSkippedRows = [];
     ventasRows.forEach(function(row, idx) {
+      // Asesor de esta fila: lo que diga el Excel; si no se entiende, el del selector
+      var asesorCrudo = _rowGet(row, ['Asesor','asesor','Asesora','Vendedor','vendedor','Vendedora','Responsable','responsable']);
+      var asesorFila = _normAsesor(asesorCrudo) || asesorFallback;
+      // El Excel trae la columna pero este nombre no se reconoció → se marca para revisar
+      var asesorDudoso = _importTieneColAsesor && !_normAsesor(asesorCrudo);
       var lead = _rowGet(row, ['ID','id','Id']).replace(/\.0$/, '');
       var fechaRaw = _rowGet(row, ['Fecha','fecha']);
       // Si el valor raw es número (serial Excel), tomarlo del objeto raw
@@ -7109,7 +7135,7 @@ async function procesarImportFiles() {
 
       var kommo = _importKommoMap[lead] || {};
       var venta = {
-        asesor:    asesor,
+        asesor:    asesorFila,
         fecha:     fecha,
         monto:     monto,
         descuento: 0,
@@ -7131,6 +7157,7 @@ async function procesarImportFiles() {
       };
       // En los pagos en dólares el alumno paga el valor oficial: pago alumno = monto
       if (esPagoUSD(venta.pago)) venta.montoLocal = monto;
+      if (asesorDudoso) venta._asesorDudoso = true;
       else if (montoLocal > 0) venta.montoLocal = montoLocal;
       if (cursoComboImport) venta.cursoCombo = cursoComboImport;
       _marcarDuplicadoImport(venta);
@@ -7174,6 +7201,19 @@ function _renderImportStatus(formato, tieneKommo) {
   } else {
     html += ' &nbsp;·&nbsp; <span style="color:var(--text3)">sin Kommo — completá los campos rojos manualmente</span>';
   }
+  // De dónde salió el asesor y cuántas ventas quedaron para cada uno
+  var porAsesor = {};
+  _importRows.forEach(function(v){ var a = v.asesor || '—'; porAsesor[a] = (porAsesor[a]||0) + 1; });
+  var detalleAsesores = Object.keys(porAsesor).sort(function(a,b){ return porAsesor[b]-porAsesor[a]; })
+    .map(function(a){ return a + ' ' + porAsesor[a]; }).join(' · ');
+  html += '<div style="margin-top:6px">' +
+    (_importTieneColAsesor
+      ? '<span style="color:var(--facundo);font-weight:600">👤 Asesor tomado de la columna del Excel</span>'
+      : '<span style="color:var(--text3)">👤 El Excel no trae columna Asesor — se usa el del selector</span>') +
+    ' &nbsp;·&nbsp; <strong>' + detalleAsesores + '</strong>' +
+    (_importRows.filter(function(v){ return v._asesorDudoso; }).length
+      ? ' <span style="color:var(--danger);font-weight:600">· ' + _importRows.filter(function(v){ return v._asesorDudoso; }).length + ' sin reconocer, revisalas en la tabla</span>'
+      : '') + '</div>';
   if (_importSkippedRows.length) {
     html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(182,31,58,0.08);border:1px solid rgba(182,31,58,0.25);border-radius:8px;color:var(--danger);font-weight:600">' +
       '⚠️ ' + _importSkippedRows.length + ' fila' + (_importSkippedRows.length!==1?'s':'') + ' del Excel NO se ' + (_importSkippedRows.length!==1?'importaron':'importó') + ' (no van a estar en las ' + total + '):' +
@@ -7278,7 +7318,7 @@ function _renderImportPreview() {
   _importRows.forEach(function(v){ var m=(v.fecha||'').substring(0,7); if(m) mesCount[m]=(mesCount[m]||0)+1; });
   var mesDominante = Object.keys(mesCount).sort(function(a,b){ return mesCount[b]-mesCount[a]; })[0] || '';
 
-  var cols = ['Fecha','Lead ID','Curso','$ USD','Pago','Nombre','Apellido','País','Canal','Email','Teléfono'];
+  var cols = ['Fecha','Asesor','Lead ID','Curso','$ USD','Pago','Nombre','Apellido','País','Canal','Email','Teléfono'];
   var html = '<div style="border-radius:8px;border:1px solid var(--border);overflow:auto;max-height:52vh">';
   html += '<table style="border-collapse:collapse;font-size:12px;table-layout:auto">';
   html += '<thead><tr style="background:rgba(255,255,255,0.97);position:sticky;top:0;z-index:2">';
@@ -7366,6 +7406,14 @@ function _renderImportPreview() {
       '<input type="date" value="' + (v.fecha||'') + '" onchange="_importRows[' + i + '].fecha=this.value;_revalidarFilaImport(' + i + ')" style="' + fechaSt + 'width:118px;cursor:pointer">' +
       (fechaSospechosa ? '<div style="font-size:10px;color:#CF6C1E;font-weight:700;white-space:nowrap">⚠ Fuera de ' + mesLabel(mesDominante) + '</div>' : '') +
       '</td>';
+    // Asesor — select por fila: verde si vino del Excel, rojo si el nombre no se entendió
+    html += '<td style="padding:3px 5px;white-space:nowrap">' +
+      '<select onchange="_importRows[' + i + '].asesor=this.value;_importRows[' + i + ']._asesorDudoso=false;this.style.border=\'1px solid var(--border)\'" style="' +
+        (v._asesorDudoso ? iSelE : (_importTieneColAsesor ? iSelG : iOk)) + 'width:124px;cursor:pointer">' +
+      ASESORES_HUB.map(function(o){ return '<option value="' + o + '"' + (v.asesor===o?' selected':'') + '>' + o + '</option>'; }).join('') +
+      '</select>' +
+      (v._asesorDudoso ? '<div style="font-size:10px;color:var(--danger);font-weight:700">⚠ Revisá el asesor</div>' : '') +
+      '</td>';
     html += '<td style="padding:3px 5px;white-space:nowrap">' +
       '<input type="text" value="' + String(v.lead||'').replace(/"/g,'&quot;') + '" placeholder="ID lead" ' +
         'oninput="_importRows[' + i + '].lead=this.value.trim()" ' +
@@ -7410,8 +7458,9 @@ async function ejecutarImportExcel() {
   var statusEl = document.getElementById('imp-status');
   var btn      = document.getElementById('btn-importar-excel');
 
-  // Actualizar asesor en todas las filas seleccionadas (por si cambió después del preview)
-  aImportar.forEach(function(v) { v.asesor = asesor; });
+  // El asesor de cada fila manda (columna del Excel o lo que se eligió en el preview).
+  // El selector solo completa las filas que quedaron sin asesor.
+  aImportar.forEach(function(v) { if (!v.asesor) v.asesor = asesor; });
 
   btn.disabled = true;
   var ok = 0, fail = 0;
@@ -7424,6 +7473,7 @@ async function ejecutarImportExcel() {
     var venta = Object.assign({}, aImportar[i]);
     delete venta._duplicado;
     delete venta.seleccionada;
+    delete venta._asesorDudoso;
     try {
       var saved = await dbPush('/ventas', venta);
       if (saved) { ok++; importadasOk.push(aImportar[i]); } else { fail++; fallidas.push(venta.lead||'(sin ID)'); }
@@ -7431,7 +7481,16 @@ async function ejecutarImportExcel() {
   }
 
   btn.disabled = false;
-  if (importadasOk.length) avisarSlack({ tipo: 'import', asesor: asesor, ventas: importadasOk.map(_ventaParaSlack) });
+  // El aviso a Slack dice quién vendió: si el lote es de varios, se listan con su cuenta
+  if (importadasOk.length) {
+    var cuentaAsesores = {};
+    importadasOk.forEach(function(v){ var a = v.asesor || '—'; cuentaAsesores[a] = (cuentaAsesores[a]||0) + 1; });
+    var nombresImp = Object.keys(cuentaAsesores);
+    var asesorLabel = nombresImp.length === 1
+      ? nombresImp[0]
+      : nombresImp.map(function(a){ return a + ' ' + cuentaAsesores[a]; }).join(' · ');
+    avisarSlack({ tipo: 'import', asesor: asesorLabel, ventas: importadasOk.map(_ventaParaSlack) });
+  }
   await loadVentas();
   fillMesOptions('admin-fil-mes');
   renderAdmin();
@@ -7545,7 +7604,7 @@ document.getElementById('f-fecha').valueAsDate = new Date();
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap">
         <div class="form-group" style="margin-bottom:0;min-width:160px">
-          <label class="form-label">Asesor</label>
+          <label class="form-label">Asesor (si el Excel no lo trae)</label>
           <select class="form-select" id="imp-asesor">
             <option>Matteo</option><option>Facundo</option><option>Dianela</option><option>Automatizacion</option>
           </select>
