@@ -1235,7 +1235,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.471</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.474</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -3954,6 +3954,9 @@ const CURSO_ALIASES = {
   'membresia life time':  'Lifetime',
   'lifetime':             'Lifetime',
   'life time':            'Lifetime',
+  // 'life' a secas (sin el +) va DESPUES de los alias de Lifetime, para que la búsqueda
+  // parcial no se coma "lifetime". Como exacto igual se resuelve antes que cualquier parcial.
+  'life':                 'Suscripción Life+',
   // Lámpara de Wood
   'lampara de wood pro':  'Lámpara de Wood PRO',
   'lampara de wood':      'Lámpara de Wood PRO',
@@ -4021,6 +4024,20 @@ const CURSO_ALIASES = {
   'despigmentacion':      'Actualización en Despigmentación',
   'actualizacion despigmentacion': 'Actualización en Despigmentación',
 };
+
+// ¿La celda entera ES un curso del catálogo? Comparación EXACTA, sin búsqueda parcial.
+// Hace falta para los nombres que terminan en "+" (Life+): si se parte la celda por "+"
+// antes de preguntar, "Life+" queda en "Life" y se pierde. Pero tiene que ser exacta:
+// con búsqueda parcial, "Lifetime + Zona Intima" también daría positivo y se comería el combo.
+function _cursoExacto(celda) {
+  var k = _qn(celda);
+  if (!k) return '';
+  if (CURSO_ALIASES[k]) return CURSO_ALIASES[k];
+  for (var i = 0; i < CURSOS.length; i++) {
+    if (_qn(CURSOS[i]) === k) return CURSOS[i];
+  }
+  return '';
+}
 
 function _normalizarCurso(raw) {
   if (!raw) return raw;
@@ -5072,7 +5089,13 @@ function nombreCompleto(v) {
 // (ningún nombre oficial de curso contiene '+', así que el split es seguro).
 function cursosDeVenta(v) {
   if (!v) return [];
-  var arr = String(v.curso||'').split('+').map(function(s){ return s.trim(); }).filter(Boolean);
+  var crudo = String(v.curso||'').trim();
+  var arr;
+  // Hay cursos cuyo nombre TERMINA en "+" (Suscripción Life+). Si se parte siempre por "+",
+  // el nombre queda mutilado ("Suscripción Life") en la tabla, en las estadísticas y en la
+  // comparación de duplicados. Por eso primero se mira si la celda entera es un curso.
+  if (_cursoExacto(crudo)) arr = [crudo];
+  else arr = crudo.split('+').map(function(s){ return s.trim(); }).filter(Boolean);
   if (v.cursoCombo) arr.push(v.cursoCombo);
   return arr;
 }
@@ -7098,7 +7121,13 @@ async function procesarImportFiles() {
       // Venta combinada: si la celda trae "curso A + curso B", separar en curso principal + curso combo
       // (no separar por "y" o "/" porque varios nombres oficiales ya los contienen, ej. "Crecimiento y Gestión")
       var cursoCeldaRaw = _rowGet(row, ['Que compro','Qué compro','que compro','que compró','Producto','producto','Curso','curso']);
-      var cursoPartes = cursoCeldaRaw.split('+').map(function(s){ return s.trim(); }).filter(Boolean);
+      // OJO: hay cursos cuyo nombre TERMINA en "+" (Life+, Lifetime+). Si se parte por "+"
+      // de entrada, "Life+" queda en "Life" y deja de reconocerse. Por eso primero se
+      // prueba la celda entera: si es un curso del catálogo, no se parte nada.
+      var cursoCeldaEntera = _cursoExacto(cursoCeldaRaw);
+      var cursoPartes = cursoCeldaEntera
+        ? [cursoCeldaRaw]
+        : cursoCeldaRaw.split('+').map(function(s){ return s.trim(); }).filter(Boolean);
       var curso = _normalizarCurso(cursoPartes[0] || cursoCeldaRaw);
       var cursoComboImport = cursoPartes.length > 1 ? _normalizarCurso(cursoPartes.slice(1).join(' + ')) : '';
       var pago  = _rowGet(row, ['Forma de pago','forma de pago','Metodo de pago','método de pago','metodo de pago']);
@@ -7161,7 +7190,8 @@ async function procesarImportFiles() {
       else if (montoLocal > 0) venta.montoLocal = montoLocal;
       if (cursoComboImport) venta.cursoCombo = cursoComboImport;
       _marcarDuplicadoImport(venta);
-      venta.seleccionada = !venta._duplicado;
+      // Las que ya están cargadas (iguales o parecidas) arrancan destildadas: no se tocan
+      venta.seleccionada = !(venta._duplicado || venta._parecida);
       _importRows.push(venta);
     });
 
@@ -7214,6 +7244,14 @@ function _renderImportStatus(formato, tieneKommo) {
     (_importRows.filter(function(v){ return v._asesorDudoso; }).length
       ? ' <span style="color:var(--danger);font-weight:600">· ' + _importRows.filter(function(v){ return v._asesorDudoso; }).length + ' sin reconocer, revisalas en la tabla</span>'
       : '') + '</div>';
+  // Ya cargadas: se avisa el conteo, sin entrar en quién la cargó. Vienen destildadas.
+  var yaCargadas = _importRows.filter(function(v){ return v._duplicado || v._parecida; });
+  if (yaCargadas.length) {
+    html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(155,94,155,0.08);border:1px solid rgba(155,94,155,0.3);border-radius:8px;font-size:12px;color:#7A4A7A">' +
+      '<strong>' + yaCargadas.length + ' fila' + (yaCargadas.length!==1?'s':'') + ' ya ' + (yaCargadas.length!==1?'están':'está') + ' en el Hub</strong> — ' +
+      'vienen destildadas: no se importan de nuevo ni se pisa lo que ya está cargado.' +
+      '</div>';
+  }
   if (_importSkippedRows.length) {
     html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(182,31,58,0.08);border:1px solid rgba(182,31,58,0.25);border-radius:8px;color:var(--danger);font-weight:600">' +
       '⚠️ ' + _importSkippedRows.length + ' fila' + (_importSkippedRows.length!==1?'s':'') + ' del Excel NO se ' + (_importSkippedRows.length!==1?'importaron':'importó') + ' (no van a estar en las ' + total + '):' +
@@ -7229,17 +7267,52 @@ function _renderImportStatus(formato, tieneKommo) {
 //   persona que compró dos cursos distintos el mismo día (ej. Diplomado + Zona Intima).
 // OJO 2: en combos hay que comparar el CONJUNTO de cursos, sin importar el orden ni si en la
 //   venta vieja quedaron pegados en un solo campo ("HIFU + Diplomado" vs "Diplomado + HIFU").
+// ¿Esta fila del Excel ya está cargada en el Hub?
+// - _duplicado: mismo lead, misma fecha, mismo monto y mismos cursos → es la misma venta.
+// - _parecida:  mismo lead y mismo curso, con el monto igual y la fecha a pocos días →
+//               probablemente la misma venta cargada otro día (dos libros distintos).
+// En los dos casos se guarda la venta del Hub (_ventaExistente) para poder avisar
+// si el asesor no coincide. Lo que ya está cargado nunca se pisa desde el import.
+function _diasEntre(f1, f2) {
+  var a = String(f1||'').split('-'), b = String(f2||'').split('-');
+  if (a.length !== 3 || b.length !== 3) return 999;
+  var da = Date.UTC(parseInt(a[0],10), parseInt(a[1],10)-1, parseInt(a[2],10));
+  var db = Date.UTC(parseInt(b[0],10), parseInt(b[1],10)-1, parseInt(b[2],10));
+  if (isNaN(da) || isNaN(db)) return 999;
+  return Math.abs(da - db) / 86400000;
+}
 function _marcarDuplicadoImport(v) {
   var cursosFila = cursosDeVenta(v).map(function(c){ return _qn(_normalizarCurso(c)); });
-  v._duplicado = !!(v.lead && ventas.some(function(ex){
-    if (ex.lead !== v.lead || ex.fecha !== v.fecha) return false;
-    if (Math.abs(parseFloat(ex.monto||0) - parseFloat(v.monto||0)) >= 0.01) return false;
+  var montoFila = parseFloat(v.monto||0);
+  v._duplicado = false;
+  v._parecida = false;
+  v._ventaExistente = null;
+  if (!v.lead) return false;
+  var candidatas = ventas.filter(function(ex){ return ex.lead === v.lead; });
+  for (var i = 0; i < candidatas.length; i++) {
+    var ex = candidatas[i];
+    // El monto es el ancla: si no coincide, no es la misma venta
+    var mismoMonto = Math.abs(parseFloat(ex.monto||0) - montoFila) < 0.01;
+    if (!mismoMonto) continue;
     var cursosEx = cursosDeVenta(ex).map(function(c){ return _qn(_normalizarCurso(c)); });
-    // Duplicado si los cursos del registro existente están todos en la fila del Excel.
-    // Cubre también registros viejos incompletos: los imports previos a la función de
-    // combos guardaban solo el primer curso de "A + B" (perdían el segundo).
-    return cursosEx.length > 0 && cursosEx.every(function(c){ return cursosFila.indexOf(c) !== -1; });
-  }));
+    // Mismos cursos si los del registro existente están todos en la fila del Excel.
+    // Cubre registros viejos incompletos: los imports previos a la función de combos
+    // guardaban solo el primer curso de "A + B" (perdían el segundo).
+    var mismosCursos = cursosEx.length > 0 && cursosEx.every(function(c){ return cursosFila.indexOf(c) !== -1; });
+    var mismaFecha = ex.fecha === v.fecha;
+    if (mismaFecha && mismosCursos) {
+      v._duplicado = true;
+      v._ventaExistente = ex;
+      return true;
+    }
+    // Casi seguro la misma venta, pero algo no cierra: o el curso está escrito distinto
+    // (mismo lead, mismo día, mismo monto), o se cargó otro día (mismo curso y monto).
+    // Se marca como parecida y queda destildada, para revisarla a ojo.
+    if (!v._parecida && (mismaFecha || (mismosCursos && _diasEntre(ex.fecha, v.fecha) <= 7))) {
+      v._parecida = true;
+      v._ventaExistente = ex;
+    }
+  }
   return v._duplicado;
 }
 
@@ -7248,10 +7321,10 @@ function _marcarDuplicadoImport(v) {
 function _revalidarFilaImport(i) {
   var v = _importRows[i];
   if (!v) return;
-  var eraDup = v._duplicado;
+  var eraDup = v._duplicado, eraParecida = v._parecida;
   _marcarDuplicadoImport(v);
-  if (v._duplicado !== eraDup) {
-    v.seleccionada = !v._duplicado;
+  if (v._duplicado !== eraDup || v._parecida !== eraParecida) {
+    v.seleccionada = !(v._duplicado || v._parecida);
     _renderImportPreview();
   } else {
     _checkImportReady();
@@ -7408,7 +7481,7 @@ function _renderImportPreview() {
       '</td>';
     // Asesor — select por fila: verde si vino del Excel, rojo si el nombre no se entendió
     html += '<td style="padding:3px 5px;white-space:nowrap">' +
-      '<select onchange="_importRows[' + i + '].asesor=this.value;_importRows[' + i + ']._asesorDudoso=false;this.style.border=\'1px solid var(--border)\'" style="' +
+      '<select onchange="_importRows[' + i + '].asesor=this.value;_importRows[' + i + ']._asesorDudoso=false;_renderImportPreview()" style="' +
         (v._asesorDudoso ? iSelE : (_importTieneColAsesor ? iSelG : iOk)) + 'width:124px;cursor:pointer">' +
       ASESORES_HUB.map(function(o){ return '<option value="' + o + '"' + (v.asesor===o?' selected':'') + '>' + o + '</option>'; }).join('') +
       '</select>' +
@@ -7419,7 +7492,15 @@ function _renderImportPreview() {
         'oninput="_importRows[' + i + '].lead=this.value.trim()" ' +
         'onchange="_actualizarLeadImport(' + i + ',this.value)" ' +
         'style="' + iOk + 'font-family:monospace;width:94px">' +
-      (v._duplicado ? '<div style="color:#9B5E9B;font-weight:700;font-size:10px;white-space:nowrap;margin-top:2px">⚠ Ya existe</div>' : '') +
+      // Ya cargada: se avisa cuándo se cargó, para no importarla de nuevo
+      (v._duplicado || v._parecida
+        ? '<div style="color:#9B5E9B;font-weight:700;font-size:10px;white-space:nowrap;margin-top:2px">' +
+            (v._duplicado ? '⚠ Ya existe' : '⚠ Parecida a una ya cargada') +
+            (v._ventaExistente && v._ventaExistente.fecha
+              ? '<br><span style="font-weight:600">cargada el ' + (v._ventaExistente.fecha.split('-').reverse().join('/')) + '</span>'
+              : '') +
+          '</div>'
+        : '') +
       '</td>';
     html += cursoTd(v.curso);
     html += '<td style="padding:5px 10px;text-align:right;font-weight:700;white-space:nowrap">$' + (v.monto||0).toLocaleString('en-US') + '</td>';
