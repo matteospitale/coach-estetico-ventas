@@ -864,7 +864,7 @@ body::before {
           </select>
           <select id="fil-pago" onchange="renderTabla()">
             <option value="all">Todas las formas de pago</option>
-            <option>Hotmart</option><option>Link Mercado Pago Argentina</option>
+            <option>Hotmart</option><option>Pesos Argentinos</option><option>Link Mercado Pago Argentina</option>
             <option>Transferencia Argentina</option><option>Zelle</option>
             <option>Bolívares</option><option>Pesos Chilenos</option>
             <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
@@ -993,8 +993,8 @@ body::before {
             <label class="form-label">Forma de pago *</label>
             <select class="form-select" id="f-pago" onchange="sincronizarPagoAlumnoUSD();actualizarCompletitud()">
               <option value="">Seleccionar...</option>
-              <option>Hotmart</option><option>Link Mercado Pago Argentina</option>
-              <option>Transferencia Argentina</option><option>Zelle</option>
+              <option>Hotmart</option><option>Pesos Argentinos</option>
+              <option>Zelle</option>
               <option>Bolívares</option><option>Pesos Chilenos</option>
               <option>Pesos Dominicanos</option><option>Pesos Colombianos</option>
               <option>Pesos Peruanos</option><option>PayPal</option><option>Binance</option>
@@ -1163,7 +1163,7 @@ body::before {
         </select>
         <select id="admin-fil-pago" onchange="renderAdmin()">
           <option value="all">Todos los métodos</option>
-          <option>Hotmart</option><option>Link Mercado Pago Argentina</option><option>Transferencia Argentina</option><option>Zelle</option><option>Bolívares</option><option>Pesos Chilenos</option><option>Pesos Dominicanos</option><option>Pesos Colombianos</option><option>Pesos Peruanos</option><option>PayPal</option><option>Binance</option>
+          <option>Hotmart</option><option>Pesos Argentinos</option><option>Link Mercado Pago Argentina</option><option>Transferencia Argentina</option><option>Zelle</option><option>Bolívares</option><option>Pesos Chilenos</option><option>Pesos Dominicanos</option><option>Pesos Colombianos</option><option>Pesos Peruanos</option><option>PayPal</option><option>Binance</option>
         </select>
         <input id="admin-fil-search" style="max-width:180px" placeholder="Buscar nombre o lead..." oninput="renderAdmin()">
       </div>
@@ -1235,7 +1235,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.579</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.581</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -2145,6 +2145,19 @@ async function eliminarVenta(key) {
   renderTabla();
   showToast('Venta eliminada');
 }
+// Las dos formas de pago argentinas viejas ya no están en el select, pero las ventas
+// que las tienen se tienen que poder editar: se reinserta la opción si hace falta.
+function asegurarOpcionPago(nombre) {
+  if (!nombre) return;
+  var sel = document.getElementById('f-pago');
+  if (!sel) return;
+  var existe = [].some.call(sel.options, function(o){ return o.value === nombre || o.text === nombre; });
+  if (existe) return;
+  var o = document.createElement('option');
+  o.value = nombre; o.text = nombre + ' (histórico)';
+  sel.appendChild(o);
+}
+
 // Facundo ya no está en la lista de asesores, pero sus ventas viejas se tienen que poder
 // editar: si una venta trae un asesor que no está en el select, se agrega como histórico.
 function asegurarOpcionAsesor(nombre) {
@@ -2168,6 +2181,7 @@ function editarVenta(key) {
   document.getElementById('f-fecha').value = v.fecha||'';
   document.getElementById('f-monto').value = v.monto||'';
   document.getElementById('f-monto-local').value = formatMontoLocal(v.montoLocal);
+  asegurarOpcionPago(v.pago);
   document.getElementById('f-pago').value = v.pago||'';
   sincronizarPagoAlumnoUSD();
   document.getElementById('f-curso').value = v.curso||'';
@@ -2432,7 +2446,7 @@ function renderStats() {
   // ── Configs visuales ──
   const cColors = {Instagram:'#C13584',WhatsApp:'#25D366','IA/Web':'#b61f3a','Sin canal':'#aaa'};
   const FLAGS = {'Argentina':'🇦🇷','Colombia':'🇨🇴','México':'🇲🇽','Venezuela':'🇻🇪','Chile':'🇨🇱','Perú':'🇵🇪','España':'🇪🇸','Estados Unidos':'🇺🇸','Ecuador':'🇪🇨','Bolivia':'🇧🇴','Paraguay':'🇵🇾','Uruguay':'🇺🇾','Brasil':'🇧🇷','Costa Rica':'🇨🇷','Panamá':'🇵🇦','Honduras':'🇭🇳','Guatemala':'🇬🇹','El Salvador':'🇸🇻','Nicaragua':'🇳🇮','Cuba':'🇨🇺','República Dominicana':'🇩🇴','Puerto Rico':'🇵🇷','Portugal':'🇵🇹','Italia':'🇮🇹','Francia':'🇫🇷','Alemania':'🇩🇪','Canadá':'🇨🇦','Australia':'🇦🇺','Israel':'🇮🇱','Andorra':'🇦🇩','Aruba':'🇦🇼','Belice':'🇧🇿','Suiza':'🇨🇭','Trinidad y Tobago':'🇹🇹','Reino Unido':'🇬🇧','Países Bajos':'🇳🇱','República Checa':'🇨🇿'};
-  const PAGO_CFG = {'Hotmart':{icon:'🛒',color:'#E8533F'},'Link Mercado Pago Argentina':{icon:'💳',color:'#009EE3'},'Transferencia Argentina':{icon:'🏦',color:'#4A8C5C'},'Zelle':{icon:'💵',color:'#6A3DE8'},'Bolívares':{icon:'💸',color:'#CF6C1E'},'Pesos Chilenos':{icon:'🇨🇱',color:'#D42B2B'},'Pesos Dominicanos':{icon:'🇩🇴',color:'#003580'},'Pesos Colombianos':{icon:'🇨🇴',color:'#FCA326'},'Pesos Peruanos':{icon:'🇵🇪',color:'#D91023'},'PayPal':{icon:'🅿️',color:'#003087'},'Sin pago':{icon:'❓',color:'#aaa'}};
+  const PAGO_CFG = {'Hotmart':{icon:'🛒',color:'#E8533F'},'Pesos Argentinos':{icon:'🇦🇷',color:'#3B6B9E'},'Link Mercado Pago Argentina':{icon:'💳',color:'#009EE3'},'Transferencia Argentina':{icon:'🏦',color:'#4A8C5C'},'Zelle':{icon:'💵',color:'#6A3DE8'},'Bolívares':{icon:'💸',color:'#CF6C1E'},'Pesos Chilenos':{icon:'🇨🇱',color:'#D42B2B'},'Pesos Dominicanos':{icon:'🇩🇴',color:'#003580'},'Pesos Colombianos':{icon:'🇨🇴',color:'#FCA326'},'Pesos Peruanos':{icon:'🇵🇪',color:'#D91023'},'PayPal':{icon:'🅿️',color:'#003087'},'Sin pago':{icon:'❓',color:'#aaa'}};
   const CURSO_PAL = ['#3B6B9E','#E8533F','#4A8C5C','#9B5E9B','#CF6C1E','#3D9B9B','#9B3D3D','#7C6FA0','#5E8B3D','#8B5E3D'];
   const PAIS_PAL  = ['#3B6B9E','#4A8C5C','#9B5E9B','#CF6C1E','#3D9B9B','#9B3D3D','#6B7CB8','#8B8B30'];
 
@@ -4297,6 +4311,7 @@ function iniciarCobroCuota(ventaKey, cuotaIdx) {
   document.getElementById('f-asesor').value   = v.asesor   || '';
   document.getElementById('f-fecha').valueAsDate = new Date();
   document.getElementById('f-monto').value    = c.monto    || '';
+  asegurarOpcionPago(v.pago);
   document.getElementById('f-pago').value     = v.pago     || '';
   document.getElementById('f-curso').value    = v.curso    || '';
   document.getElementById('f-lead').value     = v.lead     || '';
@@ -4533,13 +4548,13 @@ function renderAdmin() {
     var esHotmart = v.pago === 'Hotmart';
     // Pagos en USD (Hotmart, Zelle, Binance, PayPal): 15% de descuento fijo si no hay uno cargado a mano
     if (esPagoUSD(v.pago) && descuentoTipo === 'pct' && descPct === 0) descPct = DESCUENTO_USD_PCT;
-    var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
+    var esARS = esPagoARS(v.pago);
     var esBs = v.pago === 'Bolívares';
     var esZelle = v.pago === 'Zelle';
 
     // Moneda del alumno según forma de pago
     var localCurrencyMap = {
-      'Link Mercado Pago Argentina':'ARS', 'Transferencia Argentina':'ARS',
+      'Pesos Argentinos':'ARS', 'Link Mercado Pago Argentina':'ARS', 'Transferencia Argentina':'ARS',
       'Bolívares':'Bs',
       'Zelle':'USD', 'Hotmart':'USD',
       'Pesos Chilenos':'CLP', 'Pesos Dominicanos':'DOP',
@@ -5324,6 +5339,13 @@ var PAGOS_USD = ['Hotmart','Zelle','Binance','PayPal'];
 var DESCUENTO_USD_PCT = 15;
 var TC_AJUSTE_ARS = 60;
 function esPagoUSD(pago) { return PAGOS_USD.indexOf(pago) !== -1; }
+
+// ── PAGOS EN PESOS ARGENTINOS ──
+// Desde noviembre 2026 el equipo unificó todo en "Pesos Argentinos". Los dos nombres
+// viejos siguen reconociéndose para que las ventas ya cargadas no pierdan su moneda.
+var PAGO_ARS = 'Pesos Argentinos';
+var PAGOS_ARS = ['Pesos Argentinos','Transferencia Argentina','Link Mercado Pago Argentina'];
+function esPagoARS(pago) { return PAGOS_ARS.indexOf(pago) !== -1; }
 // Descuento por defecto cuando la venta todavía no tiene uno cargado a mano
 function descuentoPorDefecto(pago) { return esPagoUSD(pago) ? DESCUENTO_USD_PCT : 0; }
 // M.Final ARS: para los pagos en USD, "*1460" se calcula como *(1460 − 60)
@@ -5352,7 +5374,7 @@ function computeValFinales(v) {
   var descuentoMontoVal = descuentoTipo === 'monto' ? parseFloat(v.descuentoMonto||0) : 0;
   if (esPagoUSD(v.pago) && descuentoTipo === 'pct' && descPct === 0) descPct = DESCUENTO_USD_PCT;
   var esHotmart = v.pago === 'Hotmart';
-  var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
+  var esARS = esPagoARS(v.pago);
   var esBs = v.pago === 'Bolívares';
   var esZelle = v.pago === 'Zelle';
   var montoLocalNum = parseFloat(v.montoLocal || 0);
@@ -6102,7 +6124,7 @@ function renderMYF() {
   // TC real: works with adminTC field OR montoFinalARS formula ('*1400', '/1400', or plain number)
   // Only considers non-ARS-transfer sales (those are payments IN ARS, not conversions from USD)
   var tcVentas = mesVentas.filter(function(v) {
-    var esARS = v.pago === 'Transferencia Argentina' || v.pago === 'Link Mercado Pago Argentina';
+    var esARS = esPagoARS(v.pago);
     if (esARS) return false;
     var rawARS = String(v.montoFinalARS || '').trim();
     return parseFloat(v.adminTC || 0) > 0 || (rawARS.length > 0 && rawARS !== '0');
@@ -6914,14 +6936,16 @@ function _normPago(pago) {
   // Bolívares: "Pago Movil", "Pago Móvil", "Bs", "Bolivares"
   if (l.includes('pago movil') || l.includes('pago móvil') || l.includes('pagomovil') ||
       l.includes('bolivar') || l === 'bs' || l === 'bsd') return 'Bolívares';
-  // Link Mercado Pago Argentina: "Link MP ARG", "LInk MP ARG", "MP ARS", "MP"
-  if (l.includes('mercado pago')) return 'Link Mercado Pago Argentina';
-  if ((l.includes('link') || l.includes('mp')) && l.includes('arg')) return 'Link Mercado Pago Argentina';
-  if (l === 'mp ars' || l === 'mp') return 'Link Mercado Pago Argentina';
+  // Pesos Argentinos — forma única desde noviembre 2026. Acá entra todo lo que antes
+  // se separaba en "Link Mercado Pago Argentina" y "Transferencia Argentina":
+  // "Pesos Argentinos", "ARS", "Link MP ARG", "Transfe ARG", "Mercado Pago", "MP".
+  if (l.includes('argentin')) return PAGO_ARS;
+  if (l.includes('mercado pago')) return PAGO_ARS;
+  if ((l.includes('link') || l.includes('mp') || l.includes('transf')) && l.includes('arg')) return PAGO_ARS;
+  if (l === 'mp ars' || l === 'mp' || l === 'ars' || l === 'pesos arg' || l === 'peso argentino') return PAGO_ARS;
   // Pesos Chilenos: "Link MP CHILE", "Transfe CHILE"
   if (l.includes('chil')) return 'Pesos Chilenos';
   // Transferencias y sinónimos: acepta "transfe", "transfer"
-  if (l.includes('transf') && l.includes('arg'))                          return 'Transferencia Argentina';
   if (l.includes('transf') && (l.includes('cop') || l.includes('colom'))) return 'Pesos Colombianos';
   if (l.includes('transf') && (l.includes('peru') || l.includes('perú'))) return 'Pesos Peruanos';
   if (l.includes('transf') && l.includes('domin'))                        return 'Pesos Dominicanos';
@@ -7380,7 +7404,7 @@ function _renderImportPreview() {
   var wrap = document.getElementById('imp-preview-wrap');
   if (!_importRows.length) { wrap.style.display = 'none'; return; }
 
-  var PAGOS = ['Hotmart','Link Mercado Pago Argentina','Transferencia Argentina','Zelle','Bolívares','Pesos Chilenos','Pesos Dominicanos','Pesos Colombianos','Pesos Peruanos','PayPal','Binance'];
+  var PAGOS = ['Hotmart','Pesos Argentinos','Zelle','Bolívares','Pesos Chilenos','Pesos Dominicanos','Pesos Colombianos','Pesos Peruanos','PayPal','Binance'];
   var CANALES = ['Instagram','WhatsApp','IA/Web'];
 
   // Estilos base — selects no soportan background en todos los browsers, usamos border-color
