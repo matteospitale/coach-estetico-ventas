@@ -1235,7 +1235,7 @@ body::before {
 
 <div class="toast" id="toast"></div>
 
-<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.474</div>
+<div style="position:fixed;bottom:14px;right:16px;z-index:9999;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);background:rgba(0,0,0,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;letter-spacing:0.03em;">v1.579</div>
 
 <script>
 const DB_URL = 'https://coach-estetico-ventas-default-rtdb.firebaseio.com';
@@ -2890,6 +2890,7 @@ const PLANTILLAS_DEFAULT = [
   {titulo:"Reestructuración de Pieles – Info completa",categoria:"masterclass",texto:"🚀 Reestructuración de Pieles – Masterclass\n\n💡 Lo que vas a dominar\n✅ Cómo recuperar la integridad cutánea después de un procedimiento\n✅ Técnicas y principios activos para restaurar pieles reactivas\n\n📥 Qué incluye\n🎓 1 clase intensiva (3-4 horas)\n📘 PDF descargable\n🔓 Acceso ilimitado al campus virtual"},
   {titulo:"Diagnóstico 0 – Pre Peeling – Info completa",categoria:"masterclass",texto:"🚀 Diagnóstico 0 – Pre Peeling\n\n💡 Lo que vas a dominar\n✅ Cómo realizar un diagnóstico clínico antes de aplicar un peeling\n✅ Peelings combinados, multicapas y técnicas avanzadas\n\n📥 Qué incluye\n🎓 9 clases en vivo + grabaciones\n📘 PDFs descargables\n🔓 Acceso ilimitado al campus virtual"},
   {titulo:"ABC del Microneedling – Info completa",categoria:"masterclass",texto:""},
+  {titulo:"Bootcamp – Info completa",categoria:"premium",texto:""},
   {titulo:"Altafrecuencia – Info completa",categoria:"express",texto:"🚀 Altafrecuencia – Curso Express\n\n💡 Lo que vas a dominar\n✅ Los fundamentos reales de la Altafrecuencia\n✅ Las técnicas: con gasa, sin gasa y fulguración\n\n📥 Qué incluye\n🎓 Clase técnica de 3 horas\n📘 Material de apoyo incluido\n🔓 Acceso ilimitado al campus virtual"},
   {titulo:"IPL – Luz Pulsada Intensa – Info completa",categoria:"express",texto:"🚀 IPL – Luz Pulsada Intensa: Bases\n\n💡 Lo que vas a dominar\n✅ Los principios físicos del IPL\n✅ Cómo seleccionar filtros y parámetros según objetivo\n\n📥 Qué incluye\n🎓 Clase técnica con fundamento clínico\n📘 Material de apoyo incluido\n🔓 Acceso ilimitado al campus virtual"},
   {titulo:"Microneedling en Cuero Cabelludo – Info completa",categoria:"express",texto:"🚀 Microneedling en Cuero Cabelludo – Curso Express\n\n💡 Lo que vas a dominar\n✅ La fisiología y el ciclo de crecimiento capilar\n✅ Los parámetros y técnicas correctas de microneedling capilar\n\n📥 Qué incluye\n🎓 Clase técnica intensiva de 3 horas\n📘 +5 materiales descargables\n🔓 Acceso ilimitado al campus virtual"},
@@ -3392,6 +3393,7 @@ var _MAPA_FORMACIONES = {
 // El flag en /config/formaciones_seed evita recrearlas si después se borran a mano.
 var FORMACIONES_NUEVAS = [
   { flag:'mc_abc_microneedling', titulo:'ABC del Microneedling', categoria:'masterclass', palabras:['abc','microneedling'] },
+  { flag:'bootcamp_premium', titulo:'Bootcamp', categoria:'premium', palabras:['bootcamp'] },
 ];
 async function asegurarFormacionesNuevas() {
   var creadas = 0;
@@ -3929,7 +3931,7 @@ async function abrirNuevaPlantilla() {
 }
 
 // ── VENTAS FORM ──
-const CURSOS = ['Club Coach','Lifetime','Suscripción Life+','Migración','Saldo a favor','Diplomado Crecimiento y Gestión de Emprendedores Estéticos','Combo Diplomado','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','MC ABC del Microneedling','Zona Intima','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
+const CURSOS = ['Club Coach','Lifetime','Suscripción Life+','Migración','Saldo a favor','Diplomado Crecimiento y Gestión de Emprendedores Estéticos','Combo Diplomado','Diplomado Dermatocosmiatría Internacional CEF: Clínico, Estético y Funcional','Diplomado Internacional Aparatología y Tecnologías Estéticas 2025','Diplomado Internacional en Peeling Químico: Ciencia y Maestría','Diplomado Internacional en Microneedling','Bootcamp','Acné Expert Training','Anatomía del HIFU: Más que un equipo','Envejecimiento Expert Training','Formación en Cosmiatría Profesional e Internacional','Formación Profesional en Peeling Químico','Master Training en Diagnóstico Estético Facial','Melanosis Expert Training','Microneedling PRO: Entrenamiento Intensivo en Dermapen','Consultor(a) Skin Care','Método NutriSkin con Dra. Israelina','Abordaje Inteligente Estrías','Acné Activo con Dermapen','Actualización en Despigmentación','Actualización en Peeling Químico y Ácidos','Electroestética Facial','Hidrafacial','Lámpara de Wood PRO','Limpiezas Faciales','Perfeccionamiento en Dermapen','Plasma Pen','Radiofrecuencias','Tratamientos Domiciliares','MC Inmersión en Secuelas Post Acné','MC Manejo de la Pigmentación con Peeling Químico','MC Rosácea y Acné','MC Principios Activos con Dermapen','MC Protocolos en Fototipos Altos','MC Química Cosmética','MC Rebrote Acneico','MC Reestructuración en Pieles','MC Diagnóstico 0 - Pre Peeling','MC Técnicas de Aplicación con Peeling Químico Actualización 2026','MC ABC del Microneedling','Zona Intima','Altafrecuencia','IPL - Luz Pulsada Intensa','Microneedling en Cuero Cabelludo','Ultrasonido 3 Mghz'];
 
 // Mapea abreviaturas de Excel al nombre oficial.
 // Agrega aliases acá cuando aparezcan variantes nuevas de algún asesor.
@@ -4003,6 +4005,9 @@ const CURSO_ALIASES = {
   'emprendedores esteticos':  'Diplomado Crecimiento y Gestión de Emprendedores Estéticos',
   'combo diplomado':          'Combo Diplomado',
   'combo diplo':              'Combo Diplomado',
+  // Bootcamp (premium) — matchea "Bootcamp", "Bootcamp 2026", "Boot camp", etc.
+  'bootcamp':             'Bootcamp',
+  'boot camp':            'Bootcamp',
   // Expert Trainings
   'acne expert':          'Acné Expert Training',
   'acne expert training': 'Acné Expert Training',
